@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNIQLO x PAC-MAN</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Container that holds all screens -->
+  <div id="app-container">
+
+    <!-- SCREEN 1: UNIQLO LANDING PAGE -->
+    <div id="screen-landing" class="screen active">
+      <header class="uq-header">
+        <div class="uq-logo">
+          <!-- The hidden Easter Egg -->
+          <img src="/assets/pacman-icon.png" alt="Pac-Man Easter Egg" id="pacman-easter-egg"
+            onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgMTAwQTEgMSAwIDExNTAgMGExIDEgMCAwMTAgMTAwWiIgZmlsbD0iI0ZGRDQzQiIvPjxwYXRoIGQ9Ik01MCA1MGw1MC0yNGE1MCA1MCAwIDAwMCA0OFoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='">
+          <img src="/assets/uniqlo-logo.png" alt="UNIQLO Logo" id="logo-img"
+            onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0icmVkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjE0IiBmb250LWZhbWlseT0iQXJpYWwiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlVOSVFMTzwvdGV4dD48L3N2Zz4='">
+        </div>
+        <nav class="uq-nav">
+          <a href="#">WOMEN</a>
+          <a href="#">MEN</a>
+          <a href="#">KIDS</a>
+          <a href="#">BABY</a>
+        </nav>
+      </header>
+
+      <main class="uq-main">
+        <section class="uq-hero">
+          <h1>UNIQLO x PAC-MAN</h1>
+          <p>Discover the new limited capsule collection.</p>
+          <button class="uq-btn primary">SHOP NEW ARRIVALS</button>
+        </section>
+
+        <div class="uq-grid">
+          <div class="uq-grid-item"></div>
+          <div class="uq-grid-item"></div>
+          <div class="uq-grid-item"></div>
+        </div>
+      </main>
+
+    </div>
+
+    <!-- SCREEN 2: PAC-MAN EATS THE PAGE (TRANSITION) -->
+    <div id="screen-transition" class="screen">
+      <canvas id="transition-canvas"></canvas>
+    </div>
+
+    <!-- SCREEN 3 & 4: ARCADE CABINET REVEAL & COIN SEQUENCE -->
+    <div id="screen-arcade-reveal" class="screen">
+      <div id="cabinet-container">
+        <!-- We use the video as requested -->
+        <video id="cabinet-video" src="/assets/cabinet-video.mp4" muted playsinline></video>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: GAME START SCREEN -->
+    <div id="screen-game-start" class="screen arcade-mode">
+      <div class="arcade-start-menu">
+        <h1>PAC-MAN</h1>
+        <p class="subtitle">UNIQLO CAPSULE COLLECTION</p>
+        <div class="start-actions">
+          <button id="btn-play-game" class="arcade-btn">PLAY</button>
+          <button id="btn-view-collection" class="arcade-btn secondary">VIEW THE COLLECTION</button>
+        </div>
+      </div>
+
+      <!-- Locked Collection Popup -->
+      <div id="locked-collection-popup" class="modal hidden">
+        <div class="modal-content retro-border">
+          <h2>Play the game to unlock the collection</h2>
+          <div class="locked-silhouettes">
+            <div class="silhouette t-shirt">?</div>
+            <div class="silhouette sweatshirt">?</div>
+            <div class="silhouette cap">?</div>
+            <div class="silhouette tote">?</div>
+          </div>
+          <button id="btn-close-popup" class="arcade-btn small">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 6: PLAYABLE GAME SCREEN -->
+    <div id="screen-gameplay" class="screen arcade-mode">
+      <div class="game-container">
+        <div class="game-hud">
+          <div class="hud-col">
+            <span>1UP</span>
+            <span id="score-val">0</span>
+          </div>
+          <div class="hud-col">
+            <span>HIGH SCORE</span>
+            <span>10000</span>
+          </div>
+          <div class="hud-col">
+            <span>2UP</span>
+            <span>0</span>
+          </div>
+          <div class="hud-logo">
+            <img src="/assets/uniqlo-logo.png" alt="UNIQLO" onerror="this.style.display='none'">
+          </div>
+        </div>
+
+        <div class="playfield">
+          <!-- Background maze -->
+          <img src="/assets/maze-without-pellets.png" class="maze-bg" alt="Maze">
+
+          <!-- Game Canvas for Pac-Man and Items -->
+          <canvas id="game-canvas" width="448" height="496"></canvas>
+        </div>
+
+        <div class="game-controls">
+          <button id="btn-skip-game" class="arcade-btn small secondary">SKIP THE GAME</button>
+        </div>
+      </div>
+
+      <!-- Reward Overlay -->
+      <div id="reward-overlay" class="modal hidden">
+        <div class="modal-content retro-border success">
+          <h2>FULL COLLECTION UNLOCKED</h2>
+          <h1 class="discount-text">20% OFF</h1>
+          <button id="btn-shop-unlocked" class="arcade-btn primary">SHOP NOW</button>
+          <button id="btn-replay" class="arcade-btn secondary">REPLAY GAME</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 7: ARCADE REWARD COLLECTION SCREEN -->
+    <div id="screen-arcade-collection" class="screen arcade-mode">
+      <div class="arcade-collection-container">
+        <div class="arcade-collection-header">
+          <h2>★ UNLOCKED COLLECTION ★</h2>
+          <h1 class="flash-text">20% OFF REWARD ACTIVE</h1>
+          <p>SELECT YOUR ITEM</p>
+        </div>
+        <div class="arcade-product-list" id="arcade-product-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 8: STANDARD COLLECTION SCREEN (Skip Game Route) -->
+    <div id="screen-collection" class="screen">
+      <header class="uq-header">
+        <div class="uq-logo">
+          <img src="/assets/uniqlo-logo.png" alt="UNIQLO Logo" onerror="this.style.display='none'">
+        </div>
+        <div id="collection-banner" class="hidden">
+          <span>🎉 20% DISCOUNT APPLIED</span>
+        </div>
+      </header>
+
+      <main class="uq-collection-main">
+        <h1>UNIQLO x PAC-MAN</h1>
+        <div class="product-grid" id="product-grid">
+          <!-- Products will be injected via JS -->
+        </div>
+      </main>
+    </div>
+
+  </div>
+  <script src="script.js"></script>
+</body>
+
+</html>
