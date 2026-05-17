@@ -194,34 +194,10 @@ const CELL_SIZE = 16;
 const COLS = 28;
 const ROWS = 31;
 
-// Simplified map for classic Pac-Man (0: wall, 1: path)
-// I will create a basic open path around the edges and a cross in the middle
-const map = [];
-for (let r = 0; r < ROWS; r++) {
-  const row = [];
-  for (let c = 0; c < COLS; c++) {
-    // Basic borders
-    if (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) {
-      row.push(0);
-    } 
-    // Open path loop
-    else if (r === 1 || r === ROWS - 2 || c === 1 || c === COLS - 2) {
-      row.push(1);
-    }
-    // Cross
-    else if (r === 15 || c === 14 || c === 13) {
-      row.push(1);
-    }
-    else {
-      // For the sake of prototyping and not having pacman stuck, let's make it mostly walkable but with some blocks
-      if ((r % 4 === 0) && (c % 4 === 0)) row.push(0);
-      else row.push(1);
-    }
-  }
-  map.push(row);
-}
+let map = [];
+let gamePellets = [];
 
-const pacman = { r: 15, c: 14, dir: { r: 0, c: 0 }, nextDir: { r: 0, c: 0 }, open: 0, openDir: 1 };
+const pacman = { r: 23, c: 13, dir: { r: 0, c: 0 }, nextDir: { r: 0, c: 0 }, open: 0, openDir: 1 };
 const collectibles = [
   { id: 'tshirt', r: 1, c: 1, color: '#ff6b6b', collected: false, name: 'T-Shirt' },
   { id: 'sweatshirt', r: 1, c: 26, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
@@ -231,6 +207,60 @@ const collectibles = [
 
 let score = 0;
 
+// Dynamic Tile-Based Map Generation from the Image itself
+function generateMapAndPellets() {
+  const img = new Image();
+  img.src = '/assets/maze-without-pellets.png';
+  
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 448;
+    canvas.height = 496;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+
+    map = [];
+    gamePellets = [];
+
+    for (let r = 0; r < ROWS; r++) {
+      const row = [];
+      for (let c = 0; c < COLS; c++) {
+        // Sample the exact center of each 16x16 tile
+        const pixel = ctx.getImageData(c * CELL_SIZE + 8, r * CELL_SIZE + 8, 1, 1).data;
+        
+        // Pure black = walkable path
+        const isBlack = pixel[0] < 20 && pixel[1] < 20 && pixel[2] < 20;
+        
+        // Hardcode ghost pen area to blocked (rows 12-16, cols 10-17)
+        const isGhostPen = (r >= 12 && r <= 16 && c >= 10 && c <= 17);
+
+        let val = 0; // Default to wall (blocked)
+        if (isGhostPen) {
+          val = 4; // Blocked Ghost Pen
+        } else if (isBlack) {
+          val = 1; // Walkable Path
+        }
+
+        row.push(val);
+
+        if (val === 1) {
+          // Check if this tile holds a product collectible
+          const isCollectible = collectibles.some(col => col.r === r && col.c === c);
+          // Check if this is the pacman start tile
+          const isStart = (r === 23 && c === 13) || (r === 23 && c === 14);
+          
+          if (!isCollectible && !isStart) {
+            gamePellets.push({ r, c, active: true });
+          }
+        }
+      }
+      map.push(row);
+    }
+  };
+}
+// Generate once at startup to cache
+generateMapAndPellets();
+
 function drawGame() {
   const canvas = document.getElementById('game-canvas');
   if (!canvas) return;
@@ -239,6 +269,14 @@ function drawGame() {
 
   // We don't draw walls because the background image has them
   // We just draw collectibles and pacman
+
+  // Pellets
+  ctx.fillStyle = '#ffb8ae'; // Classic pellet color
+  gamePellets.forEach(p => {
+    if (p.active) {
+      ctx.fillRect(p.c * CELL_SIZE + 6, p.r * CELL_SIZE + 6, 4, 4);
+    }
+  });
 
   // Collectibles
   collectibles.forEach(c => {
@@ -272,8 +310,13 @@ function drawGame() {
 function updateGame() {
   // Try to change direction
   if (pacman.nextDir.r !== 0 || pacman.nextDir.c !== 0) {
-    const nextR = pacman.r + pacman.nextDir.r;
-    const nextC = pacman.c + pacman.nextDir.c;
+    let nextR = pacman.r + pacman.nextDir.r;
+    let nextC = pacman.c + pacman.nextDir.c;
+    
+    // Wrap-around horizontal
+    if (nextC < 0) nextC = COLS - 1;
+    else if (nextC >= COLS) nextC = 0;
+
     if (map[nextR] && map[nextR][nextC] === 1) {
       pacman.dir = { ...pacman.nextDir };
       pacman.nextDir = { r: 0, c: 0 };
@@ -281,14 +324,27 @@ function updateGame() {
   }
 
   // Move
-  const nextR = pacman.r + pacman.dir.r;
-  const nextC = pacman.c + pacman.dir.c;
+  let nextR = pacman.r + pacman.dir.r;
+  let nextC = pacman.c + pacman.dir.c;
+  
+  // Wrap-around horizontal
+  if (nextC < 0) nextC = COLS - 1;
+  else if (nextC >= COLS) nextC = 0;
+
   if (map[nextR] && map[nextR][nextC] === 1) {
     pacman.r = nextR;
     pacman.c = nextC;
   }
 
-  // Collect
+  // Collect Pellets
+  const pellet = gamePellets.find(p => p.active && p.r === pacman.r && p.c === pacman.c);
+  if (pellet) {
+    pellet.active = false;
+    score += 10;
+    document.getElementById('score-val').innerText = score;
+  }
+
+  // Collect Items
   collectibles.forEach(c => {
     if (!c.collected && c.r === pacman.r && c.c === pacman.c) {
       c.collected = true;
@@ -335,8 +391,9 @@ document.getElementById('btn-skip-game')?.addEventListener('click', () => {
   clearInterval(gameInterval);
   document.removeEventListener('keydown', handleInput);
   hasDiscount = false;
-  renderCollection();
-  showScreen('collection');
+  renderArcadeCollection();
+  showScreen('arcadeCollection');
+  initArcadeCollection();
 });
 
 // Reward actions
@@ -354,59 +411,33 @@ document.getElementById('btn-replay')?.addEventListener('click', () => {
 });
 
 function resetGame() {
-  pacman.r = 15; pacman.c = 14;
+  pacman.r = 23; pacman.c = 13;
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
   score = 0;
   document.getElementById('score-val').innerText = score;
   collectibles.forEach(c => c.collected = false);
   unlockedItems = [];
+  generateMapAndPellets();
 }
+
+// Play from Skip Screen
+document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
+  resetGame();
+  showScreen('gameStart');
+});
 
 // =========================================
 // SCREEN 7: COLLECTION
 // =========================================
 const productsData = [
-  { id: 'tshirt', name: 'Pac-Man Graphic T-Shirt', price: 24.90, img: '👕' },
-  { id: 'sweatshirt', name: 'Arcade Graphic Sweatshirt', price: 49.90, img: '🧥' },
-  { id: 'cap', name: 'Pac-Man Cap', price: 19.90, img: '🧢' },
-  { id: 'tote', name: 'UNIQLO x Pac-Man Tote Bag', price: 14.90, img: '👜' }
+  { id: 'tshirt', name: 'Pac-Man Graphic T-Shirt', price: 24.90, img: '👕', hasVariants: true, variants: { black: '/assets/item-tshirt-black.png', white: '/assets/item-tshirt-white.png' } },
+  { id: 'sweatshirt', name: 'Arcade Graphic Sweatshirt', price: 49.90, img: '🧥', hasVariants: true, variants: { black: '/assets/item-sweatshirt-black.png', white: '/assets/item-sweatshirt-white.png' } },
+  { id: 'cap', name: 'Pac-Man Cap', price: 19.90, img: '🧢', hasVariants: true, variants: { black: '/assets/item-cap-black.png', white: '/assets/item-cap-white.png' } },
+  { id: 'tote', name: 'UNIQLO x Pac-Man Tote Bag', price: 14.90, img: '👜', hasVariants: true, variants: { black: '/assets/item-bag-black.png', white: '/assets/item-bag-white.png' } }
 ];
 
-function renderCollection() {
-  // Ensure store background is white again
-  document.body.style.backgroundColor = 'var(--bg-store)';
 
-  if (hasDiscount) {
-    document.getElementById('collection-banner').classList.remove('hidden');
-  }
-
-  const grid = document.getElementById('product-grid');
-  grid.innerHTML = '';
-
-  productsData.forEach(p => {
-    let priceHtml = `$${p.price.toFixed(2)}`;
-    if (hasDiscount) {
-      const discounted = (p.price * 0.8).toFixed(2);
-      priceHtml = `<span class="original-price">$${p.price.toFixed(2)}</span><span class="product-price discounted">$${discounted}</span>`;
-    } else {
-      priceHtml = `<span class="product-price">${priceHtml}</span>`;
-    }
-
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    card.innerHTML = `
-      <div class="product-image">${p.img}</div>
-      <div class="product-name">${p.name}</div>
-      ${priceHtml}
-      <div class="product-actions">
-        <button class="btn-view">View Item</button>
-        <button class="btn-add">Add to Bag</button>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-}
 
 // =========================================
 // SCREEN 8: ARCADE COLLECTION (REWARD)
@@ -418,24 +449,53 @@ function renderArcadeCollection() {
   const list = document.getElementById('arcade-product-list');
   list.innerHTML = '';
 
+  const statusEl = document.getElementById('arcade-header-status');
+  const titleEl = document.getElementById('arcade-main-title');
+  const subtitleEl = document.getElementById('arcade-main-subtitle');
+
+  if (hasDiscount) {
+    statusEl.innerText = '[ REWARD: 20% OFF ACTIVE ]';
+    statusEl.classList.add('blink-fast');
+    statusEl.style.color = 'var(--pacman-yellow)';
+    titleEl.innerText = 'UNLOCKED COLLECTION';
+    subtitleEl.innerText = '// SELECT YOUR ITEM';
+    document.getElementById('skip-game-prompt')?.classList.add('hidden');
+  } else {
+    statusEl.innerText = '[ STANDARD STORE ]';
+    statusEl.classList.remove('blink-fast');
+    statusEl.style.color = '#888';
+    titleEl.innerText = 'UNIQLO x PAC-MAN';
+    subtitleEl.innerText = '// BROWSE COLLECTION';
+    document.getElementById('skip-game-prompt')?.classList.remove('hidden');
+  }
+
   productsData.forEach((p, index) => {
-    const discounted = (p.price * 0.8).toFixed(2);
+    let priceRowHtml = '';
+    
+    if (hasDiscount) {
+      const discounted = (p.price * 0.8).toFixed(2);
+      priceRowHtml = `
+        <span class="item-original-price">$${p.price.toFixed(2)}</span>
+        <span class="item-price">$${discounted}</span>
+      `;
+    } else {
+      priceRowHtml = `<span class="item-price">$${p.price.toFixed(2)}</span>`;
+    }
     
     const item = document.createElement('div');
     item.className = `arcade-product-item ${index === 0 ? 'selected' : ''}`;
     item.dataset.index = index;
     
     item.innerHTML = `
-      <div class="cursor-indicator">▶</div>
+      <div class="cursor-indicator">›</div>
       <div class="item-icon">${p.img}</div>
       <div class="item-details">
         <div class="item-name">${p.name}</div>
-        <div>
-          <span class="item-original-price">$${p.price.toFixed(2)}</span>
-          <span class="item-price">$${discounted}</span>
+        <div class="item-price-row">
+          ${priceRowHtml}
         </div>
       </div>
-      <button class="arcade-btn small primary">VIEW ITEM</button>
+      <button class="wahba-btn" onclick="openItemView('${p.id}'); event.stopPropagation();">VIEW ITEM</button>
     `;
     
     list.appendChild(item);
@@ -456,8 +516,7 @@ function initArcadeCollection() {
     });
     
     item.addEventListener('click', () => {
-      // Logic to view item (e.g., alert or redirect)
-      alert('Selected: ' + productsData[arcadeActiveIndex].name);
+      openItemView(productsData[arcadeActiveIndex].id);
     });
   });
 
@@ -489,9 +548,77 @@ function handleArcadeKeyboard(e) {
     updateArcadeSelection();
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    alert('Selected: ' + productsData[arcadeActiveIndex].name);
+    openItemView(productsData[arcadeActiveIndex].id);
   }
 }
+
+// =========================================
+// ITEM VIEW MODAL LOGIC
+// =========================================
+let currentViewItem = null;
+
+function openItemView(productId) {
+  const item = productsData.find(p => p.id === productId);
+  if (!item) return;
+
+  if (!item.hasVariants) {
+    alert("3D Item View is coming soon for this product!");
+    return;
+  }
+
+  currentViewItem = item;
+  
+  // Set UI Text
+  document.getElementById('item-view-name').innerText = item.name;
+  
+  const priceDisplay = document.getElementById('item-view-price');
+  if (hasDiscount) {
+    priceDisplay.innerHTML = `
+      <span style="font-size:1rem; color:#555; text-decoration:line-through; margin-right:10px;">$${item.price.toFixed(2)}</span>
+      <span style="color:var(--uniqlo-red);">$${(item.price * 0.8).toFixed(2)}</span>
+    `;
+    priceDisplay.classList.add('discount-text');
+  } else {
+    priceDisplay.innerHTML = `$${item.price.toFixed(2)}`;
+    priceDisplay.classList.remove('discount-text');
+  }
+
+  // Reset color selector to Black
+  updateItemViewColor('black');
+
+  // Show Modal
+  document.getElementById('item-view-overlay').classList.remove('hidden');
+}
+
+function updateItemViewColor(color) {
+  if (!currentViewItem || !currentViewItem.hasVariants) return;
+  
+  // Update floating image src
+  const imgEl = document.getElementById('floating-item-image');
+  imgEl.src = currentViewItem.variants[color];
+
+  // Update active button state
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    if (btn.dataset.color === color) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
+// Bind Color Selectors
+document.querySelectorAll('.color-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    updateItemViewColor(e.target.dataset.color);
+  });
+});
+
+// Bind Close Button
+document.getElementById('btn-close-item-view').addEventListener('click', () => {
+  document.getElementById('item-view-overlay').classList.add('hidden');
+  currentViewItem = null;
+});
 
 // INIT
 showScreen('landing');

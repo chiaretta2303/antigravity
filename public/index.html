@@ -124,43 +124,84 @@
         <div class="modal-content retro-border success">
           <h2>FULL COLLECTION UNLOCKED</h2>
           <h1 class="discount-text">20% OFF</h1>
-          <button id="btn-shop-unlocked" class="arcade-btn primary">SHOP NOW</button>
-          <button id="btn-replay" class="arcade-btn secondary">REPLAY GAME</button>
+          <button id="btn-shop-unlocked" class="wahba-cta-btn primary">SHOP NOW</button>
+          <button id="btn-replay" class="wahba-btn secondary" style="margin-top: 15px;">REPLAY GAME</button>
         </div>
       </div>
     </div>
 
     <!-- SCREEN 7: ARCADE REWARD COLLECTION SCREEN -->
-    <div id="screen-arcade-collection" class="screen arcade-mode">
-      <div class="arcade-collection-container">
-        <div class="arcade-collection-header">
-          <h2>★ UNLOCKED COLLECTION ★</h2>
-          <h1 class="flash-text">20% OFF REWARD ACTIVE</h1>
-          <p>SELECT YOUR ITEM</p>
+    <div id="screen-arcade-collection" class="screen arcade-mode wahba-shell">
+      <div class="scanlines"></div>
+      
+      <div class="terminal-header">
+        <div class="terminal-header-left">
+          <span class="logo">/UNIQLO_X_PACMAN</span>
         </div>
+        <div class="terminal-header-right">
+          <span id="arcade-header-status" class="status blink-fast">[ REWARD: 20% OFF ACTIVE ]</span>
+        </div>
+      </div>
+
+      <div class="wahba-main-container">
+        <div class="wahba-title-area">
+          <h1 id="arcade-main-title" class="wahba-title">UNLOCKED COLLECTION</h1>
+          <p id="arcade-main-subtitle" class="wahba-subtitle">// SELECT YOUR ITEM</p>
+          <div id="skip-game-prompt" class="hidden" style="margin-top: 30px;">
+            <p style="color: #ccc; margin-bottom: 15px; letter-spacing: 1px;">You skipped the game. Play Pac-Man to unlock 20% off.</p>
+            <button id="btn-play-from-skip" class="wahba-cta-btn">PLAY TO UNLOCK 20%</button>
+          </div>
+        </div>
+
         <div class="arcade-product-list" id="arcade-product-list">
           <!-- Populated by JS -->
         </div>
       </div>
     </div>
 
-    <!-- SCREEN 8: STANDARD COLLECTION SCREEN (Skip Game Route) -->
-    <div id="screen-collection" class="screen">
-      <header class="uq-header">
-        <div class="uq-logo">
-          <img src="/assets/uniqlo-logo.png" alt="UNIQLO Logo" onerror="this.style.display='none'">
-        </div>
-        <div id="collection-banner" class="hidden">
-          <span>🎉 20% DISCOUNT APPLIED</span>
-        </div>
-      </header>
 
-      <main class="uq-collection-main">
-        <h1>UNIQLO x PAC-MAN</h1>
-        <div class="product-grid" id="product-grid">
-          <!-- Products will be injected via JS -->
+
+    <!-- ITEM VIEW MODAL -->
+    <div id="item-view-overlay" class="modal hidden arcade-mode wahba-shell">
+      <div class="scanlines"></div>
+      
+      <div class="terminal-header" style="position: absolute; top: 0; left: 0; width: 100%;">
+        <div class="terminal-header-left">
+          <span class="logo">/PRODUCT_VIEWER</span>
         </div>
-      </main>
+      </div>
+
+      <div class="item-view-content wahba-modal-content">
+        <!-- The Floating 3D Object -->
+        <div class="floating-item-scene">
+          <div class="bobbing-container">
+            <div class="rotating-container">
+              <img id="floating-item-image" src="" alt="Floating Item">
+            </div>
+          </div>
+        </div>
+        
+        <!-- The UI Panel -->
+        <div class="item-view-ui wahba-panel">
+          <div class="wahba-panel-header">
+            <h2 id="item-view-name">Product Name</h2>
+            <div id="item-view-price" class="wahba-price discount-text">$0.00</div>
+          </div>
+          
+          <div class="color-selector wahba-field">
+            <div class="wahba-label">// SELECT COLOR</div>
+            <div class="color-options">
+              <button class="wahba-btn color-btn active" data-color="black">BLACK</button>
+              <button class="wahba-btn color-btn" data-color="white">WHITE</button>
+            </div>
+          </div>
+
+          <div class="item-view-actions start-actions wahba-actions">
+            <button class="wahba-cta-btn primary">ADD TO BAG</button>
+            <button id="btn-close-item-view" class="wahba-btn secondary">CLOSE</button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>

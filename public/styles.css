@@ -20,6 +20,10 @@
   padding: 0;
 }
 
+.hidden {
+  display: none !important;
+}
+
 body, html {
   width: 100%;
   height: 100%;
@@ -533,117 +537,315 @@ body, html {
 }
 
 /* =========================================
-   SCREEN 8: ARCADE COLLECTION (REWARD)
+   WAHBA-OS INSPIRED SHELL & UTILITIES
 ========================================= */
-#screen-arcade-collection {
+.wahba-shell {
+  background-color: #000;
+  color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  position: relative;
   display: flex;
-  justify-content: center;
-  align-items: center;
   flex-direction: column;
-  padding: 20px;
 }
 
-.arcade-collection-container {
-  width: 100%;
-  max-width: 800px;
-  text-align: center;
+.scanlines {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.8;
 }
 
-.arcade-collection-header {
-  margin-bottom: 40px;
-}
-
-.arcade-collection-header h2 {
-  color: var(--pacman-yellow);
-  font-size: 2rem;
-  margin-bottom: 10px;
-  letter-spacing: 3px;
-}
-
-.arcade-collection-header h1 {
-  color: var(--uniqlo-red);
-  font-size: 3rem;
-  margin-bottom: 15px;
-  text-shadow: 2px 2px 0 #fff;
-}
-
-.arcade-collection-header p {
-  color: #aaa;
-  font-size: 1.2rem;
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 30px;
+  border-bottom: 1px solid #222;
+  font-size: 0.9rem;
   letter-spacing: 2px;
+  z-index: 10;
+  background: rgba(0,0,0,0.8);
 }
 
-.flash-text {
-  animation: flash 1s infinite alternate;
+.terminal-header .logo {
+  color: var(--text-white);
 }
 
-@keyframes flash {
-  from { opacity: 1; }
-  to { opacity: 0.5; }
+.terminal-header .status {
+  color: var(--pacman-yellow);
 }
 
+.blink-fast {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.wahba-main-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  z-index: 10;
+}
+
+.wahba-title-area {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.wahba-title {
+  font-size: 2.5rem;
+  letter-spacing: 4px;
+  margin-bottom: 10px;
+  color: var(--text-white);
+}
+
+.wahba-subtitle {
+  color: #888;
+  letter-spacing: 2px;
+  font-size: 1rem;
+}
+
+/* =========================================
+   ARCADE COLLECTION (TABULAR MENU)
+========================================= */
 .arcade-product-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  width: 100%;
+  max-width: 800px;
 }
 
 .arcade-product-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #111;
-  border: 2px solid #333;
-  padding: 15px 30px;
+  padding: 20px;
+  border-bottom: 1px solid #1a1a1a;
   cursor: pointer;
-  transition: all 0.1s;
+  transition: all 0.2s ease;
   position: relative;
+  background: transparent;
+}
+
+.arcade-product-item:hover {
+  background: rgba(255,255,255,0.02);
 }
 
 .arcade-product-item .cursor-indicator {
   opacity: 0;
   color: var(--pacman-yellow);
   font-size: 1.5rem;
-  position: absolute;
-  left: 10px;
+  width: 30px;
+  transition: transform 0.2s;
 }
 
 .arcade-product-item.selected {
-  border-color: var(--pacman-yellow);
-  background-color: #222;
-  box-shadow: 0 0 15px rgba(255, 212, 59, 0.5);
-  transform: scale(1.02);
+  background: rgba(255, 212, 59, 0.05);
+  border-left: 2px solid var(--pacman-yellow);
 }
 
 .arcade-product-item.selected .cursor-indicator {
   opacity: 1;
+  transform: translateX(10px);
 }
 
 .arcade-product-item .item-icon {
-  font-size: 2rem;
-  margin-left: 30px;
+  font-size: 1.5rem;
+  margin-right: 20px;
+  opacity: 0.7;
 }
 
 .arcade-product-item .item-details {
   flex-grow: 1;
-  text-align: left;
-  margin-left: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 40px;
 }
 
 .arcade-product-item .item-name {
-  color: #fff;
-  font-size: 1.2rem;
-  margin-bottom: 5px;
+  color: #ccc;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.arcade-product-item.selected .item-name {
+  color: var(--pacman-yellow);
+}
+
+.arcade-product-item .item-price-row {
+  text-align: right;
 }
 
 .arcade-product-item .item-price {
-  color: var(--uniqlo-red);
+  color: var(--text-white);
   font-weight: bold;
 }
 
 .arcade-product-item .item-original-price {
-  color: #666;
+  color: #555;
   text-decoration: line-through;
-  margin-right: 10px;
+  margin-right: 15px;
   font-size: 0.9rem;
+}
+
+/* =========================================
+   WAHBA BUTTONS
+========================================= */
+.wahba-btn {
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #444;
+  padding: 10px 24px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wahba-btn:hover {
+  border-color: #fff;
+  color: #fff;
+}
+
+.wahba-cta-btn {
+  background: var(--uniqlo-red);
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(230, 0, 18, 0.4);
+  transition: all 0.2s;
+}
+
+.wahba-cta-btn:hover {
+  box-shadow: 0 0 25px rgba(230, 0, 18, 0.8);
+  transform: translateY(-2px);
+}
+
+/* Color selector specific */
+.color-btn {
+  padding: 8px 16px;
+}
+
+.color-btn.active {
+  border-color: var(--pacman-yellow);
+  color: var(--pacman-yellow);
+  background: rgba(255, 212, 59, 0.1);
+}
+
+/* =========================================
+   ITEM VIEW MODAL (WAHBA + MINECRAFT STYLE)
+========================================= */
+#item-view-overlay {
+  z-index: 300;
+  position: absolute !important;
+  top: 0; left: 0; width: 100%; height: 100%;
+}
+
+.wahba-modal-content {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  z-index: 10;
+}
+
+/* 3D Scene Container */
+.floating-item-scene {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 500px;
+  perspective: 800px;
+}
+
+.bobbing-container {
+  animation: floatBob 3s ease-in-out infinite;
+}
+
+.rotating-container {
+  animation: spinY 12s linear infinite;
+}
+
+#floating-item-image {
+  width: 350px;
+  height: auto;
+  filter: drop-shadow(0 30px 25px rgba(0,0,0,0.9));
+}
+
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-25px); }
+}
+
+@keyframes spinY {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+
+/* UI Panel */
+.wahba-panel {
+  width: 400px;
+  border: 1px solid #222;
+  background: rgba(10, 10, 10, 0.9);
+  padding: 40px;
+  backdrop-filter: blur(10px);
+}
+
+.wahba-panel-header {
+  border-bottom: 1px solid #333;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+#item-view-name {
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-bottom: 15px;
+}
+
+.wahba-price {
+  font-size: 2rem;
+}
+
+.wahba-field {
+  margin-bottom: 40px;
+}
+
+.wahba-label {
+  color: #666;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
+}
+
+.color-options {
+  display: flex;
+  gap: 15px;
+}
+
+.wahba-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
