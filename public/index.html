@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UNIQLO x PAC-MAN</title>
   <link rel="stylesheet" href="styles.css">
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
 <body>
@@ -53,21 +54,8 @@
     </div>
 
     <!-- SCREEN 3 & 4: ARCADE CABINET REVEAL & COIN SEQUENCE -->
-    <div id="screen-arcade-reveal" class="screen">
-      <div id="cabinet-container">
-        <!-- Replaced video with 3D GLB Model -->
-        <model-viewer id="cabinet-model" 
-          src="/assets/cabinet.glb" 
-          camera-controls="false"
-          disable-zoom
-          disable-pan
-          shadow-intensity="1"
-          exposure="1.5"
-          environment-image="neutral"
-          style="width: 100%; height: 100%; outline: none;"
-          interaction-prompt="none">
-        </model-viewer>
-      </div>
+    <div id="screen-arcade-reveal" class="screen" style="background-color: black;">
+      <div id="three-cabinet-container" style="width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; cursor: pointer;"></div>
     </div>
 
     <!-- SCREEN 5: GAME START SCREEN -->

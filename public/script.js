@@ -123,44 +123,226 @@ function startTransition() {
 // =========================================
 // SCREEN 3 & 4: CABINET REVEAL & COIN
 // =========================================
+let cabinetScene, cabinetCamera, cabinetRenderer, cabinetModel, cabinetCoin;
+let cabinetAnimationId;
+let cabinetState = 'hidden'; // 'hidden', 'approaching', 'idle', 'zooming_coin', 'inserting_coin', 'zooming_screen'
+let cabinetApproachProgress = 0;
+let cabinetZoomProgress = 0;
+let coinProgress = 0;
+let baseCameraZ = 5;
+let currentCameraY = 0;
+let currentCameraZ = 5;
+let startCameraY = 0;
+let startCameraZ = 5;
+let cabinetMaxDim = 1;
+let cabinetSizeZ = 1;
+
+function initThreeJSCabinet() {
+  const container = document.getElementById('three-cabinet-container');
+  if (!container || cabinetScene) return;
+  
+  cabinetScene = new THREE.Scene();
+  cabinetScene.background = new THREE.Color(0x000000);
+  
+  cabinetCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+  
+  cabinetRenderer = new THREE.WebGLRenderer({ antialias: true });
+  cabinetRenderer.setSize(window.innerWidth, window.innerHeight);
+  cabinetRenderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(cabinetRenderer.domElement);
+  
+  // Lighting setup for full 3D visibility and depth
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  cabinetScene.add(ambientLight);
+  
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  directionalLight.position.set(5, 10, 7);
+  cabinetScene.add(directionalLight);
+
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+  fillLight.position.set(-5, 0, -5);
+  cabinetScene.add(fillLight);
+  
+  const loader = new THREE.GLTFLoader();
+  loader.load('/assets/cabinet.glb', (gltf) => {
+    const rawModel = gltf.scene;
+    
+    // Auto-center the model natively
+    const box = new THREE.Box3().setFromObject(rawModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    rawModel.position.x = -center.x;
+    rawModel.position.y = -center.y;
+    rawModel.position.z = -center.z;
+    
+    const wrapper = new THREE.Group();
+    wrapper.add(rawModel);
+    cabinetScene.add(wrapper);
+    cabinetModel = wrapper;
+    
+    const maxDim = Math.max(size.x, size.y, size.z);
+    cabinetMaxDim = maxDim;
+    cabinetSizeZ = size.z;
+    
+    // Create the 3D coin
+    const coinRadius = maxDim * 0.02;
+    const coinThickness = maxDim * 0.005;
+    const coinGeometry = new THREE.CylinderGeometry(coinRadius, coinRadius, coinThickness, 32);
+    const coinMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
+    cabinetCoin = new THREE.Mesh(coinGeometry, coinMaterial);
+    cabinetCoin.rotation.x = Math.PI / 2;
+    cabinetCoin.visible = false;
+    cabinetModel.add(cabinetCoin); // Add to wrapper so it aligns with cabinet
+    
+    const fov = cabinetCamera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    baseCameraZ = cameraZ * 1.6; // Scale down slightly to fit nicely
+    
+    cabinetCamera.position.z = baseCameraZ * 8; // Start very far
+    cabinetModel.rotation.y = -Math.PI * 2;
+    cabinetModel.scale.set(0.01, 0.01, 0.01);
+  });
+  
+  window.addEventListener('resize', () => {
+    if (!cabinetCamera || !cabinetRenderer) return;
+    cabinetCamera.aspect = window.innerWidth / window.innerHeight;
+    cabinetCamera.updateProjectionMatrix();
+    cabinetRenderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
 function startCabinetReveal() {
   showScreen('arcadeReveal');
-  const cabinet = document.getElementById('cabinet-container');
-
-  // Keep black screen for 1 second before revealing cabinet
+  initThreeJSCabinet();
+  
+  cabinetState = 'hidden';
+  cabinetApproachProgress = 0;
+  
   setTimeout(() => {
-    cabinet.classList.add('approaching');
+    cabinetState = 'approaching';
+    animateCabinet();
   }, 1000);
+}
 
-  // Approach takes 6 seconds, make clickable after 7 seconds
-  setTimeout(() => {
-    cabinet.addEventListener('click', onCabinetClick, { once: true });
-  }, 7000);
+function animateCabinet() {
+  cabinetAnimationId = requestAnimationFrame(animateCabinet);
+  
+  if (!cabinetModel) return;
+  
+  if (cabinetState === 'approaching') {
+    // 6 second approach approx at 60fps
+    cabinetApproachProgress += 1 / (60 * 6);
+    if (cabinetApproachProgress >= 1) {
+      cabinetApproachProgress = 1;
+      cabinetState = 'idle';
+      const container = document.getElementById('three-cabinet-container');
+      container.addEventListener('click', onCabinetClick, { once: true });
+    }
+    
+    // Smooth cubic ease out
+    const ease = 1 - Math.pow(1 - cabinetApproachProgress, 3);
+    
+    const s = 0.01 + ease * 0.99;
+    cabinetModel.scale.set(s, s, s);
+    
+    // Rotate fully to reveal sides in 3D space
+    cabinetModel.rotation.y = -Math.PI * 2 * (1 - ease);
+    
+    cabinetCamera.position.z = baseCameraZ * (8 - ease * 7);
+    cabinetCamera.lookAt(0, 0, 0);
+  } else if (cabinetState === 'idle') {
+    // Subtle idle rotation
+    cabinetModel.rotation.y += 0.002;
+  } else if (cabinetState === 'zooming_coin') {
+    cabinetZoomProgress += 1 / (60 * 2); // 2s zoom
+    if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
+    const ease = 1 - Math.pow(1 - cabinetZoomProgress, 3);
+    
+    // Physically move camera to view coin slot
+    currentCameraY = THREE.MathUtils.lerp(0, -cabinetMaxDim * 0.15, ease);
+    currentCameraZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.45, ease);
+    
+    cabinetCamera.position.y = currentCameraY;
+    cabinetCamera.position.z = currentCameraZ;
+    cabinetCamera.lookAt(0, currentCameraY, 0);
+  } else if (cabinetState === 'inserting_coin') {
+    coinProgress += 1 / (60 * 1.2); // 1.2s insertion
+    if (coinProgress > 1) coinProgress = 1;
+    
+    // Ease-in to feel like it's dropping naturally
+    const ease = Math.pow(coinProgress, 2);
+    
+    const startY = -cabinetMaxDim * 0.05;
+    const endY = -cabinetMaxDim * 0.20;
+    const startZ = cabinetSizeZ * 0.5 + cabinetMaxDim * 0.02;
+    const endZ = cabinetSizeZ * 0.5; // flush with cabinet face
+    
+    cabinetCoin.position.x = cabinetMaxDim * 0.08; // slightly offset to the right
+    cabinetCoin.position.y = THREE.MathUtils.lerp(startY, endY, ease);
+    cabinetCoin.position.z = THREE.MathUtils.lerp(startZ, endZ, Math.pow(coinProgress, 0.5));
+    
+  } else if (cabinetState === 'zooming_screen') {
+    cabinetZoomProgress += 1 / (60 * 2.5); // 2.5s zoom
+    if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
+    const ease = 1 - Math.pow(1 - cabinetZoomProgress, 3);
+    
+    // Physically move camera to view arcade screen
+    currentCameraY = THREE.MathUtils.lerp(startCameraY, cabinetMaxDim * 0.2, ease);
+    currentCameraZ = THREE.MathUtils.lerp(startCameraZ, baseCameraZ * 0.35, ease);
+    
+    cabinetCamera.position.y = currentCameraY;
+    cabinetCamera.position.z = currentCameraZ;
+    cabinetCamera.lookAt(0, currentCameraY, 0);
+  }
+  
+  cabinetRenderer.render(cabinetScene, cabinetCamera);
 }
 
 function onCabinetClick() {
-  const cabinet = document.getElementById('cabinet-container');
-
-  // Step 1: Zoom to coin slot (framing match: cabinet-frame-02 / cabinet-frame-03)
-  cabinet.classList.add('interacting');
-  cabinet.classList.add('zoom-coin-slot');
+  cabinetState = 'zooming_coin';
+  cabinetZoomProgress = 0;
   
-  let time = 2000; // 2s zoom duration
-
-  // Step 2: Brief hold on the coin-slot framing (no coin animation)
-  time += 1000; // 1s hold
-
-  // Step 3: Zoom toward the game screen (framing match: cabinet-frame-04)
+  let time = 2000; // 2s zoom to coin slot
+  
+  // Show and animate coin
   setTimeout(() => {
-    cabinet.classList.remove('zoom-coin-slot');
-    cabinet.classList.add('zoom-game-screen');
+    cabinetState = 'inserting_coin';
+    if (cabinetCoin) cabinetCoin.visible = true;
+    coinProgress = 0;
   }, time);
-
-  time += 2500; // 2.5s zoom in
-
-  // Step 4: Game screen takes over
+  
+  time += 1500; // 1.5s coin insertion
+  
+  // Zoom to screen
   setTimeout(() => {
+    if (cabinetCoin) cabinetCoin.visible = false;
+    cabinetState = 'zooming_screen';
+    cabinetZoomProgress = 0;
+    startCameraY = cabinetCamera.position.y;
+    startCameraZ = cabinetCamera.position.z;
+  }, time);
+  
+  time += 2500; // 2.5s zoom to screen
+  
+  // Fade to black
+  setTimeout(() => {
+    const container = document.getElementById('three-cabinet-container');
+    container.style.transition = 'opacity 1s ease-in-out';
+    container.style.opacity = '0';
+  }, time);
+  
+  time += 1000; // 1s fade
+  
+  // Transition to game
+  setTimeout(() => {
+    cancelAnimationFrame(cabinetAnimationId);
     showScreen('gameStart');
+    
+    // Reset container visibility for future views
+    const container = document.getElementById('three-cabinet-container');
+    container.style.transition = 'none';
+    container.style.opacity = '1';
   }, time);
 }
 
