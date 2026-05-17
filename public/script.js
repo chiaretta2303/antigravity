@@ -126,12 +126,6 @@ function startTransition() {
 function startCabinetReveal() {
   showScreen('arcadeReveal');
   const cabinet = document.getElementById('cabinet-container');
-  const video = document.getElementById('cabinet-video');
-  
-  // Try to play video if it exists
-  if (video) {
-    video.play().catch(e => console.log('Video autoplay prevented', e));
-  }
 
   // Keep black screen for 1 second before revealing cabinet
   setTimeout(() => {

@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UNIQLO x PAC-MAN</title>
   <link rel="stylesheet" href="styles.css">
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
 
 <body>
@@ -54,8 +55,18 @@
     <!-- SCREEN 3 & 4: ARCADE CABINET REVEAL & COIN SEQUENCE -->
     <div id="screen-arcade-reveal" class="screen">
       <div id="cabinet-container">
-        <!-- We use the video as requested -->
-        <video id="cabinet-video" src="/assets/cabinet-video.mp4" muted playsinline></video>
+        <!-- Replaced video with 3D GLB Model -->
+        <model-viewer id="cabinet-model" 
+          src="/assets/cabinet.glb" 
+          camera-controls="false"
+          disable-zoom
+          disable-pan
+          shadow-intensity="1"
+          exposure="1.5"
+          environment-image="neutral"
+          style="width: 100%; height: 100%; outline: none;"
+          interaction-prompt="none">
+        </model-viewer>
       </div>
     </div>
 
