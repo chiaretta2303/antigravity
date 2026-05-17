@@ -53,6 +53,14 @@
       <canvas id="transition-canvas"></canvas>
     </div>
 
+    <!-- SCREEN 2.5: ARCADE BOOT LOADER -->
+    <div id="screen-arcade-loader" class="screen">
+      <div class="loader-content">
+        <div class="loader-text blinking">SYSTEM BOOT...</div>
+        <div class="loader-status">LOADING ROM 0x00FF</div>
+      </div>
+    </div>
+
     <!-- SCREEN 3 & 4: ARCADE CABINET REVEAL & COIN SEQUENCE -->
     <div id="screen-arcade-reveal" class="screen" style="background-color: black;">
       <div id="three-cabinet-container" style="width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; cursor: pointer;"></div>
@@ -204,7 +212,10 @@
     </div>
 
   </div>
+  
+  <!-- CRT TELEVISION OVERLAY (Hidden by default, activated after cabinet zoom) -->
+  <div id="crt-overlay"></div>
+
   <script src="script.js"></script>
 </body>
-
 </html>
