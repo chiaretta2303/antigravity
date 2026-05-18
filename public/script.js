@@ -19,10 +19,26 @@ const screens = {
 
 function showScreen(screenKey) {
   Object.values(screens).forEach(s => {
-    if (s) s.classList.remove('active');
+    if (s) {
+      s.classList.remove('active');
+      // If we are showing the gameStart screen, immediately force-hide all other screens without transition
+      if (screenKey === 'gameStart') {
+        s.style.opacity = '0';
+        s.style.visibility = 'hidden';
+      } else {
+        // Reset custom overrides for other screen transitions
+        s.style.opacity = '';
+        s.style.visibility = '';
+      }
+    }
   });
+
   if (screens[screenKey]) {
     screens[screenKey].classList.add('active');
+    if (screenKey === 'gameStart') {
+      screens[screenKey].style.opacity = '1';
+      screens[screenKey].style.visibility = 'visible';
+    }
   }
   
   // Keep landing page visible under transparent transition canvas
@@ -69,8 +85,8 @@ function startTransition() {
   const totalRows = Math.ceil(canvas.height / rowHeight);
   
   const totalDistance = totalRows * canvas.width;
-  // 4 seconds * 60 fps = 240 frames
-  const speed = totalDistance / 240; 
+  // 6 seconds * 60 fps = 360 frames
+  const speed = totalDistance / 360; 
 
   let pacX = -radius; 
   let currentRow = 0;

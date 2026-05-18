@@ -598,6 +598,8 @@ body, html {
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  background-color: #000000 !important; /* Pure isolated black background */
+  z-index: 100 !important; /* Always stacked on top of all other screens and transitions */
 }
 
 .arcade-start-menu {
