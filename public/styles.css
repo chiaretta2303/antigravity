@@ -1195,3 +1195,47 @@ body, html {
   text-shadow: 0 0 10px rgba(255, 212, 59, 0.6);
   animation: blink 0.3s step-end infinite;
 }
+
+/* =========================================
+   ARCADE HUD & CREDIT STYLES
+========================================= */
+.arcade-hud-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  letter-spacing: 2px;
+  font-size: 16px;
+  color: #fff;
+  z-index: 20;
+}
+
+.arcade-hud-header .hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.arcade-hud-header .hud-item .label {
+  color: #ff3333; /* Red labels matching Pac-Man */
+}
+
+.arcade-hud-header .hud-item .value {
+  color: #fff;
+}
+
+.arcade-credit-bar {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15px;
+  color: #fff;
+  letter-spacing: 3px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 40px;
+  z-index: 20;
+  text-transform: uppercase;
+}

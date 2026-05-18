@@ -77,6 +77,13 @@
 
     <!-- SCREEN 5: GAME START SCREEN -->
     <div id="screen-game-start" class="screen arcade-mode">
+      <!-- Retrò Arcade Top HUD -->
+      <div class="arcade-hud-header">
+        <div class="hud-item"><div class="label">1UP</div><div class="value">00</div></div>
+        <div class="hud-item"><div class="label">HIGH SCORE</div><div class="value">10000</div></div>
+        <div class="hud-item"><div class="label">2UP</div><div class="value">00</div></div>
+      </div>
+
       <!-- 1. HARDWARE SELF-TEST SCREEN -->
       <div id="startup-self-test" class="startup-phase hidden">
         <div class="self-test-grid"></div>
@@ -96,23 +103,23 @@
         <div class="ghost-list">
           <div class="ghost-row blinky">
             <div class="ghost-sprite red"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name">shadow</span>
-            <span class="ghost-nick">"chaser"</span>
+            <span class="ghost-name">-SHADOW</span>
+            <span class="ghost-nick">"CHASER"</span>
           </div>
           <div class="ghost-row pinky">
             <div class="ghost-sprite pink"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name">speedy</span>
-            <span class="ghost-nick">"dash"</span>
+            <span class="ghost-name">-SPEEDY</span>
+            <span class="ghost-nick">"DASH"</span>
           </div>
           <div class="ghost-row inky">
             <div class="ghost-sprite cyan"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name">bashful</span>
-            <span class="ghost-nick">"shy"</span>
+            <span class="ghost-name">-BASHFUL</span>
+            <span class="ghost-nick">"SHY"</span>
           </div>
           <div class="ghost-row clyde">
             <div class="ghost-sprite orange"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name">pokey</span>
-            <span class="ghost-nick">"wandy"</span>
+            <span class="ghost-name">-POKEY</span>
+            <span class="ghost-nick">"WANDY"</span>
           </div>
         </div>
         <div class="points-table">
@@ -130,8 +137,10 @@
           <button id="btn-play-game" class="arcade-btn">PLAY PLAYER 1</button>
           <button id="btn-view-collection" class="arcade-btn secondary">VIEW THE COLLECTION</button>
         </div>
-        <div class="insert-coin-prompt blinking">CREDIT 01</div>
       </div>
+
+      <!-- Retro Bottom Credit Bar -->
+      <div id="arcade-credit-bar" class="arcade-credit-bar">CREDIT 01</div>
 
       <!-- Locked Collection Popup -->
       <div id="locked-collection-popup" class="modal hidden">

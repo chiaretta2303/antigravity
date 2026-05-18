@@ -134,7 +134,7 @@ function startTransition() {
 // =========================================
 let cabinetScene, cabinetCamera, cabinetRenderer, cabinetModel, cabinetCoin;
 let cabinetAnimationId;
-let cabinetState = 'hidden'; // 'hidden', 'approaching', 'idle', 'zooming_coin', 'inserting_coin', 'zooming_screen'
+let cabinetState = 'hidden'; // 'hidden', 'approaching', 'idle', 'aligning_front', 'zooming_coin', 'inserting_coin', 'zooming_screen'
 let cabinetApproachProgress = 0;
 let cabinetZoomProgress = 0;
 let coinProgress = 0;
@@ -145,6 +145,11 @@ let startCameraY = 0;
 let startCameraZ = 5;
 let cabinetMaxDim = 1;
 let cabinetSizeZ = 1;
+
+// Frontal alignment state variables
+let alignProgress = 0;
+let startCabinetRotY = 0;
+let startCameraX = 0;
 
 function initThreeJSCabinet() {
   const container = document.getElementById('three-cabinet-container');
@@ -300,6 +305,23 @@ function animateCabinet() {
   } else if (cabinetState === 'idle') {
     // Subtle idle rotation
     cabinetModel.rotation.y += 0.002;
+  } else if (cabinetState === 'aligning_front') {
+    alignProgress += 1 / (60 * 0.8); // 0.8s alignment
+    if (alignProgress >= 1) {
+      alignProgress = 1;
+      cabinetState = 'zooming_coin';
+      cabinetZoomProgress = 0;
+    }
+    const ease = 1 - Math.pow(1 - alignProgress, 3);
+    
+    // Smoothly rotate model to Y = 0 (perfect frontal face)
+    cabinetModel.rotation.y = THREE.MathUtils.lerp(startCabinetRotY, 0, ease);
+    
+    // Smoothly reposition camera to frontal center
+    cabinetCamera.position.x = THREE.MathUtils.lerp(startCameraX, 0, ease);
+    cabinetCamera.position.y = THREE.MathUtils.lerp(startCameraY, 0, ease);
+    cabinetCamera.position.z = THREE.MathUtils.lerp(startCameraZ, baseCameraZ, ease);
+    cabinetCamera.lookAt(0, 0, 0);
   } else if (cabinetState === 'zooming_coin') {
     cabinetZoomProgress += 1 / (60 * 2); // 2s zoom
     if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
@@ -333,9 +355,9 @@ function animateCabinet() {
     if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
     const ease = 1 - Math.pow(1 - cabinetZoomProgress, 3);
     
-    // Physically move camera to intersect exactly with the front face of the screen
+    // Controlled framing: zoom toward screen center without entering inside it
     currentCameraY = THREE.MathUtils.lerp(startCameraY, cabinetMaxDim * 0.12, ease);
-    currentCameraZ = THREE.MathUtils.lerp(startCameraZ, cabinetSizeZ * 0.49, ease);
+    currentCameraZ = THREE.MathUtils.lerp(startCameraZ, baseCameraZ * 0.45, ease);
     
     cabinetCamera.position.y = currentCameraY;
     cabinetCamera.position.z = currentCameraZ;
@@ -391,39 +413,39 @@ function runStartSequence() {
 }
 
 function onCabinetClick() {
-  cabinetState = 'zooming_coin';
-  cabinetZoomProgress = 0;
+  cabinetState = 'aligning_front';
+  alignProgress = 0;
+  startCabinetRotY = cabinetModel.rotation.y;
+  startCameraX = cabinetCamera.position.x;
+  startCameraY = cabinetCamera.position.y;
+  startCameraZ = cabinetCamera.position.z;
   
-  let time = 2000; // 2s zoom to coin slot
-  
-  // Show and animate coin
+  // Staggered absolute timing after click
+  // 1. Zoom to coin slot starts 800ms after frontal alignment finishes
+  // 2. Coin shows & drops at 2800ms (800ms alignment + 2000ms zoom)
   setTimeout(() => {
     cabinetState = 'inserting_coin';
     if (cabinetCoin) cabinetCoin.visible = true;
     coinProgress = 0;
-  }, time);
+  }, 2800);
   
-  time += 1500; // 1.5s coin insertion
-  
-  // Zoom to screen
+  // 3. Zoom to screen starts at 4300ms (2800ms + 1500ms insertion)
   setTimeout(() => {
     if (cabinetCoin) cabinetCoin.visible = false;
     cabinetState = 'zooming_screen';
     cabinetZoomProgress = 0;
     startCameraY = cabinetCamera.position.y;
     startCameraZ = cabinetCamera.position.z;
-  }, time);
+  }, 4300);
   
-  time += 2500; // 2.5s zoom to screen
-  
-  // Pre-transition cross-fade (inspired by shader.se loading rhythm)
+  // 4. Pre-transition cross-fade at 6400ms (inspired by shader.se continuous flow)
   setTimeout(() => {
     const container = document.getElementById('three-cabinet-container');
     container.style.transition = 'opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
     container.style.opacity = '0';
-  }, time - 400); // 400ms before camera sweep completes
+  }, 6400);
   
-  // Transition to game start sequence
+  // 5. Final transition to gameStart at 6800ms
   setTimeout(() => {
     cancelAnimationFrame(cabinetAnimationId);
     showScreen('gameStart');
@@ -437,7 +459,7 @@ function onCabinetClick() {
     const container = document.getElementById('three-cabinet-container');
     container.style.transition = 'none';
     container.style.opacity = '1';
-  }, time);
+  }, 6800);
 }
 
 // =========================================
