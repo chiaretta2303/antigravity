@@ -55,15 +55,24 @@
 
     <!-- SCREEN 2.5: ARCADE BOOT LOADER -->
     <div id="screen-arcade-loader" class="screen">
-      <div class="loader-content">
-        <div class="loader-text blinking">SYSTEM BOOT...</div>
-        <div class="loader-status">LOADING ROM 0x00FF</div>
+      <div class="loader-container">
+        <div class="loader-header">// RETRO_OS_INIT //</div>
+        <div class="loader-console">
+          <div class="console-line">> BOOTING FROM ROM_PACMAN... SUCCESS</div>
+          <div class="console-line">> CONNECTING TO CABINET 3D... STABLE</div>
+          <div class="console-line">> INITIATING ARCADE REVEAL SEQUENCE...</div>
+        </div>
+        <div class="loader-progressbar">
+          <div class="loader-progressfill"></div>
+        </div>
+        <div class="loader-footer">UNIQLO x PAC-MAN © 1980 - 2026</div>
       </div>
     </div>
 
     <!-- SCREEN 3 & 4: ARCADE CABINET REVEAL & COIN SEQUENCE -->
     <div id="screen-arcade-reveal" class="screen" style="background-color: black;">
-      <div id="three-cabinet-container" style="width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; cursor: pointer;"></div>
+      <div id="three-cabinet-container"
+        style="width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; cursor: pointer;"></div>
     </div>
 
     <!-- SCREEN 5: GAME START SCREEN -->
@@ -140,7 +149,7 @@
     <!-- SCREEN 7: ARCADE REWARD COLLECTION SCREEN -->
     <div id="screen-arcade-collection" class="screen arcade-mode wahba-shell">
       <div class="scanlines"></div>
-      
+
       <div class="terminal-header">
         <div class="terminal-header-left">
           <span class="logo">/UNIQLO_X_PACMAN</span>
@@ -155,7 +164,8 @@
           <h1 id="arcade-main-title" class="wahba-title">UNLOCKED COLLECTION</h1>
           <p id="arcade-main-subtitle" class="wahba-subtitle">// SELECT YOUR ITEM</p>
           <div id="skip-game-prompt" class="hidden" style="margin-top: 30px;">
-            <p style="color: #ccc; margin-bottom: 15px; letter-spacing: 1px;">You skipped the game. Play Pac-Man to unlock 20% off.</p>
+            <p style="color: #ccc; margin-bottom: 15px; letter-spacing: 1px;">You skipped the game. Play Pac-Man to
+              unlock 20% off.</p>
             <button id="btn-play-from-skip" class="wahba-cta-btn">PLAY TO UNLOCK 20%</button>
           </div>
         </div>
@@ -171,7 +181,7 @@
     <!-- ITEM VIEW MODAL -->
     <div id="item-view-overlay" class="modal hidden arcade-mode wahba-shell">
       <div class="scanlines"></div>
-      
+
       <div class="terminal-header" style="position: absolute; top: 0; left: 0; width: 100%;">
         <div class="terminal-header-left">
           <span class="logo">/PRODUCT_VIEWER</span>
@@ -187,14 +197,14 @@
             </div>
           </div>
         </div>
-        
+
         <!-- The UI Panel -->
         <div class="item-view-ui wahba-panel">
           <div class="wahba-panel-header">
             <h2 id="item-view-name">Product Name</h2>
             <div id="item-view-price" class="wahba-price discount-text">$0.00</div>
           </div>
-          
+
           <div class="color-selector wahba-field">
             <div class="wahba-label">// SELECT COLOR</div>
             <div class="color-options">
@@ -212,10 +222,11 @@
     </div>
 
   </div>
-  
+
   <!-- CRT TELEVISION OVERLAY (Hidden by default, activated after cabinet zoom) -->
   <div id="crt-overlay"></div>
 
   <script src="script.js"></script>
 </body>
+
 </html>

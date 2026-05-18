@@ -9,6 +9,7 @@ const TOTAL_ITEMS = 4;
 const screens = {
   landing: document.getElementById('screen-landing'),
   transition: document.getElementById('screen-transition'),
+  arcadeLoader: document.getElementById('screen-arcade-loader'),
   arcadeReveal: document.getElementById('screen-arcade-reveal'),
   gameStart: document.getElementById('screen-game-start'),
   gameplay: document.getElementById('screen-gameplay'),
@@ -22,6 +23,14 @@ function showScreen(screenKey) {
   });
   if (screens[screenKey]) {
     screens[screenKey].classList.add('active');
+  }
+  
+  // Robust CRT overlay activation logic
+  const crt = document.getElementById('crt-overlay');
+  if (crt) {
+    if (screenKey === 'landing' || screenKey === 'transition' || screenKey === 'arcadeLoader' || screenKey === 'arcadeReveal') {
+      crt.classList.remove('active');
+    }
   }
 }
 
@@ -113,7 +122,7 @@ function startTransition() {
     } else {
       // Transition complete
       document.body.style.backgroundColor = '#050505';
-      startCabinetReveal();
+      startArcadeLoader();
     }
   }
   
@@ -151,15 +160,18 @@ function initThreeJSCabinet() {
   cabinetRenderer.setPixelRatio(window.devicePixelRatio);
   container.appendChild(cabinetRenderer.domElement);
   
-  // Lighting setup for full 3D visibility and depth
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  // Lighting setup with 0 initial intensity for cinematic fade-in
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+  ambientLight.name = 'ambientLight';
   cabinetScene.add(ambientLight);
   
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0);
+  directionalLight.name = 'dirLight1';
   directionalLight.position.set(5, 10, 7);
   cabinetScene.add(directionalLight);
 
-  const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0);
+  fillLight.name = 'dirLight2';
   fillLight.position.set(-5, 0, -5);
   cabinetScene.add(fillLight);
   
@@ -212,6 +224,31 @@ function initThreeJSCabinet() {
   });
 }
 
+function startArcadeLoader() {
+  showScreen('arcadeLoader');
+  
+  const lines = document.querySelectorAll('.console-line');
+  lines.forEach((line, index) => {
+    line.style.opacity = index === 0 ? '1' : '0';
+  });
+  
+  // Sequential diagnostic text reveal
+  setTimeout(() => {
+    const line2 = document.querySelector('.console-line:nth-child(2)');
+    if (line2) line2.style.opacity = '1';
+  }, 800);
+  
+  setTimeout(() => {
+    const line3 = document.querySelector('.console-line:nth-child(3)');
+    if (line3) line3.style.opacity = '1';
+  }, 1600);
+  
+  // Transition to cabinet reveal after the custom cubic loader bar finishes
+  setTimeout(() => {
+    startCabinetReveal();
+  }, 3200);
+}
+
 function startCabinetReveal() {
   showScreen('arcadeReveal');
   initThreeJSCabinet();
@@ -248,6 +285,15 @@ function animateCabinet() {
     
     // Rotate fully to reveal sides in 3D space
     cabinetModel.rotation.y = -Math.PI * 2 * (1 - ease);
+    
+    // Dynamic cinematic light fade-up
+    const amb = cabinetScene.getObjectByName('ambientLight');
+    const dir1 = cabinetScene.getObjectByName('dirLight1');
+    const dir2 = cabinetScene.getObjectByName('dirLight2');
+    
+    if (amb) amb.intensity = 0.6 * ease;
+    if (dir1) dir1.intensity = 1.2 * ease;
+    if (dir2) dir2.intensity = 0.4 * ease;
     
     cabinetCamera.position.z = baseCameraZ * (8 - ease * 7);
     cabinetCamera.lookAt(0, 0, 0);
@@ -338,6 +384,10 @@ function onCabinetClick() {
   setTimeout(() => {
     cancelAnimationFrame(cabinetAnimationId);
     showScreen('gameStart');
+    
+    // Turn on the CRT Television effect
+    const crt = document.getElementById('crt-overlay');
+    if (crt) crt.classList.add('active');
     
     // Reset container visibility for future views
     const container = document.getElementById('three-cabinet-container');
