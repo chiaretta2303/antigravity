@@ -1573,91 +1573,35 @@ body, html {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* The physical arcade button */
-.arcade-red-button {
+/* Image-based arcade button */
+.arcade-img-button {
   position: relative;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
   cursor: pointer;
-  /* Outer matte bezel ring */
-  background: radial-gradient(circle at 50% 105%, #1a1a1a, #0a0a0a);
-  box-shadow:
-    0 8px 0 #0a0a0a,          /* base drop shadow — gives height */
-    0 12px 30px rgba(0,0,0,0.8),
-    0 0 60px rgba(200, 0, 0, 0.25),
-    0 0 120px rgba(200, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.06s ease, box-shadow 0.06s ease;
   user-select: none;
+  filter: drop-shadow(0 0 40px rgba(200, 0, 0, 0.55));
+  transition: filter 0.08s ease, transform 0.08s ease;
 }
 
-.arcade-red-button:hover {
-  box-shadow:
-    0 8px 0 #0a0a0a,
-    0 12px 30px rgba(0,0,0,0.8),
-    0 0 80px rgba(220, 0, 0, 0.4),
-    0 0 160px rgba(220, 0, 0, 0.2);
+.arcade-img-button:hover {
+  filter: drop-shadow(0 0 65px rgba(220, 0, 0, 0.75));
 }
 
-/* Mounting ring — the bezel that holds the button */
-.button-ring-outer {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(
-    #2a2a2a 0deg, #444 45deg, #1a1a1a 90deg,
-    #444 135deg, #2a2a2a 180deg, #111 225deg,
-    #444 270deg, #111 315deg, #2a2a2a 360deg
-  );
-  box-shadow: inset 0 2px 6px rgba(255,255,255,0.06), inset 0 -4px 10px rgba(0,0,0,0.6);
-}
-
-/* The actual glossy red button cap */
-.button-top-cap {
-  position: relative;
-  width: 108px;
-  height: 108px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 42% 38%, #ff5555 0%, #cc0000 45%, #7a0000 100%);
-  box-shadow:
-    inset 0 -6px 18px rgba(0,0,0,0.5),
-    inset 0 3px 6px rgba(255,120,120,0.25),
-    0 0 20px rgba(200, 0, 0, 0.4);
-  z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  transition: transform 0.06s ease, box-shadow 0.06s ease;
-}
-
-/* Specular gloss spot */
-.button-shine {
-  width: 32px;
-  height: 20px;
-  background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.75) 0%, transparent 100%);
-  border-radius: 50%;
-  margin-top: 18px;
-  margin-left: 22px;
+.arcade-btn-img {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  display: block;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-/* Pressed state */
-.arcade-red-button.pressed {
-  transform: translateY(7px);
-  box-shadow:
-    0 1px 0 #0a0a0a,
-    0 3px 12px rgba(0,0,0,0.8),
-    0 0 40px rgba(200, 0, 0, 0.3);
-}
-
-.arcade-red-button.pressed .button-top-cap {
-  transform: translateY(3px);
-  box-shadow:
-    inset 0 -2px 8px rgba(0,0,0,0.6),
-    0 0 10px rgba(200, 0, 0, 0.2);
+.arcade-img-button.pressed {
+  transform: translateY(8px) scale(0.97);
+  filter: drop-shadow(0 0 18px rgba(180, 0, 0, 0.35));
 }
 
 /* "PRESS START" label */
