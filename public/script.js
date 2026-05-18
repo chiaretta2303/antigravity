@@ -171,6 +171,7 @@ let cabinetSizeZ = 1;
 // Drop + scroll state
 let cabinetDropProgress = 0;
 let cabinetDropStartY = 0;
+let settlingTime = 0;
 let scrollTarget = 0;
 let scrollCurrent = 0;
 let scrollListenerActive = false;
@@ -407,8 +408,9 @@ function animateCabinet() {
     cabinetDropProgress += 1 / (60 * 2.2); // 2.2 s drop
     if (cabinetDropProgress >= 1) {
       cabinetDropProgress = 1;
-      cabinetState = 'scroll_idle';
-      setupScrollListener();
+      // Transition to settling sway phase
+      cabinetState = 'settling';
+      settlingTime = 0;
     }
     // Bounce-out easing: overshoots slightly then settles
     const dropEase = bounceOut(Math.min(cabinetDropProgress, 1));
@@ -423,18 +425,36 @@ function animateCabinet() {
     if (dir2b) dir2b.intensity = 0.4 * lightT;
     cabinetCamera.lookAt(0, 0, 0);
 
+  } else if (cabinetState === 'settling') {
+    // Damped oscillation — left/right sway as cabinet stabilises on its surface
+    settlingTime += 1 / 60;
+    // Z-axis rotation: main left-right lean  (amplitude 0.052 rad ≈ 3°)
+    const sway = 0.052 * Math.exp(-2.6 * settlingTime) * Math.sin(7.5 * settlingTime);
+    // X-axis rotation: very subtle forward-back rock
+    const rock = 0.016 * Math.exp(-3.2 * settlingTime) * Math.sin(6.8 * settlingTime);
+    cabinetModel.rotation.z = sway;
+    cabinetModel.rotation.x = rock;
+    cabinetCamera.lookAt(0, 0, 0);
+    // When oscillation becomes imperceptible (≈1.7 s), switch to scroll mode
+    if (settlingTime > 1.7) {
+      cabinetModel.rotation.z = 0;
+      cabinetModel.rotation.x = 0;
+      cabinetState = 'scroll_idle';
+      setupScrollListener();
+    }
+
   } else if (cabinetState === 'scroll_idle') {
     // Smooth lerp scroll progress
-    scrollCurrent += (scrollTarget - scrollCurrent) * 0.07;
+    scrollCurrent += (scrollTarget - scrollCurrent) * 0.06;
     // Update progress bar UI
     const bar = document.getElementById('scroll-progress-bar');
     if (bar) bar.style.width = (scrollCurrent * 100) + '%';
-    // Camera glides toward cabinet screen; slight upward tilt to frame monitor
-    const targetZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.18, scrollCurrent);
-    const targetY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.18, scrollCurrent);
+    // Controlled camera approach — stops well before entering the screen
+    const targetZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.42, scrollCurrent);
+    const targetY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, scrollCurrent);
     cabinetCamera.position.z = targetZ;
     cabinetCamera.position.y = targetY;
-    cabinetCamera.lookAt(0, cabinetMaxDim * 0.18 * scrollCurrent, 0);
+    cabinetCamera.lookAt(0, cabinetMaxDim * 0.12 * scrollCurrent, 0);
     // Hide scroll hint once user starts scrolling
     if (scrollTarget > 0.05) {
       const hint = document.getElementById('scroll-hint');
@@ -656,8 +676,8 @@ function setupScrollListener() {
 
 function onScrollCabinet(e) {
   if (!scrollListenerActive) return;
-  // deltaY > 0 = scroll down = move closer
-  scrollTarget = Math.min(1, Math.max(0, scrollTarget + e.deltaY * 0.0012));
+  // deltaY > 0 = scroll down = move closer. Slow, deliberate sensitivity.
+  scrollTarget = Math.min(1, Math.max(0, scrollTarget + e.deltaY * 0.0007));
 }
 
 function showScrollHint() {
