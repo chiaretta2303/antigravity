@@ -9,6 +9,7 @@ const TOTAL_ITEMS = 4;
 const screens = {
   landing: document.getElementById('screen-landing'),
   transition: document.getElementById('screen-transition'),
+  pressStart: document.getElementById('screen-press-start'),
   arcadeLoader: document.getElementById('screen-arcade-loader'),
   arcadeReveal: document.getElementById('screen-arcade-reveal'),
   gameStart: document.getElementById('screen-game-start'),
@@ -141,9 +142,9 @@ function startTransition() {
     if (currentRow < totalRows) {
       requestAnimationFrame(draw);
     } else {
-      // Transition complete
-      document.body.style.backgroundColor = '#050505';
-      startArcadeLoader();
+      // Transition complete — show red arcade button
+      document.body.style.backgroundColor = '#000000';
+      showPressStartButton();
     }
   }
   
@@ -155,7 +156,7 @@ function startTransition() {
 // =========================================
 let cabinetScene, cabinetCamera, cabinetRenderer, cabinetModel, cabinetCoin;
 let cabinetAnimationId;
-let cabinetState = 'hidden'; // 'hidden', 'approaching', 'idle', 'aligning_front', 'zooming_coin', 'inserting_coin', 'zooming_screen'
+let cabinetState = 'hidden'; // 'hidden','dropping','scroll_idle' (new) | legacy: 'approaching','idle','aligning_front','zooming_coin','inserting_coin','zooming_screen'
 let cabinetApproachProgress = 0;
 let cabinetZoomProgress = 0;
 let coinProgress = 0;
@@ -166,6 +167,14 @@ let startCameraY = 0;
 let startCameraZ = 5;
 let cabinetMaxDim = 1;
 let cabinetSizeZ = 1;
+
+// Drop + scroll state
+let cabinetDropProgress = 0;
+let cabinetDropStartY = 0;
+let scrollTarget = 0;
+let scrollCurrent = 0;
+let scrollListenerActive = false;
+let enterTriggered = false;
 
 // Frontal alignment state variables
 let alignProgress = 0;
@@ -235,11 +244,22 @@ function initThreeJSCabinet() {
     
     const fov = cabinetCamera.fov * (Math.PI / 180);
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    baseCameraZ = cameraZ * 1.6; // Scale down slightly to fit nicely
+    baseCameraZ = cameraZ * 1.6;
     
-    cabinetCamera.position.z = baseCameraZ * 8; // Start very far
-    cabinetModel.rotation.y = -Math.PI * 2;
-    cabinetModel.scale.set(0.01, 0.01, 0.01);
+    // Drop-from-above setup: full size, frontal, camera at normal distance
+    cabinetDropStartY = maxDim * 4.5;
+    cabinetModel.position.y = cabinetDropStartY;
+    cabinetModel.rotation.y = 0; // face front immediately
+    cabinetModel.scale.set(1, 1, 1);
+    cabinetCamera.position.set(0, 0, baseCameraZ);
+    
+    // Lights start dark, fade in during drop
+    const amb = cabinetScene.getObjectByName('ambientLight');
+    const dir1 = cabinetScene.getObjectByName('dirLight1');
+    const dir2 = cabinetScene.getObjectByName('dirLight2');
+    if (amb)  amb.intensity  = 0;
+    if (dir1) dir1.intensity = 0;
+    if (dir2) dir2.intensity = 0;
   });
   
   window.addEventListener('resize', () => {
@@ -372,17 +392,59 @@ function animateCabinet() {
     cabinetCoin.position.z = THREE.MathUtils.lerp(startZ, endZ, Math.pow(coinProgress, 0.5));
     
   } else if (cabinetState === 'zooming_screen') {
-    cabinetZoomProgress += 1 / (60 * 2.5); // 2.5s zoom
+    cabinetZoomProgress += 1 / (60 * 2.5);
     if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
     const ease = 1 - Math.pow(1 - cabinetZoomProgress, 3);
-    
-    // Controlled framing: zoom toward screen center without entering inside it
     currentCameraY = THREE.MathUtils.lerp(startCameraY, cabinetMaxDim * 0.12, ease);
     currentCameraZ = THREE.MathUtils.lerp(startCameraZ, baseCameraZ * 0.45, ease);
-    
     cabinetCamera.position.y = currentCameraY;
     cabinetCamera.position.z = currentCameraZ;
     cabinetCamera.lookAt(0, currentCameraY, 0);
+
+  // ── NEW STATES ───────────────────────────────────────────────
+  } else if (cabinetState === 'dropping') {
+    if (!cabinetModel) { cabinetRenderer.render(cabinetScene, cabinetCamera); return; }
+    cabinetDropProgress += 1 / (60 * 2.2); // 2.2 s drop
+    if (cabinetDropProgress >= 1) {
+      cabinetDropProgress = 1;
+      cabinetState = 'scroll_idle';
+      setupScrollListener();
+    }
+    // Bounce-out easing: overshoots slightly then settles
+    const dropEase = bounceOut(Math.min(cabinetDropProgress, 1));
+    cabinetModel.position.y = THREE.MathUtils.lerp(cabinetDropStartY, 0, dropEase);
+    // Lights fade in during first half of drop
+    const lightT = Math.min(cabinetDropProgress * 2.5, 1);
+    const amb2  = cabinetScene.getObjectByName('ambientLight');
+    const dir1b = cabinetScene.getObjectByName('dirLight1');
+    const dir2b = cabinetScene.getObjectByName('dirLight2');
+    if (amb2)  amb2.intensity  = 0.6 * lightT;
+    if (dir1b) dir1b.intensity = 1.2 * lightT;
+    if (dir2b) dir2b.intensity = 0.4 * lightT;
+    cabinetCamera.lookAt(0, 0, 0);
+
+  } else if (cabinetState === 'scroll_idle') {
+    // Smooth lerp scroll progress
+    scrollCurrent += (scrollTarget - scrollCurrent) * 0.07;
+    // Update progress bar UI
+    const bar = document.getElementById('scroll-progress-bar');
+    if (bar) bar.style.width = (scrollCurrent * 100) + '%';
+    // Camera glides toward cabinet screen; slight upward tilt to frame monitor
+    const targetZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.18, scrollCurrent);
+    const targetY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.18, scrollCurrent);
+    cabinetCamera.position.z = targetZ;
+    cabinetCamera.position.y = targetY;
+    cabinetCamera.lookAt(0, cabinetMaxDim * 0.18 * scrollCurrent, 0);
+    // Hide scroll hint once user starts scrolling
+    if (scrollTarget > 0.05) {
+      const hint = document.getElementById('scroll-hint');
+      if (hint && !hint.classList.contains('fading')) hint.classList.add('fading');
+    }
+    // Trigger entry at 95% scroll
+    if (scrollCurrent >= 0.95 && !enterTriggered) {
+      enterTriggered = true;
+      enterCabinetScreen();
+    }
   }
   
   cabinetRenderer.render(cabinetScene, cabinetCamera);
@@ -533,16 +595,101 @@ function onCabinetClick() {
     cancelAnimationFrame(cabinetAnimationId);
     showScreen('gameStart');
     runStartSequence();
-    
-    // Turn on the CRT Television effect
     const crt = document.getElementById('crt-overlay');
     if (crt) crt.classList.add('active');
-    
-    // Reset container visibility for future views
     const container = document.getElementById('three-cabinet-container');
     container.style.transition = 'none';
     container.style.opacity = '1';
   }, 6800);
+}
+
+// =========================================
+// NEW FLOW: PRESS START + DROP + SCROLL
+// =========================================
+function showPressStartButton() {
+  showScreen('pressStart');
+  const btn = document.getElementById('arcade-start-btn');
+  if (btn) btn.addEventListener('click', onPressStartClick, { once: true });
+}
+
+function onPressStartClick() {
+  const btn = document.getElementById('arcade-start-btn');
+  if (btn) btn.classList.add('pressed');
+  // Short press-down pause, then fade screen and reveal cabinet
+  setTimeout(() => {
+    const ps = document.getElementById('screen-press-start');
+    if (ps) { ps.style.transition = 'opacity 0.45s ease'; ps.style.opacity = '0'; }
+    setTimeout(() => {
+      // Inject progress bar
+      if (!document.getElementById('scroll-progress-bar')) {
+        const bar = document.createElement('div');
+        bar.id = 'scroll-progress-bar';
+        document.body.appendChild(bar);
+      }
+      showScreen('arcadeReveal');
+      cabinetState = 'dropping';
+      cabinetDropProgress = 0;
+      enterTriggered = false;
+      initThreeJSCabinet();
+      animateCabinet();
+    }, 450);
+  }, 220);
+}
+
+// Bounce-out easing (standard Penner)
+function bounceOut(t) {
+  const n = 7.5625, d = 2.75;
+  if (t < 1/d)       return n * t * t;
+  if (t < 2/d)       return n * (t -= 1.5/d) * t + 0.75;
+  if (t < 2.5/d)     return n * (t -= 2.25/d) * t + 0.9375;
+  return               n * (t -= 2.625/d) * t + 0.984375;
+}
+
+function setupScrollListener() {
+  scrollTarget  = 0;
+  scrollCurrent = 0;
+  scrollListenerActive = true;
+  window.addEventListener('wheel', onScrollCabinet, { passive: true });
+  // Scroll hint appears after a short beat
+  setTimeout(showScrollHint, 400);
+}
+
+function onScrollCabinet(e) {
+  if (!scrollListenerActive) return;
+  // deltaY > 0 = scroll down = move closer
+  scrollTarget = Math.min(1, Math.max(0, scrollTarget + e.deltaY * 0.0012));
+}
+
+function showScrollHint() {
+  const existing = document.getElementById('scroll-hint');
+  if (existing) return;
+  const hint = document.createElement('div');
+  hint.id = 'scroll-hint';
+  hint.textContent = '\u25BC  SCROLL TO ENTER  \u25BC';
+  document.body.appendChild(hint);
+}
+
+function enterCabinetScreen() {
+  window.removeEventListener('wheel', onScrollCabinet);
+  scrollListenerActive = false;
+  // Remove UI helpers
+  const hint = document.getElementById('scroll-hint');
+  if (hint) hint.remove();
+  const bar = document.getElementById('scroll-progress-bar');
+  if (bar) { bar.style.transition = 'opacity 0.3s'; bar.style.opacity = '0'; setTimeout(() => bar.remove(), 300); }
+  // Fade cabinet out
+  const container = document.getElementById('three-cabinet-container');
+  container.style.transition = 'opacity 0.6s cubic-bezier(0.25,1,0.5,1)';
+  container.style.opacity = '0';
+  setTimeout(() => {
+    cancelAnimationFrame(cabinetAnimationId);
+    showScreen('gameStart');
+    runStartSequence();
+    const crt = document.getElementById('crt-overlay');
+    if (crt) crt.classList.add('active');
+    container.style.transition = 'none';
+    container.style.opacity = '1';
+  }, 620);
 }
 
 // =========================================

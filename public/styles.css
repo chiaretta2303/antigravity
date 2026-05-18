@@ -1548,3 +1548,172 @@ body, html {
   z-index: 20;
   text-transform: uppercase;
 }
+
+/* =========================================
+   SCREEN 2.5: PRESS START BUTTON
+========================================= */
+#screen-press-start {
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+}
+
+.press-start-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  animation: scene-fade-in 0.8s ease forwards;
+}
+
+@keyframes scene-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* The physical arcade button */
+.arcade-red-button {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  cursor: pointer;
+  /* Outer matte bezel ring */
+  background: radial-gradient(circle at 50% 105%, #1a1a1a, #0a0a0a);
+  box-shadow:
+    0 8px 0 #0a0a0a,          /* base drop shadow — gives height */
+    0 12px 30px rgba(0,0,0,0.8),
+    0 0 60px rgba(200, 0, 0, 0.25),
+    0 0 120px rgba(200, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+  user-select: none;
+}
+
+.arcade-red-button:hover {
+  box-shadow:
+    0 8px 0 #0a0a0a,
+    0 12px 30px rgba(0,0,0,0.8),
+    0 0 80px rgba(220, 0, 0, 0.4),
+    0 0 160px rgba(220, 0, 0, 0.2);
+}
+
+/* Mounting ring — the bezel that holds the button */
+.button-ring-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    #2a2a2a 0deg, #444 45deg, #1a1a1a 90deg,
+    #444 135deg, #2a2a2a 180deg, #111 225deg,
+    #444 270deg, #111 315deg, #2a2a2a 360deg
+  );
+  box-shadow: inset 0 2px 6px rgba(255,255,255,0.06), inset 0 -4px 10px rgba(0,0,0,0.6);
+}
+
+/* The actual glossy red button cap */
+.button-top-cap {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, #ff5555 0%, #cc0000 45%, #7a0000 100%);
+  box-shadow:
+    inset 0 -6px 18px rgba(0,0,0,0.5),
+    inset 0 3px 6px rgba(255,120,120,0.25),
+    0 0 20px rgba(200, 0, 0, 0.4);
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+
+/* Specular gloss spot */
+.button-shine {
+  width: 32px;
+  height: 20px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.75) 0%, transparent 100%);
+  border-radius: 50%;
+  margin-top: 18px;
+  margin-left: 22px;
+  pointer-events: none;
+}
+
+/* Pressed state */
+.arcade-red-button.pressed {
+  transform: translateY(7px);
+  box-shadow:
+    0 1px 0 #0a0a0a,
+    0 3px 12px rgba(0,0,0,0.8),
+    0 0 40px rgba(200, 0, 0, 0.3);
+}
+
+.arcade-red-button.pressed .button-top-cap {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 -2px 8px rgba(0,0,0,0.6),
+    0 0 10px rgba(200, 0, 0, 0.2);
+}
+
+/* "PRESS START" label */
+.press-start-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: #ffffff;
+  letter-spacing: 4px;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.5);
+  animation: label-blink 1s step-end infinite;
+  margin-top: 8px;
+}
+
+@keyframes label-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* =========================================
+   SCROLL-TO-ENTER HINT
+========================================= */
+#scroll-hint {
+  position: fixed;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 3px;
+  pointer-events: none;
+  z-index: 9000;
+  white-space: nowrap;
+  animation: scroll-hint-float 2s ease-in-out infinite;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes scroll-hint-float {
+  0%, 100% { transform: translateX(-50%) translateY(0);  opacity: 0.55; }
+  50%       { transform: translateX(-50%) translateY(-7px); opacity: 0.9; }
+}
+
+#scroll-hint.fading {
+  opacity: 0;
+}
+
+/* Scroll progress bar — thin red line at bottom */
+#scroll-progress-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, #cc0000, #ff4444);
+  box-shadow: 0 0 8px rgba(255, 60, 60, 0.8);
+  z-index: 9001;
+  pointer-events: none;
+  transition: width 0.1s linear;
+}
