@@ -85,8 +85,8 @@ function startTransition() {
   const totalRows = Math.ceil(canvas.height / rowHeight);
   
   const totalDistance = totalRows * canvas.width;
-  // 6 seconds * 60 fps = 360 frames
-  const speed = totalDistance / 360; 
+  // 8 seconds * 60 fps = 480 frames
+  const speed = totalDistance / 480; 
 
   let pacX = -radius; 
   let currentRow = 0;

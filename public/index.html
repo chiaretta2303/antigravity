@@ -144,64 +144,67 @@
         <div class="hud-item"><div class="label">2UP</div><div class="value">00</div></div>
       </div>
 
-      <!-- 1. HARDWARE SELF-TEST SCREEN -->
-      <div id="startup-self-test" class="startup-phase hidden">
-        <div class="self-test-grid"></div>
-        <div class="self-test-text">
-          <div>OK ROM 1</div>
-          <div>OK ROM 2</div>
-          <div>OK RAM 1</div>
-          <div>OK RAM 2</div>
-          <div style="color: var(--pacman-yellow); margin-top: 20px;">SOUND... OK</div>
-          <div style="color: var(--uniqlo-red); margin-top: 10px;">SYSTEM READY</div>
+      <!-- Centered screen layout wrapper -->
+      <div class="arcade-screen-content">
+        <!-- 1. HARDWARE SELF-TEST SCREEN -->
+        <div id="startup-self-test" class="startup-phase hidden">
+          <div class="self-test-grid"></div>
+          <div class="self-test-text">
+            <div>OK ROM 1</div>
+            <div>OK ROM 2</div>
+            <div>OK RAM 1</div>
+            <div>OK RAM 2</div>
+            <div style="color: var(--pacman-yellow); margin-top: 20px;">SOUND... OK</div>
+            <div style="color: var(--uniqlo-red); margin-top: 10px;">SYSTEM READY</div>
+          </div>
         </div>
-      </div>
 
-      <!-- 2. CHARACTER / NICKNAME ATTRACT SCREEN -->
-      <div id="startup-attract" class="startup-phase hidden">
-        <div class="attract-title">CHARACTER / NICKNAME</div>
-        <div class="ghost-list">
-          <div class="ghost-row blinky" style="opacity: 0;">
-            <div class="ghost-sprite red"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name" style="opacity: 0;">Shadow</span>
-            <span class="ghost-nick" style="opacity: 0;">"BLINKY"</span>
+        <!-- 2. CHARACTER / NICKNAME ATTRACT SCREEN -->
+        <div id="startup-attract" class="startup-phase hidden">
+          <div class="attract-title">CHARACTER / NICKNAME</div>
+          <div class="ghost-list">
+            <div class="ghost-row blinky" style="opacity: 0;">
+              <div class="ghost-sprite red"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
+              <span class="ghost-name" style="opacity: 0;">Shadow</span>
+              <span class="ghost-nick" style="opacity: 0;">"BLINKY"</span>
+            </div>
+            <div class="ghost-row pinky" style="opacity: 0;">
+              <div class="ghost-sprite pink"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
+              <span class="ghost-name" style="opacity: 0;">Speedy</span>
+              <span class="ghost-nick" style="opacity: 0;">"PINKY"</span>
+            </div>
+            <div class="ghost-row inky" style="opacity: 0;">
+              <div class="ghost-sprite cyan"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
+              <span class="ghost-name" style="opacity: 0;">Bashful</span>
+              <span class="ghost-nick" style="opacity: 0;">"INKY"</span>
+            </div>
+            <div class="ghost-row clyde" style="opacity: 0;">
+              <div class="ghost-sprite orange"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
+              <span class="ghost-name" style="opacity: 0;">Pokey</span>
+              <span class="ghost-nick" style="opacity: 0;">"CLYDE"</span>
+            </div>
           </div>
-          <div class="ghost-row pinky" style="opacity: 0;">
-            <div class="ghost-sprite pink"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name" style="opacity: 0;">Speedy</span>
-            <span class="ghost-nick" style="opacity: 0;">"PINKY"</span>
-          </div>
-          <div class="ghost-row inky" style="opacity: 0;">
-            <div class="ghost-sprite cyan"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name" style="opacity: 0;">Bashful</span>
-            <span class="ghost-nick" style="opacity: 0;">"INKY"</span>
-          </div>
-          <div class="ghost-row clyde" style="opacity: 0;">
-            <div class="ghost-sprite orange"><div class="ghost-eyes"><div class="ghost-eye"></div><div class="ghost-eye"></div></div></div>
-            <span class="ghost-name" style="opacity: 0;">Pokey</span>
-            <span class="ghost-nick" style="opacity: 0;">"CLYDE"</span>
+          <div class="points-table">
+            <div class="points-row">
+              <span class="pellet-symbol small"></span>
+              <span class="pellet-desc">10 PTS</span>
+            </div>
+            <div class="points-row">
+              <span class="pellet-symbol large animate-pulse"></span>
+              <span class="pellet-desc">50 PTS</span>
+            </div>
           </div>
         </div>
-        <div class="points-table">
-          <div class="points-row">
-            <span class="pellet-symbol small"></span>
-            <span class="pellet-desc">10 PTS</span>
-          </div>
-          <div class="points-row">
-            <span class="pellet-symbol large animate-pulse"></span>
-            <span class="pellet-desc">50 PTS</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- 3. ACTUAL START MENU -->
-      <div id="start-menu-content" class="arcade-start-menu hidden">
-        <div class="uq-arcade-header">UNIQLO x PAC-MAN</div>
-        <h1>PAC-MAN</h1>
-        <p class="subtitle">UNIQLO CAPSULE COLLECTION</p>
-        <div class="start-actions">
-          <button id="btn-play-game" class="arcade-btn">PLAY PLAYER 1</button>
-          <button id="btn-view-collection" class="arcade-btn secondary">VIEW THE COLLECTION</button>
+        <!-- 3. ACTUAL START MENU -->
+        <div id="start-menu-content" class="arcade-start-menu hidden">
+          <div class="uq-arcade-header">UNIQLO x PAC-MAN</div>
+          <h1>PAC-MAN</h1>
+          <p class="subtitle">UNIQLO CAPSULE COLLECTION</p>
+          <div class="start-actions">
+            <button id="btn-play-game" class="arcade-btn">PLAY PLAYER 1</button>
+            <button id="btn-view-collection" class="arcade-btn secondary">VIEW THE COLLECTION</button>
+          </div>
         </div>
       </div>
 
