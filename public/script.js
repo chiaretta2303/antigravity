@@ -25,6 +25,11 @@ function showScreen(screenKey) {
     screens[screenKey].classList.add('active');
   }
   
+  // Keep landing page visible under transparent transition canvas
+  if (screenKey === 'transition' && screens.landing) {
+    screens.landing.classList.add('active');
+  }
+  
   // Robust CRT overlay activation logic
   const crt = document.getElementById('crt-overlay');
   if (crt) {
@@ -64,8 +69,8 @@ function startTransition() {
   const totalRows = Math.ceil(canvas.height / rowHeight);
   
   const totalDistance = totalRows * canvas.width;
-  // 12 seconds * 60 fps = 720 frames
-  const speed = totalDistance / 720; 
+  // 4 seconds * 60 fps = 240 frames
+  const speed = totalDistance / 240; 
 
   let pacX = -radius; 
   let currentRow = 0;
@@ -380,25 +385,87 @@ function runStartSequence() {
   // Phase 1: Hardware Self-Test Grid
   if (selfTest) selfTest.classList.remove('hidden');
   
+  // Reset all ghost rows, names and nicks to opacity 0 initially
+  const rows = document.querySelectorAll('.ghost-row');
+  rows.forEach(row => {
+    row.style.opacity = '0';
+    const name = row.querySelector('.ghost-name');
+    const nick = row.querySelector('.ghost-nick');
+    if (name) name.style.opacity = '0';
+    if (nick) nick.style.opacity = '0';
+  });
+
   // Phase 2: Attract & Character Screen after 1.2 seconds
   setTimeout(() => {
     if (selfTest) selfTest.classList.add('hidden');
     if (attract) attract.classList.remove('hidden');
     
-    // Animate ghost names sequentially for a high-fidelity feel
-    const rows = document.querySelectorAll('.ghost-row');
-    rows.forEach((row, i) => {
-      row.style.opacity = '0';
-      row.style.transform = 'translateX(-25px)';
-      row.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    // Staggered reveal timeline:
+    // Row 1 (Blinky): Red Ghost -> 1.0s -> "Shadow" -> 0.5s -> "BLINKY"
+    const r1 = document.querySelector('.ghost-row.blinky');
+    if (r1) {
+      r1.style.opacity = '1';
       setTimeout(() => {
-        row.style.opacity = '1';
-        row.style.transform = 'translateX(0)';
-      }, i * 600);
-    });
+        const name = r1.querySelector('.ghost-name');
+        if (name) name.style.opacity = '1';
+      }, 1000);
+      setTimeout(() => {
+        const nick = r1.querySelector('.ghost-nick');
+        if (nick) nick.style.opacity = '1';
+      }, 1500);
+    }
+    
+    // Row 2 (Pinky): Pink Ghost -> 1.0s -> "Speedy" -> 0.5s -> "PINKY"
+    setTimeout(() => {
+      const r2 = document.querySelector('.ghost-row.pinky');
+      if (r2) {
+        r2.style.opacity = '1';
+        setTimeout(() => {
+          const name = r2.querySelector('.ghost-name');
+          if (name) name.style.opacity = '1';
+        }, 1000);
+        setTimeout(() => {
+          const nick = r2.querySelector('.ghost-nick');
+          if (nick) nick.style.opacity = '1';
+        }, 1500);
+      }
+    }, 2000);
+    
+    // Row 3 (Inky): Cyan Ghost -> 1.0s -> "Bashful" -> 0.5s -> "INKY"
+    setTimeout(() => {
+      const r3 = document.querySelector('.ghost-row.inky');
+      if (r3) {
+        r3.style.opacity = '1';
+        setTimeout(() => {
+          const name = r3.querySelector('.ghost-name');
+          if (name) name.style.opacity = '1';
+        }, 1000);
+        setTimeout(() => {
+          const nick = r3.querySelector('.ghost-nick');
+          if (nick) nick.style.opacity = '1';
+        }, 1500);
+      }
+    }, 4000);
+    
+    // Row 4 (Clyde): Orange Ghost -> 1.0s -> "Pokey" -> 0.5s -> "CLYDE"
+    setTimeout(() => {
+      const r4 = document.querySelector('.ghost-row.clyde');
+      if (r4) {
+        r4.style.opacity = '1';
+        setTimeout(() => {
+          const name = r4.querySelector('.ghost-name');
+          if (name) name.style.opacity = '1';
+        }, 1000);
+        setTimeout(() => {
+          const nick = r4.querySelector('.ghost-nick');
+          if (nick) nick.style.opacity = '1';
+        }, 1500);
+      }
+    }, 6000);
+    
   }, 1200);
   
-  // Phase 3: Display Actual Start Menu after 4.8 seconds
+  // Phase 3: Display Actual Start Menu after 10.5 seconds
   setTimeout(() => {
     if (attract) attract.classList.add('hidden');
     if (menuContent) {
@@ -409,7 +476,7 @@ function runStartSequence() {
       menuContent.offsetHeight;
       menuContent.style.opacity = '1';
     }
-  }, 4800);
+  }, 10500);
 }
 
 function onCabinetClick() {

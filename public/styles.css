@@ -72,104 +72,319 @@ body, html {
 ========================================= */
 .uq-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 20px 40px;
-  border-bottom: 1px solid #eee;
+  padding: 15px 40px;
+  border-bottom: 1px solid #e5e5e5;
   background-color: var(--bg-store);
+  z-index: 10;
+  position: relative;
+}
+
+.uq-logo-container {
+  display: flex;
+  align-items: center;
 }
 
 .uq-logo {
   position: relative;
-  z-index: 10;
+  width: 50px;
+  height: 50px;
 }
 
 .uq-logo #logo-img {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 2;
-  height: 40px;
-  margin-right: 40px;
+}
+
+.uq-nav {
+  display: flex;
+  gap: 25px;
 }
 
 .uq-nav a {
   text-decoration: none;
   color: var(--text-primary);
-  margin-right: 30px;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 1px;
+  padding: 5px 0;
+  border-bottom: 2px solid transparent;
+  transition: border-bottom 0.2s;
 }
 
-.uq-main {
-  padding: 60px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
+.uq-nav a.active, .uq-nav a:hover {
+  border-bottom: 2px solid var(--text-primary);
 }
 
-.uq-hero {
-  text-align: center;
-  margin-bottom: 80px;
-}
-
-.uq-hero h1 {
-  font-size: 4rem;
-  font-weight: 900;
-  letter-spacing: -1px;
-  margin-bottom: 10px;
-}
-
-.uq-hero p {
-  font-size: 1.2rem;
-  color: #555;
-  margin-bottom: 30px;
-}
-
-.uq-btn {
-  padding: 15px 40px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 14px;
-  letter-spacing: 1px;
-  transition: all 0.3s;
-}
-
-.uq-btn.primary {
-  background-color: var(--text-primary);
-  color: var(--bg-store);
-}
-
-.uq-btn.primary:hover {
-  background-color: #333;
-}
-
-.uq-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.uq-header-right {
+  display: flex;
+  align-items: center;
   gap: 20px;
 }
 
-.uq-grid-item {
-  background-color: #f5f5f5;
-  height: 400px;
+.uq-header-right .search-bar {
+  background: #f4f4f4;
+  padding: 8px 15px;
+  font-size: 12px;
+  color: #777;
+  border-radius: 3px;
+  width: 160px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.uq-header-right .header-icon {
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Hero Section */
+.uq-hero-banner {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  background-color: #f7f7f7;
+  border-radius: 4px;
+  margin-bottom: 60px;
+  overflow: hidden;
+  height: 380px;
+}
+
+.hero-left {
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.hero-left .capsule-tag {
+  background-color: var(--uniqlo-red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 4px 8px;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+
+.hero-left h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 15px;
+  color: var(--text-primary);
+}
+
+.hero-left p {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.uq-shop-btn {
+  background-color: var(--text-primary);
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background-color 0.2s;
+}
+
+.uq-shop-btn:hover {
+  background-color: #333;
+}
+
+.hero-right-visual {
+  background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.3)), url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgNjAwIDQwMCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2UzZTNlMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjYWFhIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPlVOSVFMTyBGQVNISU9OIFZJU1VBTDwvdGV4dD48L3N2Zz4=');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.model-caption {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 5px 10px;
+  letter-spacing: 1px;
+}
+
+/* Product Grid */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: -0.5px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.uq-product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-bottom: 50px;
+}
+
+.uq-product-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.uq-product-card:hover {
+  transform: translateY(-5px);
+}
+
+.product-image-container {
+  height: 220px;
+  background-color: #f7f7f7;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.product-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background-color: #333;
+  color: #fff;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 3px 6px;
+  letter-spacing: 0.5px;
+}
+
+.product-badge.red {
+  background-color: var(--uniqlo-red);
+}
+
+.product-details {
+  padding: 15px 5px;
+}
+
+.prod-category {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.product-details h3 {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.prod-rating {
+  color: #f1c40f;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+.review-count {
+  color: #999;
+}
+
+.prod-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* Pure CSS Clothing Graphics for premium mockup vibe */
+.shirt-graphic {
+  width: 90px;
+  height: 90px;
+  position: relative;
+}
+
+.shirt-graphic.red-shirt {
+  background-color: var(--uniqlo-red);
+  clip-path: polygon(25% 0%, 75% 0%, 85% 15%, 100% 25%, 85% 50%, 75% 40%, 75% 100%, 25% 100%, 25% 40%, 15% 50%, 0% 25%, 15% 15%);
+}
+
+.shirt-graphic.black-shirt {
+  background-color: #111111;
+  clip-path: polygon(25% 0%, 75% 0%, 85% 15%, 100% 25%, 85% 50%, 75% 40%, 75% 100%, 25% 100%, 25% 40%, 15% 50%, 0% 25%, 15% 15%);
+}
+
+.shirt-graphic.white-tote {
+  background-color: #fff;
+  border: 2px solid #ccc;
+  width: 70px;
+  height: 70px;
+  border-radius: 2px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.mini-pixel-ghost {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  background-color: #ff3333;
+  border-radius: 7px 7px 0 0;
+}
+
+.mini-pixel-pacman {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  background-color: var(--pacman-yellow);
+  border-radius: 50%;
+  clip-path: polygon(0 0, 100% 0, 100% 30%, 50% 50%, 100% 70%, 100% 100%, 0 100%);
+}
+
+.mini-pixel-cherry {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px; height: 12px;
+  background-color: var(--uniqlo-red);
+  border-radius: 50%;
 }
 
 /* Easter Egg */
 #pacman-easter-egg {
   position: absolute;
-  top: -6px;
-  left: -8px;
-  width: 20px;
-  height: 20px;
+  top: -4px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
-  opacity: 0.8;
+  opacity: 0.6;
   transition: transform 0.2s, top 0.2s, left 0.2s;
-  z-index: 1; /* Behind the logo */
+  z-index: 1; /* Partially hidden behind the logo */
 }
 
 #pacman-easter-egg:hover {
   transform: scale(1.2);
-  top: -10px;
-  left: -12px;
+  top: -6px;
+  left: -6px;
+  opacity: 0.9;
 }
 
 /* =========================================
@@ -1109,16 +1324,19 @@ body, html {
   align-items: center;
   font-size: 18px;
   letter-spacing: 2px;
+  transition: opacity 0.3s ease;
 }
 
 .ghost-name {
   text-transform: uppercase;
   font-weight: bold;
+  transition: opacity 0.3s ease;
 }
 
 .ghost-nick {
-  font-style: italic;
+  font-style: normal; /* Classic nicknames are block caps, not italic */
   font-weight: bold;
+  transition: opacity 0.3s ease;
 }
 
 .ghost-row.blinky { color: var(--uniqlo-red); text-shadow: 0 0 8px rgba(230, 0, 18, 0.4); }
@@ -1128,19 +1346,49 @@ body, html {
 
 .points-table {
   display: flex;
-  justify-content: space-around;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   border-top: 1px dashed #333;
   padding-top: 25px;
-  font-size: 15px;
-  color: #888;
+  font-size: 13px;
+  color: #fff;
   letter-spacing: 2px;
 }
 
-.points-table .pts {
-  color: var(--pacman-yellow);
-  font-weight: bold;
-  margin-left: 5px;
+.points-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-family: inherit;
+}
+
+.pellet-symbol {
+  background-color: var(--pacman-yellow);
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px var(--pacman-yellow);
+}
+
+.pellet-symbol.small {
+  width: 6px;
+  height: 6px;
+}
+
+.pellet-symbol.large {
+  width: 14px;
+  height: 14px;
+}
+
+.animate-pulse {
+  animation: pulse-glow 1s infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.9); box-shadow: 0 0 4px var(--pacman-yellow); }
+  100% { transform: scale(1.15); box-shadow: 0 0 12px var(--pacman-yellow); }
 }
 
 /* 3. Start Menu Content */
