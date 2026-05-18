@@ -978,6 +978,58 @@ body, html {
 /* =========================================
    ARCADE GAME STARTUP STYLES
 ========================================= */
+/* Custom 8-bit Ghost Character Silhouette */
+.ghost-sprite {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  display: inline-block;
+  border-radius: 12px 12px 0 0; /* Rounded top */
+}
+
+/* Wavy bottom waves */
+.ghost-sprite::before {
+  content: "";
+  position: absolute;
+  bottom: -4px; left: 0; width: 100%; height: 6px;
+  background-size: 8px 6px;
+  background-image: radial-gradient(circle at 4px 6px, transparent 3px, currentColor 3px);
+}
+
+.ghost-sprite.red { background-color: #ff3333; color: #ff3333; }
+.ghost-sprite.pink { background-color: #ff99cc; color: #ff99cc; }
+.ghost-sprite.cyan { background-color: #33ccff; color: #33ccff; }
+.ghost-sprite.orange { background-color: #ff9933; color: #ff9933; }
+
+/* Ghost Eyes */
+.ghost-eyes {
+  position: absolute;
+  top: 6px; left: 3px;
+  width: 18px;
+  height: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ghost-eye {
+  width: 6px;
+  height: 6px;
+  background-color: #fff;
+  border-radius: 50%;
+  position: relative;
+}
+
+.ghost-eye::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background-color: #3f00f2; /* Retro blue pupils */
+  border-radius: 50%;
+  top: 1px;
+  left: 2px; /* Expressive gaze looking to the side */
+}
+
 .startup-phase {
   display: flex;
   flex-direction: column;
@@ -1057,11 +1109,6 @@ body, html {
   align-items: center;
   font-size: 18px;
   letter-spacing: 2px;
-}
-
-.ghost-char {
-  font-size: 26px;
-  text-align: center;
 }
 
 .ghost-name {
