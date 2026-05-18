@@ -77,13 +77,60 @@
 
     <!-- SCREEN 5: GAME START SCREEN -->
     <div id="screen-game-start" class="screen arcade-mode">
-      <div class="arcade-start-menu">
+      <!-- 1. HARDWARE SELF-TEST SCREEN -->
+      <div id="startup-self-test" class="startup-phase hidden">
+        <div class="self-test-grid"></div>
+        <div class="self-test-text">
+          <div>OK ROM 1</div>
+          <div>OK ROM 2</div>
+          <div>OK RAM 1</div>
+          <div>OK RAM 2</div>
+          <div style="color: var(--pacman-yellow); margin-top: 20px;">SOUND... OK</div>
+          <div style="color: var(--uniqlo-red); margin-top: 10px;">SYSTEM READY</div>
+        </div>
+      </div>
+
+      <!-- 2. CHARACTER / NICKNAME ATTRACT SCREEN -->
+      <div id="startup-attract" class="startup-phase hidden">
+        <div class="attract-title">CHARACTER / NICKNAME</div>
+        <div class="ghost-list">
+          <div class="ghost-row blinky">
+            <span class="ghost-char">🔴</span>
+            <span class="ghost-name">shadow</span>
+            <span class="ghost-nick">"blinky"</span>
+          </div>
+          <div class="ghost-row pinky">
+            <span class="ghost-char">🌸</span>
+            <span class="ghost-name">speedy</span>
+            <span class="ghost-nick">"pinky"</span>
+          </div>
+          <div class="ghost-row inky">
+            <span class="ghost-char">🔵</span>
+            <span class="ghost-name">bashful</span>
+            <span class="ghost-nick">"inky"</span>
+          </div>
+          <div class="ghost-row clyde">
+            <span class="ghost-char">🟠</span>
+            <span class="ghost-name">pokey</span>
+            <span class="ghost-nick">"clyde"</span>
+          </div>
+        </div>
+        <div class="points-table">
+          <div>• PELLET <span class="pts">10 PTS</span></div>
+          <div>• ITEM <span class="pts">1000 PTS</span></div>
+        </div>
+      </div>
+
+      <!-- 3. ACTUAL START MENU -->
+      <div id="start-menu-content" class="arcade-start-menu hidden">
+        <div class="uq-arcade-header">UNIQLO x PAC-MAN</div>
         <h1>PAC-MAN</h1>
         <p class="subtitle">UNIQLO CAPSULE COLLECTION</p>
         <div class="start-actions">
-          <button id="btn-play-game" class="arcade-btn">PLAY</button>
+          <button id="btn-play-game" class="arcade-btn">PLAY PLAYER 1</button>
           <button id="btn-view-collection" class="arcade-btn secondary">VIEW THE COLLECTION</button>
         </div>
+        <div class="insert-coin-prompt blinking">CREDIT 01</div>
       </div>
 
       <!-- Locked Collection Popup -->
@@ -128,6 +175,12 @@
 
           <!-- Game Canvas for Pac-Man and Items -->
           <canvas id="game-canvas" width="448" height="496"></canvas>
+
+          <!-- READY OVERLAY -->
+          <div id="game-ready-overlay" class="ready-overlay-container hidden">
+            <div class="player-text">PLAYER 1</div>
+            <div class="ready-text">READY!</div>
+          </div>
         </div>
 
         <div class="game-controls">

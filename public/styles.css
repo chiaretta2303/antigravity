@@ -974,3 +974,177 @@ body, html {
   flex-direction: column;
   gap: 15px;
 }
+
+/* =========================================
+   ARCADE GAME STARTUP STYLES
+========================================= */
+.startup-phase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: 'Press Start 2P', monospace;
+  color: #fff;
+  letter-spacing: 2px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 15;
+  background-color: #000;
+}
+
+/* 1. Hardware Self-Test */
+#startup-self-test {
+  background-color: #000;
+}
+
+.self-test-grid {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridFade 1s steps(4) infinite;
+  pointer-events: none;
+}
+
+@keyframes gridFade {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.3; }
+}
+
+.self-test-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  line-height: 2.2;
+  z-index: 10;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+/* 2. Character & Nickname Attract */
+#startup-attract {
+  background-color: #000;
+  padding: 40px;
+  max-width: 600px;
+  margin: 0 auto;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.attract-title {
+  color: #fff;
+  font-size: 18px;
+  margin-bottom: 45px;
+  text-align: center;
+  letter-spacing: 4px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.ghost-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  margin-bottom: 50px;
+}
+
+.ghost-row {
+  display: grid;
+  grid-template-columns: 60px 140px 160px;
+  align-items: center;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+.ghost-char {
+  font-size: 26px;
+  text-align: center;
+}
+
+.ghost-name {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.ghost-nick {
+  font-style: italic;
+  font-weight: bold;
+}
+
+.ghost-row.blinky { color: var(--uniqlo-red); text-shadow: 0 0 8px rgba(230, 0, 18, 0.4); }
+.ghost-row.pinky { color: #ffb8ff; text-shadow: 0 0 8px rgba(255, 184, 255, 0.4); }
+.ghost-row.inky { color: #00ffff; text-shadow: 0 0 8px rgba(0, 255, 255, 0.4); }
+.ghost-row.clyde { color: #ffb852; text-shadow: 0 0 8px rgba(255, 184, 82, 0.4); }
+
+.points-table {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  border-top: 1px dashed #333;
+  padding-top: 25px;
+  font-size: 15px;
+  color: #888;
+  letter-spacing: 2px;
+}
+
+.points-table .pts {
+  color: var(--pacman-yellow);
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+/* 3. Start Menu Content */
+.uq-arcade-header {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  color: #666;
+  letter-spacing: 5px;
+  margin-bottom: 25px;
+  font-weight: bold;
+}
+
+.insert-coin-prompt {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  color: var(--pacman-yellow);
+  margin-top: 35px;
+  letter-spacing: 3px;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 212, 59, 0.4);
+}
+
+/* 4. Ready Overlay inside Gameplay */
+.ready-overlay-container {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 15;
+  pointer-events: none;
+  background-color: rgba(0, 0, 0, 0.35);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.player-text {
+  color: #00ffff;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  margin-top: 35px;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+}
+
+.ready-text {
+  color: var(--pacman-yellow);
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  margin-top: 15px;
+  text-shadow: 0 0 10px rgba(255, 212, 59, 0.6);
+  animation: blink 0.3s step-end infinite;
+}

@@ -333,9 +333,9 @@ function animateCabinet() {
     if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
     const ease = 1 - Math.pow(1 - cabinetZoomProgress, 3);
     
-    // Physically move camera to view arcade screen
-    currentCameraY = THREE.MathUtils.lerp(startCameraY, cabinetMaxDim * 0.2, ease);
-    currentCameraZ = THREE.MathUtils.lerp(startCameraZ, baseCameraZ * 0.35, ease);
+    // Physically move camera to intersect exactly with the front face of the screen
+    currentCameraY = THREE.MathUtils.lerp(startCameraY, cabinetMaxDim * 0.12, ease);
+    currentCameraZ = THREE.MathUtils.lerp(startCameraZ, cabinetSizeZ * 0.49, ease);
     
     cabinetCamera.position.y = currentCameraY;
     cabinetCamera.position.z = currentCameraZ;
@@ -343,6 +343,51 @@ function animateCabinet() {
   }
   
   cabinetRenderer.render(cabinetScene, cabinetCamera);
+}
+
+function runStartSequence() {
+  // Hide all screens/phases first
+  const selfTest = document.getElementById('startup-self-test');
+  const attract = document.getElementById('startup-attract');
+  const menuContent = document.getElementById('start-menu-content');
+  
+  if (selfTest) selfTest.classList.add('hidden');
+  if (attract) attract.classList.add('hidden');
+  if (menuContent) menuContent.classList.add('hidden');
+  
+  // Phase 1: Hardware Self-Test Grid
+  if (selfTest) selfTest.classList.remove('hidden');
+  
+  // Phase 2: Attract & Character Screen after 1.2 seconds
+  setTimeout(() => {
+    if (selfTest) selfTest.classList.add('hidden');
+    if (attract) attract.classList.remove('hidden');
+    
+    // Animate ghost names sequentially for a high-fidelity feel
+    const rows = document.querySelectorAll('.ghost-row');
+    rows.forEach((row, i) => {
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(-25px)';
+      row.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      setTimeout(() => {
+        row.style.opacity = '1';
+        row.style.transform = 'translateX(0)';
+      }, i * 600);
+    });
+  }, 1200);
+  
+  // Phase 3: Display Actual Start Menu after 4.8 seconds
+  setTimeout(() => {
+    if (attract) attract.classList.add('hidden');
+    if (menuContent) {
+      menuContent.classList.remove('hidden');
+      menuContent.style.opacity = '0';
+      menuContent.style.transition = 'opacity 0.8s ease';
+      // Force repaint
+      menuContent.offsetHeight;
+      menuContent.style.opacity = '1';
+    }
+  }, 4800);
 }
 
 function onCabinetClick() {
@@ -371,19 +416,18 @@ function onCabinetClick() {
   
   time += 2500; // 2.5s zoom to screen
   
-  // Fade to black
+  // Pre-transition cross-fade (inspired by shader.se loading rhythm)
   setTimeout(() => {
     const container = document.getElementById('three-cabinet-container');
-    container.style.transition = 'opacity 1s ease-in-out';
+    container.style.transition = 'opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
     container.style.opacity = '0';
-  }, time);
+  }, time - 400); // 400ms before camera sweep completes
   
-  time += 1000; // 1s fade
-  
-  // Transition to game
+  // Transition to game start sequence
   setTimeout(() => {
     cancelAnimationFrame(cabinetAnimationId);
     showScreen('gameStart');
+    runStartSequence();
     
     // Turn on the CRT Television effect
     const crt = document.getElementById('crt-overlay');
@@ -588,8 +632,22 @@ function gameLoop() {
 }
 
 function startGame() {
-  document.addEventListener('keydown', handleInput);
-  gameInterval = setInterval(gameLoop, 150);
+  // Show READY overlay containing blink READY! and PLAYER 1
+  const readyOverlay = document.getElementById('game-ready-overlay');
+  if (readyOverlay) readyOverlay.classList.remove('hidden');
+  
+  // Setup board and spawn players
+  resetGame();
+  drawGame();
+  
+  // Wait 2.2 seconds (arcade startup freeze) before allowing input and gameplay
+  setTimeout(() => {
+    if (readyOverlay) readyOverlay.classList.add('hidden');
+    document.addEventListener('keydown', handleInput);
+    
+    clearInterval(gameInterval);
+    gameInterval = setInterval(gameLoop, 150);
+  }, 2200);
 }
 
 function handleInput(e) {
