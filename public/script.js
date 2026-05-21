@@ -176,6 +176,7 @@ let scrollTarget = 0;
 let scrollCurrent = 0;
 let scrollListenerActive = false;
 let enterTriggered = false;
+let dustParticles = [];
 
 // Frontal alignment state variables
 let alignProgress = 0;
@@ -247,10 +248,11 @@ function initThreeJSCabinet() {
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
     baseCameraZ = cameraZ * 1.6;
     
-    // Drop-from-above setup: full size, frontal, camera at normal distance
+    // Drop-from-above setup: full size, right side, camera at normal distance
     cabinetDropStartY = maxDim * 4.5;
     cabinetModel.position.y = cabinetDropStartY;
-    cabinetModel.rotation.y = 0; // face front immediately
+    cabinetModel.position.x = maxDim * 0.35; // Position on the right side
+    cabinetModel.rotation.y = -0.25; // Face angled slightly, showing the right panel
     cabinetModel.scale.set(1, 1, 1);
     cabinetCamera.position.set(0, 0, baseCameraZ);
     
@@ -411,10 +413,14 @@ function animateCabinet() {
       // Transition to settling sway phase
       cabinetState = 'settling';
       settlingTime = 0;
+      createDustBurst(); // Trigger subtle dust cloud / burst on landing!
     }
     // Bounce-out easing: overshoots slightly then settles
     const dropEase = bounceOut(Math.min(cabinetDropProgress, 1));
     cabinetModel.position.y = THREE.MathUtils.lerp(cabinetDropStartY, 0, dropEase);
+    cabinetModel.position.x = cabinetMaxDim * 0.35; // Stay on the right side
+    cabinetModel.rotation.y = -0.25; // Stay angled
+    
     // Lights fade in during first half of drop
     const lightT = Math.min(cabinetDropProgress * 2.5, 1);
     const amb2  = cabinetScene.getObjectByName('ambientLight');
@@ -428,12 +434,22 @@ function animateCabinet() {
   } else if (cabinetState === 'settling') {
     // Damped oscillation — left/right sway as cabinet stabilises on its surface
     settlingTime += 1 / 60;
+    
+    // Maintain X position and basic Y rotation
+    cabinetModel.position.x = cabinetMaxDim * 0.35;
+    cabinetModel.rotation.y = -0.25;
+    
     // Z-axis rotation: main left-right lean  (amplitude 0.052 rad ≈ 3°)
     const sway = 0.052 * Math.exp(-2.6 * settlingTime) * Math.sin(7.5 * settlingTime);
     // X-axis rotation: very subtle forward-back rock
     const rock = 0.016 * Math.exp(-3.2 * settlingTime) * Math.sin(6.8 * settlingTime);
+    
     cabinetModel.rotation.z = sway;
     cabinetModel.rotation.x = rock;
+    
+    // Animate and fade dust particles
+    updateDustParticles();
+    
     cabinetCamera.lookAt(0, 0, 0);
     // When oscillation becomes imperceptible (≈1.7 s), switch to scroll mode
     if (settlingTime > 1.7) {
@@ -446,15 +462,42 @@ function animateCabinet() {
   } else if (cabinetState === 'scroll_idle') {
     // Smooth lerp scroll progress
     scrollCurrent += (scrollTarget - scrollCurrent) * 0.06;
+    
     // Update progress bar UI
     const bar = document.getElementById('scroll-progress-bar');
     if (bar) bar.style.width = (scrollCurrent * 100) + '%';
-    // Controlled camera approach — stops well before entering the screen
-    const targetZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.42, scrollCurrent);
-    const targetY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, scrollCurrent);
-    cabinetCamera.position.z = targetZ;
-    cabinetCamera.position.y = targetY;
-    cabinetCamera.lookAt(0, cabinetMaxDim * 0.12 * scrollCurrent, 0);
+    
+    // Curved cinematic scroll arc: camera moves from X=0 to cabinet X, cabinet Y-rotation turns to frontal, camera approaches
+    const t = scrollCurrent;
+    const easeX = Math.pow(t, 1.8); // curved arc
+    const easeY = Math.pow(t, 1.5);
+    const easeZ = t;
+    
+    const cameraX = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.35, easeX);
+    const cameraY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, easeY);
+    const cameraZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.42, easeZ);
+    
+    cabinetCamera.position.set(cameraX, cameraY, cameraZ);
+    
+    // Slowly rotate cabinet to face frontal
+    const easeRot = Math.sin(t * Math.PI / 2);
+    cabinetModel.rotation.y = THREE.MathUtils.lerp(-0.25, 0, easeRot);
+    
+    // Ensure rotation X and Z stay at 0
+    cabinetModel.rotation.x = 0;
+    cabinetModel.rotation.z = 0;
+    cabinetModel.position.x = cabinetMaxDim * 0.35;
+    
+    // lookAt target shifts from center of scene to screen center
+    const lookAtX = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.35, Math.pow(t, 1.2));
+    const lookAtY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, Math.pow(t, 1.2));
+    const lookAtZ = 0;
+    
+    cabinetCamera.lookAt(lookAtX, lookAtY, lookAtZ);
+    
+    // Animate and fade any active dust particles
+    updateDustParticles();
+    
     // Hide scroll hint once user starts scrolling
     if (scrollTarget > 0.05) {
       const hint = document.getElementById('scroll-hint');
@@ -635,7 +678,14 @@ function showPressStartButton() {
 function onPressStartClick() {
   const btn = document.getElementById('arcade-start-btn');
   if (btn) btn.classList.add('pressed');
-  // Short press-down pause, then fade screen and reveal cabinet
+  
+  // Swap the image to the down state
+  const btnImg = document.getElementById('arcade-btn-img');
+  if (btnImg) {
+    btnImg.src = '/assets/arcade-button-down.png';
+  }
+
+  // Satisfying physical press hold, then fade press start screen and drop cabinet
   setTimeout(() => {
     const ps = document.getElementById('screen-press-start');
     if (ps) { ps.style.transition = 'opacity 0.45s ease'; ps.style.opacity = '0'; }
@@ -653,7 +703,90 @@ function onPressStartClick() {
       initThreeJSCabinet();
       animateCabinet();
     }, 450);
-  }, 220);
+  }, 280);
+}
+
+// Subtle cinematic dust burst particle system
+function createDustBurst() {
+  if (!cabinetScene || !cabinetModel) return;
+  
+  // Clear any existing stale particles
+  dustParticles.forEach(p => {
+    cabinetScene.remove(p.mesh);
+    p.mesh.geometry.dispose();
+    p.mesh.material.dispose();
+  });
+  dustParticles = [];
+  
+  const particleCount = 35;
+  const geom = new THREE.SphereGeometry(cabinetMaxDim * 0.012, 5, 5);
+  
+  const baseX = cabinetModel.position.x;
+  const baseY = -cabinetMaxDim * 0.45; // Bottom base footprint level
+  const baseZ = 0;
+  
+  for (let i = 0; i < particleCount; i++) {
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xcccccc,
+      transparent: true,
+      opacity: 0.35 + Math.random() * 0.15,
+      depthWrite: false
+    });
+    
+    const mesh = new THREE.Mesh(geom, mat);
+    
+    // Spread in a circular base ring
+    const angle = Math.random() * Math.PI * 2;
+    const distance = cabinetMaxDim * (0.08 + Math.random() * 0.28);
+    
+    mesh.position.set(
+      baseX + Math.cos(angle) * distance,
+      baseY + (Math.random() * 0.04 - 0.02),
+      baseZ + Math.sin(angle) * distance
+    );
+    
+    cabinetScene.add(mesh);
+    
+    // Radial outwards movement + gentle upward lift
+    const speed = (0.2 + Math.random() * 0.35) * 0.024;
+    dustParticles.push({
+      mesh: mesh,
+      vx: Math.cos(angle) * speed,
+      vy: (0.1 + Math.random() * 0.25) * 0.026, // rises slightly
+      vz: Math.sin(angle) * speed,
+      alpha: mat.opacity,
+      decay: 0.011 + Math.random() * 0.007,
+      growth: 1.018 + Math.random() * 0.012
+    });
+  }
+}
+
+function updateDustParticles() {
+  for (let i = dustParticles.length - 1; i >= 0; i--) {
+    const p = dustParticles[i];
+    
+    p.mesh.position.x += p.vx;
+    p.mesh.position.y += p.vy;
+    p.mesh.position.z += p.vz;
+    
+    // Friction deceleration
+    p.vx *= 0.94;
+    p.vy *= 0.94;
+    p.vz *= 0.94;
+    
+    // Dissipate & expand
+    p.mesh.scale.multiplyScalar(p.growth);
+    
+    p.alpha -= p.decay;
+    if (p.alpha <= 0) {
+      cabinetScene.remove(p.mesh);
+      p.mesh.geometry.dispose();
+      p.mesh.material.dispose();
+      dustParticles.splice(i, 1);
+    } else {
+      p.mesh.material.opacity = p.alpha;
+    }
+  }
 }
 
 // Bounce-out easing (standard Penner)
