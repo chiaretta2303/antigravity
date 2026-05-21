@@ -1121,9 +1121,9 @@ document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
 // =========================================
 const productsData = [
   { id: 'tshirt', name: 'Pac-Man Graphic T-Shirt', price: 24.90, img: '👕', hasVariants: true, variants: { black: '/assets/item-tshirt-black.png', white: '/assets/item-tshirt-white.png' } },
-  { id: 'sweatshirt', name: 'Arcade Graphic Sweatshirt', price: 49.90, img: '🧥', hasVariants: true, variants: { black: '/assets/item-sweatshirt-black.png', white: '/assets/item-sweatshirt-white.png' } },
-  { id: 'cap', name: 'Pac-Man Cap', price: 19.90, img: '🧢', hasVariants: true, variants: { black: '/assets/item-cap-black.png', white: '/assets/item-cap-white.png' } },
-  { id: 'tote', name: 'UNIQLO x Pac-Man Tote Bag', price: 14.90, img: '👜', hasVariants: true, variants: { black: '/assets/item-bag-black.png', white: '/assets/item-bag-white.png' } }
+  { id: 'sweatshirt', name: 'Pac-Man Arcade Sweatshirt', price: 49.90, img: '🧥', hasVariants: true, variants: { black: '/assets/item-sweatshirt-black.png', white: '/assets/item-sweatshirt-white.png' } },
+  { id: 'cap', name: 'Pac-Man Logo Cap', price: 19.90, img: '🧢', hasVariants: true, variants: { black: '/assets/item-cap-black.png', white: '/assets/item-cap-white.png' } },
+  { id: 'tote', name: 'UNIQLO x Pac-Man Bag', price: 14.90, img: '👜', hasVariants: true, variants: { black: '/assets/item-bag-black.png', white: '/assets/item-bag-white.png' } }
 ];
 
 
@@ -1246,6 +1246,212 @@ function handleArcadeKeyboard(e) {
 // =========================================
 let currentViewItem = null;
 
+let productScene, productCamera, productRenderer, productGroup, productAnimationId, productResizeHandler;
+const productTextureCache = {};
+
+function initProductViewer(container, imageUrl) {
+  // Clear container
+  container.innerHTML = '';
+  
+  // Create Scene
+  productScene = new THREE.Scene();
+  productScene.background = null; // transparent background for overlay blend
+  
+  // Create Camera (narrow FOV for a high-end collectible appearance)
+  productCamera = new THREE.PerspectiveCamera(30, container.clientWidth / container.clientHeight, 0.1, 100);
+  productCamera.position.set(0, 0, 8);
+  
+  // Create Renderer
+  productRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  productRenderer.setSize(container.clientWidth, container.clientHeight);
+  productRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(productRenderer.domElement);
+  
+  // Specular Dynamic Lighting Setup
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+  productScene.add(ambientLight);
+  
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
+  dirLight.position.set(5, 5, 4);
+  productScene.add(dirLight);
+  
+  const rimLight = new THREE.DirectionalLight(0x00ffff, 0.45); // Arcade Cyan rim highlight
+  rimLight.position.set(-5, -3, -2);
+  productScene.add(rimLight);
+  
+  const yellowLight = new THREE.DirectionalLight(0xffd43b, 0.4); // Pac-Man yellow ambient highlight
+  yellowLight.position.set(2, -2, 3);
+  productScene.add(yellowLight);
+
+  // Group for floating and rotation animation
+  productGroup = new THREE.Group();
+  productScene.add(productGroup);
+  
+  // Render Sandwich layers
+  const buildLayers = (texture) => {
+    productGroup.clear(); // Clear any old layers first
+    
+    const layerCount = 24;
+    const thickness = 0.22;
+    const width = 2.4;
+    const height = 2.4;
+    const geom = new THREE.PlaneGeometry(width, height);
+    
+    for (let i = 0; i < layerCount; i++) {
+      // Calculate how close this layer is to the center (0 = outer, 1 = center)
+      const centerFactor = 1.0 - Math.abs(i - (layerCount - 1) / 2) / ((layerCount - 1) / 2);
+      // Darken inner layers slightly to create a beautiful ambient occlusion edge depth effect
+      const tint = 1.0 - centerFactor * 0.42; 
+      
+      const mat = new THREE.MeshStandardMaterial({
+        map: texture,
+        transparent: true,
+        roughness: 0.35,
+        metalness: 0.15,
+        side: THREE.DoubleSide,
+        alphaTest: 0.05,
+        color: new THREE.Color(tint, tint, tint)
+      });
+      
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.z = -thickness/2 + (i / (layerCount - 1)) * thickness;
+      productGroup.add(mesh);
+    }
+  };
+
+  // Load from cache or remote
+  if (productTextureCache[imageUrl]) {
+    buildLayers(productTextureCache[imageUrl]);
+  } else {
+    const loader = new THREE.TextureLoader();
+    loader.load(imageUrl, (texture) => {
+      texture.minFilter = THREE.LinearFilter;
+      productTextureCache[imageUrl] = texture;
+      buildLayers(texture);
+    });
+  }
+  
+  // Canvas-based radial soft shadow under the item
+  const shadowCanvas = document.createElement('canvas');
+  shadowCanvas.width = 64;
+  shadowCanvas.height = 64;
+  const ctx = shadowCanvas.getContext('2d');
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(0,0,0,0.65)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 64, 64);
+  
+  const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+  const shadowMat = new THREE.MeshBasicMaterial({
+    map: shadowTex,
+    transparent: true,
+    depthWrite: false
+  });
+  
+  const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), shadowMat);
+  shadowMesh.rotation.x = -Math.PI / 2;
+  shadowMesh.position.y = -1.65;
+  productScene.add(shadowMesh);
+  
+  // Animation loop
+  const clock = new THREE.Clock();
+  function animate() {
+    productAnimationId = requestAnimationFrame(animate);
+    const elapsed = clock.getElapsedTime();
+    
+    if (productGroup) {
+      // Gentle Bobbing
+      productGroup.position.y = Math.sin(elapsed * 1.8) * 0.15;
+      
+      // Slow rotation
+      productGroup.rotation.y = elapsed * 0.65;
+      
+      // Secondary minor tilts for premium 3D feeling
+      productGroup.rotation.x = Math.sin(elapsed * 0.9) * 0.08;
+      productGroup.rotation.z = Math.cos(elapsed * 0.9) * 0.05;
+      
+      // Shadow responds in size and opacity
+      if (shadowMesh) {
+        const h = productGroup.position.y;
+        const s = 1.0 - h * 0.32;
+        shadowMesh.scale.set(s, s, 1);
+        shadowMesh.material.opacity = 0.75 - h * 0.45;
+      }
+    }
+    
+    productRenderer.render(productScene, productCamera);
+  }
+  
+  animate();
+  
+  // Resize Handler
+  productResizeHandler = () => {
+    if (!productCamera || !productRenderer || !container) return;
+    productCamera.aspect = container.clientWidth / container.clientHeight;
+    productCamera.updateProjectionMatrix();
+    productRenderer.setSize(container.clientWidth, container.clientHeight);
+  };
+  window.addEventListener('resize', productResizeHandler);
+}
+
+function updateProductViewerTexture(imageUrl) {
+  if (!productGroup) return;
+  
+  const applyTexture = (texture) => {
+    productGroup.children.forEach(mesh => {
+      if (mesh.material) {
+        mesh.material.map = texture;
+        mesh.material.needsUpdate = true;
+      }
+    });
+  };
+  
+  if (productTextureCache[imageUrl]) {
+    applyTexture(productTextureCache[imageUrl]);
+  } else {
+    const loader = new THREE.TextureLoader();
+    loader.load(imageUrl, (texture) => {
+      texture.minFilter = THREE.LinearFilter;
+      productTextureCache[imageUrl] = texture;
+      applyTexture(texture);
+    });
+  }
+}
+
+function closeProductViewer() {
+  if (productAnimationId) {
+    cancelAnimationFrame(productAnimationId);
+    productAnimationId = null;
+  }
+  if (productResizeHandler) {
+    window.removeEventListener('resize', productResizeHandler);
+    productResizeHandler = null;
+  }
+  if (productRenderer) {
+    productRenderer.dispose();
+    if (productRenderer.domElement && productRenderer.domElement.parentNode) {
+      productRenderer.domElement.parentNode.removeChild(productRenderer.domElement);
+    }
+    productRenderer = null;
+  }
+  if (productGroup) {
+    productGroup.children.forEach(mesh => {
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material) {
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(m => m.dispose());
+        } else {
+          mesh.material.dispose();
+        }
+      }
+    });
+    productGroup = null;
+  }
+  productScene = null;
+  productCamera = null;
+}
+
 function openItemView(productId) {
   const item = productsData.find(p => p.id === productId);
   if (!item) return;
@@ -1272,19 +1478,41 @@ function openItemView(productId) {
     priceDisplay.classList.remove('discount-text');
   }
 
-  // Reset color selector to Black
-  updateItemViewColor('black');
-
   // Show Modal
   document.getElementById('item-view-overlay').classList.remove('hidden');
+
+  // Initialize Three.js WebGL product view inside .floating-item-scene
+  const container = document.querySelector('.floating-item-scene');
+  if (container) {
+    initProductViewer(container, item.variants['black']);
+  }
+
+  // Reset color selector active buttons to Black
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    if (btn.dataset.color === 'black') {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  const imgEl = document.getElementById('floating-item-image');
+  if (imgEl) {
+    imgEl.src = item.variants['black'];
+  }
 }
 
 function updateItemViewColor(color) {
   if (!currentViewItem || !currentViewItem.hasVariants) return;
   
-  // Update floating image src
+  // Update floating image src (if the element still exists, though the canvas replaced it)
   const imgEl = document.getElementById('floating-item-image');
-  imgEl.src = currentViewItem.variants[color];
+  if (imgEl) {
+    imgEl.src = currentViewItem.variants[color];
+  }
+
+  // Update Three.js WebGL texture immediately
+  updateProductViewerTexture(currentViewItem.variants[color]);
 
   // Update active button state
   document.querySelectorAll('.color-btn').forEach(btn => {
@@ -1307,6 +1535,9 @@ document.querySelectorAll('.color-btn').forEach(btn => {
 document.getElementById('btn-close-item-view').addEventListener('click', () => {
   document.getElementById('item-view-overlay').classList.add('hidden');
   currentViewItem = null;
+  
+  // Cleanup Three.js product viewer
+  closeProductViewer();
 });
 
 // INIT
