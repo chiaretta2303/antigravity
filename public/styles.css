@@ -1661,3 +1661,257 @@ body, html {
   pointer-events: none;
   transition: width 0.1s linear;
 }
+
+/* =========================================
+   SHOPPING BAG / CART DRAWER STYLES
+   Inspired by premium Outfit bag transition
+========================================= */
+
+.shopping-bag-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 440px;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background-color: #050505;
+  border-left: 2px solid #222;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.85);
+  transform: translateX(100%);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.shopping-bag-drawer.active {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+@keyframes float-empty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Size buttons states */
+.size-btn.active {
+  background: var(--pacman-yellow) !important;
+  color: black !important;
+  border-color: var(--pacman-yellow) !important;
+}
+
+/* Cart Item Layout */
+.cart-item {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #111;
+  border-radius: 4px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cart-item.adding {
+  animation: cart-item-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.cart-item.removing {
+  animation: cart-item-slide-out 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cart-item-slide-in {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cart-item-slide-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(50px); }
+}
+
+.cart-item-image-container {
+  width: 60px;
+  height: 60px;
+  background: #0d0d0d;
+  border: 1px dashed #222;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.cart-item-img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+
+.cart-item-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cart-item-name {
+  font-family: monospace;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: white;
+}
+
+.cart-item-variant {
+  font-size: 0.75rem;
+  color: #777;
+  letter-spacing: 1px;
+}
+
+.cart-item-qty-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.qty-control-btn {
+  background: #111;
+  border: 1px solid #333;
+  color: white;
+  width: 22px;
+  height: 22px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.qty-control-btn:hover {
+  background: var(--pacman-yellow);
+  color: black;
+  border-color: var(--pacman-yellow);
+}
+
+.cart-item-qty-val {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: white;
+}
+
+.cart-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.cart-item-price {
+  font-family: monospace;
+  font-weight: bold;
+  color: white;
+}
+
+.cart-item-remove-btn {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 0.75rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: color 0.2s;
+  padding: 2px 5px;
+}
+
+.cart-item-remove-btn:hover {
+  color: var(--uniqlo-red);
+}
+
+/* Flying Thumbnail / Add to Bag animation */
+.flying-cart-item {
+  position: fixed;
+  z-index: 99999;
+  width: 50px;
+  height: 50px;
+  pointer-events: none;
+  background: #050505;
+  border: 2px solid var(--pacman-yellow);
+  border-radius: 50%;
+  box-shadow: 0 0 15px var(--pacman-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.85s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.85s ease-out;
+}
+
+.flying-cart-item img {
+  max-width: 75%;
+  max-height: 75%;
+  object-fit: contain;
+}
+
+/* Toast added notification */
+.cart-toast-notification {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  z-index: 100000;
+  background: #050505;
+  border: 2px solid var(--pacman-yellow);
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(255, 212, 59, 0.45);
+  color: var(--pacman-yellow);
+  font-family: monospace;
+  font-size: 0.95rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  padding: 12px 28px;
+  pointer-events: none;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  opacity: 0;
+}
+
+.cart-toast-notification.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* Pulsing effect for the cart icon badge */
+@keyframes cart-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35); filter: drop-shadow(0 0 8px var(--pacman-yellow)); }
+  100% { transform: scale(1); }
+}
+
+.pulse-cart {
+  animation: cart-pulse 0.45s ease-out;
+}
+
+/* Overlay blur when drawer is active */
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.drawer-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}

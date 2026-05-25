@@ -289,6 +289,16 @@
           <button id="btn-replay" class="wahba-btn secondary" style="margin-top: 15px;">REPLAY GAME</button>
         </div>
       </div>
+
+      <!-- Game Over Overlay -->
+      <div id="game-over-overlay" class="modal hidden">
+        <div class="modal-content retro-border">
+          <h2 style="color:var(--uniqlo-red);letter-spacing:4px;">GAME OVER</h2>
+          <p style="color:#aaa;font-family:monospace;margin:10px 0 22px;font-size:0.85rem;">A GHOST GOT YOU!</p>
+          <button id="btn-retry-game" class="wahba-cta-btn primary" style="margin-bottom:12px;">TRY AGAIN</button>
+          <button id="btn-skip-from-over" class="wahba-btn secondary">SKIP THE GAME</button>
+        </div>
+      </div>
     </div>
 
     <!-- SCREEN 7: ARCADE REWARD COLLECTION SCREEN -->
@@ -299,8 +309,12 @@
         <div class="terminal-header-left">
           <span class="logo">/UNIQLO_X_PACMAN</span>
         </div>
-        <div class="terminal-header-right">
+        <div class="terminal-header-right" style="display: flex; align-items: center; gap: 20px;">
           <span id="arcade-header-status" class="status blink-fast">[ REWARD: 20% OFF ACTIVE ]</span>
+          <div id="arcade-cart-btn" class="arcade-cart-btn-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
+            <span class="cart-icon" style="font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,212,59,0.5)); transition: transform 0.2s;">🛍️</span>
+            <span id="cart-count-badge" class="cart-count-badge" style="background: var(--uniqlo-red); color: white; font-family: monospace; font-size: 0.8rem; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(230,0,18,0.6);">0</span>
+          </div>
         </div>
       </div>
 
@@ -327,9 +341,15 @@
     <div id="item-view-overlay" class="modal hidden arcade-mode wahba-shell">
       <div class="scanlines"></div>
 
-      <div class="terminal-header" style="position: absolute; top: 0; left: 0; width: 100%;">
+      <div class="terminal-header" style="position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; padding: 15px 30px;">
         <div class="terminal-header-left">
           <span class="logo">/PRODUCT_VIEWER</span>
+        </div>
+        <div class="terminal-header-right">
+          <div id="item-view-cart-btn" class="arcade-cart-btn-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
+            <span class="cart-icon" style="font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,212,59,0.5)); transition: transform 0.2s;">🛍️</span>
+            <span id="item-view-cart-count-badge" class="cart-count-badge" style="background: var(--uniqlo-red); color: white; font-family: monospace; font-size: 0.8rem; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(230,0,18,0.6);">0</span>
+          </div>
         </div>
       </div>
 
@@ -358,13 +378,66 @@
             </div>
           </div>
 
+          <div class="size-selector wahba-field" id="item-view-size-container">
+            <div class="wahba-label">// SELECT SIZE</div>
+            <div class="size-options" style="display: flex; gap: 10px;">
+              <button class="wahba-btn size-btn" data-size="S">S</button>
+              <button class="wahba-btn size-btn active" data-size="M">M</button>
+              <button class="wahba-btn size-btn" data-size="L">L</button>
+              <button class="wahba-btn size-btn" data-size="XL">XL</button>
+            </div>
+          </div>
+
           <div class="item-view-actions start-actions wahba-actions">
-            <button class="wahba-cta-btn primary">ADD TO BAG</button>
+            <button id="btn-add-to-bag" class="wahba-cta-btn primary">ADD TO BAG</button>
             <button id="btn-close-item-view" class="wahba-btn secondary">CLOSE</button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- SHOPPING BAG / CART DRAWER -->
+    <div id="shopping-bag-drawer" class="shopping-bag-drawer arcade-mode">
+      <div class="scanlines"></div>
+      
+      <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #222;">
+        <span class="drawer-title" style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; color: var(--pacman-yellow);">// YOUR BAG</span>
+        <button id="btn-close-bag" class="wahba-btn small" style="padding: 5px 12px; font-size: 0.8rem;">CLOSE ✕</button>
+      </div>
+      
+      <div class="drawer-content" style="flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+        <!-- Empty cart message -->
+        <div id="cart-empty-message" class="cart-empty-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; gap: 20px; text-align: center;">
+          <div class="empty-icon" style="font-size: 3rem; animation: float-empty 3s ease-in-out infinite;">👾</div>
+          <div class="empty-title" style="font-family: monospace; font-size: 1rem; color: #888; letter-spacing: 1px;">YOUR BAG IS EMPTY</div>
+          <button id="btn-continue-shopping" class="wahba-cta-btn primary" style="font-size: 0.9rem; padding: 12px 24px;">CONTINUE SHOPPING</button>
+        </div>
+        
+        <!-- Cart items list -->
+        <div id="cart-items-list" class="cart-items-container" style="display: flex; flex-direction: column; gap: 15px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      
+      <div class="drawer-footer" style="padding: 20px; border-top: 1px solid #222; background: #080808; display: flex; flex-direction: column; gap: 15px;">
+        <div class="price-summary-row" style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #888;">
+          <span>SUBTOTAL</span>
+          <span id="cart-subtotal-val">$0.00</span>
+        </div>
+        <div id="cart-discount-row" class="price-summary-row reward-discount hidden" style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--pacman-yellow);">
+          <span>PAC-MAN REWARD -20%</span>
+          <span id="cart-discount-val">-$0.00</span>
+        </div>
+        <div class="price-summary-row total-row" style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.2rem; border-top: 1px dashed #333; padding-top: 10px; color: white;">
+          <span>TOTAL</span>
+          <span id="cart-total-val">$0.00</span>
+        </div>
+        <button id="btn-checkout" class="wahba-cta-btn primary checkout-btn" style="width: 100%; font-size: 1rem; padding: 14px; text-align: center;">PROCEED TO CHECKOUT</button>
+      </div>
+    </div>
+
+    <!-- SHOPPING BAG BACKDROP -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
 
   </div>
 

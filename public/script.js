@@ -864,77 +864,198 @@ document.getElementById('btn-close-popup')?.addEventListener('click', () => {
 // =========================================
 // SCREEN 6: GAMEPLAY
 // =========================================
-let gameInterval;
-const CELL_SIZE = 16;
-const COLS = 28;
-const ROWS = 31;
+const DEBUG_MAP = true;
+const TILE_SIZE = 16;
+const MAP_OFFSET_X = 0;
+const MAP_OFFSET_Y = 0;
 
+const collisionMap = [
+  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW",
+  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
+  "WCWWWWPWWWWWPWWPWWWWWPWWWWCW",
+  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
+  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW",
+  "WPWWWWPWWPWWWWWWWWPWWPWWWWPW",
+  "WPWWWWPWWPWWWWWWWWPWWPWWWWPW",
+  "WPPPPPPWWPPPPWWPPPPWWPPPPPPW",
+  "WWWWWWPWWWWWPWWPWWWWWPWWWWWW",
+  "WWWWWWPWWWWWPWWPWWWWWPWWWWWW",
+  "WWWWWWPWWPPPPPPPPPPWWPWWWWWW",
+  "WWWWWWPWWPWWGGWWWWPWWPWWWWWW",
+  "WWWWWWPWWPWGGGGGGWPWWPWWWWWW",
+  "PPPPPPPWWPWGGGGGGWPWWPPPPPPP",
+  "WWWWWWPWWPWGGGGGGWPWWPWWWWWW",
+  "WWWWWWPWWPWWWWWWWWPWWPWWWWWW",
+  "WWWWWWPWWPPPPPPPPPPWWPWWWWWW",
+  "WWWWWWPWWPWWWWWWWWPWWPWWWWWW",
+  "WWWWWWPWWPWWWWWWWWPWWPWWWWWW",
+  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW",
+  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
+  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
+  "WCPPPWPPPPPPPPPPPPPPPPWPPPCW",
+  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW",
+  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW",
+  "WPPPPPPWWPPPPWWPPPPWWPPPPPPW",
+  "WPWWWWWWWWWWPWWPWWWWWWWWWWPW",
+  "WPWWWWWWWWWWPWWPWWWWWWWWWWPW",
+  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW",
+  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+];
+
+let gameInterval;
 let map = [];
 let gamePellets = [];
+let hoveredCell = null;
 
-const pacman = { r: 23, c: 13, dir: { r: 0, c: 0 }, nextDir: { r: 0, c: 0 }, open: 0, openDir: 1 };
+const pacman =  {
+  r: 23,
+  c: 13,
+  dir: { r: 0, c: 0 },
+  nextDir: { r: 0, c: 0 },
+  open: 0,
+  openDir: 1
+};
 const collectibles = [
-  { id: 'tshirt', r: 1, c: 1, color: '#ff6b6b', collected: false, name: 'T-Shirt' },
-  { id: 'sweatshirt', r: 1, c: 26, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
-  { id: 'cap', r: 29, c: 1, color: '#45b7d1', collected: false, name: 'Cap' },
-  { id: 'tote', r: 29, c: 26, color: '#96ceb4', collected: false, name: 'Tote Bag' }
+  { id: 'tshirt',     r: 3,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
+  { id: 'sweatshirt', r: 3,  c: 26, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
+  { id: 'cap',        r: 23, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
+  { id: 'bag',        r: 23, c: 26, color: '#96ceb4', collected: false, name: 'Bag' },
 ];
 
 let score = 0;
 
-// Dynamic Tile-Based Map Generation from the Image itself
+// ── GHOST AI — constants ──────────────────────────────────────────
+const GHOST_SCATTER_TICKS = Math.round(7000 / 150);   // ~47 ticks ≈ 7 s
+const GHOST_CHASE_TICKS   = Math.round(20000 / 150);  // ~133 ticks ≈ 20 s
+const GHOST_PHASE_SCHEDULE = [
+  { mode: 'scatter', duration: GHOST_SCATTER_TICKS },
+  { mode: 'chase',   duration: GHOST_CHASE_TICKS   },
+  { mode: 'scatter', duration: GHOST_SCATTER_TICKS },
+  { mode: 'chase',   duration: GHOST_CHASE_TICKS   },
+  { mode: 'scatter', duration: GHOST_SCATTER_TICKS },
+  { mode: 'chase',   duration: Infinity            },
+];
+const GHOST_SPAWN_DATA = [
+  { id: 'blinky', r: 11, c: 13, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 26 }, releaseAt: 0   },
+  { id: 'pinky',  r: 17, c: 13, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
+  { id: 'inky',   r: 11, c: 9,  dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 29, c: 26 }, releaseAt: 66  },
+  { id: 'clyde',  r: 17, c: 17, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 29, c: 1  }, releaseAt: 100 },
+];
+let ghosts        = [];
+let gameTick      = 0;
+let ghostModeTick  = 0;
+let ghostModePhase = 0;
+let globalGhostMode = 'scatter';
+
+// Setup Map & Pellet Spawning based on collisionMap array
 function generateMapAndPellets() {
-  const img = new Image();
-  img.src = '/assets/maze-without-pellets.png';
+  map = [];
+  gamePellets = [];
   
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 448;
-    canvas.height = 496;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(img, 0, 0);
-
-    map = [];
-    gamePellets = [];
-
-    for (let r = 0; r < ROWS; r++) {
-      const row = [];
-      for (let c = 0; c < COLS; c++) {
-        // Sample the exact center of each 16x16 tile
-        const pixel = ctx.getImageData(c * CELL_SIZE + 8, r * CELL_SIZE + 8, 1, 1).data;
-        
-        // Pure black = walkable path
-        const isBlack = pixel[0] < 20 && pixel[1] < 20 && pixel[2] < 20;
-        
-        // Hardcode ghost pen area to blocked (rows 12-16, cols 10-17)
-        const isGhostPen = (r >= 12 && r <= 16 && c >= 10 && c <= 17);
-
-        let val = 0; // Default to wall (blocked)
-        if (isGhostPen) {
-          val = 4; // Blocked Ghost Pen
-        } else if (isBlack) {
-          val = 1; // Walkable Path
-        }
-
-        row.push(val);
-
-        if (val === 1) {
-          // Check if this tile holds a product collectible
-          const isCollectible = collectibles.some(col => col.r === r && col.c === c);
-          // Check if this is the pacman start tile
-          const isStart = (r === 23 && c === 13) || (r === 23 && c === 14);
-          
-          if (!isCollectible && !isStart) {
-            gamePellets.push({ r, c, active: true });
-          }
+  for (let r = 0; r < collisionMap.length; r++) {
+    const row = [];
+    for (let c = 0; c < collisionMap[r].length; c++) {
+      const char = collisionMap[r][c];
+      let val = 0; // Blocked wall by default
+      
+      if (char === 'P' || char === 'C') {
+        val = 1; // Walkable path
+      } else if (char === 'G') {
+        val = 4; // Ghost house / gate
+      }
+      
+      row.push(val);
+      
+      if (char === 'P') {
+        // Spawn pellets on all walkable path tiles except Pac-Man start tile
+        const isStart = (r === 23 && c === 13);
+        if (!isStart) {
+          gamePellets.push({ r, c, active: true });
         }
       }
-      map.push(row);
     }
-  };
+    map.push(row);
+  }
 }
-// Generate once at startup to cache
-generateMapAndPellets();
+
+// Set up grid hover listener
+function initDebugMouseListener() {
+  const canvas = document.getElementById('game-canvas');
+  if (!canvas) return;
+  
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    const c = Math.floor((mouseX - MAP_OFFSET_X) / TILE_SIZE);
+    const r = Math.floor((mouseY - MAP_OFFSET_Y) / TILE_SIZE);
+    
+    if (r >= 0 && r < collisionMap.length && c >= 0 && c < collisionMap[r].length) {
+      hoveredCell = { r, c };
+    } else {
+      hoveredCell = null;
+    }
+  });
+  
+  canvas.addEventListener('mouseleave', () => {
+    hoveredCell = null;
+  });
+}
+
+function resizePlayfield() {
+  const playfield = document.querySelector('.playfield');
+  const canvas = document.getElementById('game-canvas');
+  if (playfield && canvas) {
+    const width = collisionMap[0].length * TILE_SIZE;
+    const height = collisionMap.length * TILE_SIZE;
+    canvas.width = width;
+    canvas.height = height;
+    playfield.style.width = `${width}px`;
+    playfield.style.height = `${height}px`;
+    
+    const hud = document.querySelector('.game-hud');
+    if (hud) hud.style.width = `${width}px`;
+  }
+}
+
+function drawDebugGrid(ctx) {
+  for (let r = 0; r < collisionMap.length; r++) {
+    for (let c = 0; c < collisionMap[r].length; c++) {
+      const char = collisionMap[r][c];
+      const x = MAP_OFFSET_X + c * TILE_SIZE;
+      const y = MAP_OFFSET_Y + r * TILE_SIZE;
+      
+      // Grid line borders
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+      
+      // Color overlays
+      if (char === 'W' || char === 'G') {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.25)'; // Red blocked wall
+      } else if (char === 'P') {
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.08)'; // Green walkable path
+      } else if (char === 'C') {
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.25)'; // Yellow collectible
+      }
+      ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+      
+      // Highlight hovered coordinate cell
+      if (hoveredCell && hoveredCell.r === r && hoveredCell.c === c) {
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.35)';
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        
+        ctx.fillStyle = '#00ffff';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`R${r}C${c}`, x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+      }
+    }
+  }
+}
 
 function drawGame() {
   const canvas = document.getElementById('game-canvas');
@@ -942,30 +1063,42 @@ function drawGame() {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // We don't draw walls because the background image has them
-  // We just draw collectibles and pacman
-
-  // Pellets
-  ctx.fillStyle = '#ffb8ae'; // Classic pellet color
+  // Draw pellets
+  ctx.fillStyle = '#ffb8ae';
   gamePellets.forEach(p => {
     if (p.active) {
-      ctx.fillRect(p.c * CELL_SIZE + 6, p.r * CELL_SIZE + 6, 4, 4);
+      const x = MAP_OFFSET_X + p.c * TILE_SIZE + TILE_SIZE / 2;
+      const y = MAP_OFFSET_Y + p.r * TILE_SIZE + TILE_SIZE / 2;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
     }
   });
 
-  // Collectibles
+  // Draw collectibles
   collectibles.forEach(c => {
     if (!c.collected) {
       ctx.fillStyle = c.color;
-      ctx.fillRect(c.c * CELL_SIZE + 4, c.r * CELL_SIZE + 4, 8, 8);
+      const x = MAP_OFFSET_X + c.c * TILE_SIZE + TILE_SIZE / 2;
+      const y = MAP_OFFSET_Y + c.r * TILE_SIZE + TILE_SIZE / 2;
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
   });
 
-  // Pacman
+  // Draw Ghosts (behind Pac-Man)
+  drawGhosts(ctx);
+
+  // Draw Pac-Man
   ctx.fillStyle = '#FFD43B';
   ctx.beginPath();
-  const x = pacman.c * CELL_SIZE + CELL_SIZE / 2;
-  const y = pacman.r * CELL_SIZE + CELL_SIZE / 2;
+  const x = MAP_OFFSET_X + pacman.c * TILE_SIZE + TILE_SIZE / 2;
+  const y = MAP_OFFSET_Y + pacman.r * TILE_SIZE + TILE_SIZE / 2;
   
   let angleOffset = 0;
   if (pacman.dir.c === 1) angleOffset = 0;
@@ -974,58 +1107,71 @@ function drawGame() {
   else if (pacman.dir.r === -1) angleOffset = -Math.PI / 2;
 
   const mouthAngle = (0.2 * pacman.open) * Math.PI;
-  ctx.arc(x, y, CELL_SIZE / 2, angleOffset + mouthAngle, angleOffset + 2 * Math.PI - mouthAngle);
+  ctx.arc(x, y, TILE_SIZE * 0.45, angleOffset + mouthAngle, angleOffset + 2 * Math.PI - mouthAngle);
   ctx.lineTo(x, y);
   ctx.fill();
 
   pacman.open += 0.2 * pacman.openDir;
   if (pacman.open >= 1 || pacman.open <= 0) pacman.openDir *= -1;
+
+  if (DEBUG_MAP) { true;
+    drawDebugGrid(ctx);
+  }
 }
 
 function updateGame() {
-  // Try to change direction
+  const COLS_COUNT = collisionMap[0].length;
+  const ROWS_COUNT = collisionMap.length;
+
+  // 1. Try to shift direction
   if (pacman.nextDir.r !== 0 || pacman.nextDir.c !== 0) {
     let nextR = pacman.r + pacman.nextDir.r;
     let nextC = pacman.c + pacman.nextDir.c;
     
-    // Wrap-around horizontal
-    if (nextC < 0) nextC = COLS - 1;
-    else if (nextC >= COLS) nextC = 0;
-
-    if (map[nextR] && map[nextR][nextC] === 1) {
-      pacman.dir = { ...pacman.nextDir };
-      pacman.nextDir = { r: 0, c: 0 };
+    if (nextC < 0) nextC = COLS_COUNT - 1;
+    else if (nextC >= COLS_COUNT) nextC = 0;
+    
+    if (nextR >= 0 && nextR < ROWS_COUNT) {
+      const char = collisionMap[nextR][nextC];
+      if (char === 'P' || char === 'C') {
+        pacman.dir = { ...pacman.nextDir };
+        pacman.nextDir = { r: 0, c: 0 };
+      }
     }
   }
 
-  // Move
+  // 2. Drive Pac-Man in the current active direction
   let nextR = pacman.r + pacman.dir.r;
   let nextC = pacman.c + pacman.dir.c;
   
-  // Wrap-around horizontal
-  if (nextC < 0) nextC = COLS - 1;
-  else if (nextC >= COLS) nextC = 0;
+  if (nextC < 0) nextC = COLS_COUNT - 1;
+  else if (nextC >= COLS_COUNT) nextC = 0;
 
-  if (map[nextR] && map[nextR][nextC] === 1) {
-    pacman.r = nextR;
-    pacman.c = nextC;
+  if (nextR >= 0 && nextR < ROWS_COUNT) {
+    const char = collisionMap[nextR][nextC];
+    if (char === 'P' || char === 'C') {
+      pacman.r = nextR;
+      pacman.c = nextC;
+    }
   }
 
-  // Collect Pellets
+  // 3. Collect pellets
   const pellet = gamePellets.find(p => p.active && p.r === pacman.r && p.c === pacman.c);
   if (pellet) {
     pellet.active = false;
     score += 10;
-    document.getElementById('score-val').innerText = score;
+    const scoreVal = document.getElementById('score-val');
+    if (scoreVal) scoreVal.innerText = score;
   }
 
-  // Collect Items
+  // 4. Collect products
   collectibles.forEach(c => {
     if (!c.collected && c.r === pacman.r && c.c === pacman.c) {
       c.collected = true;
       unlockedItems.push(c.id);
       score += 1000;
-      document.getElementById('score-val').innerText = score;
+      const scoreVal = document.getElementById('score-val');
+      if (scoreVal) scoreVal.innerText = score;
       checkWin();
     }
   });
@@ -1033,19 +1179,19 @@ function updateGame() {
 
 function gameLoop() {
   updateGame();
+  updateGhosts();
   drawGame();
 }
 
 function startGame() {
-  // Show READY overlay containing blink READY! and PLAYER 1
   const readyOverlay = document.getElementById('game-ready-overlay');
   if (readyOverlay) readyOverlay.classList.remove('hidden');
   
-  // Setup board and spawn players
+  resizePlayfield();
+  initDebugMouseListener();
   resetGame();
   drawGame();
   
-  // Wait 2.2 seconds (arcade startup freeze) before allowing input and gameplay
   setTimeout(() => {
     if (readyOverlay) readyOverlay.classList.add('hidden');
     document.addEventListener('keydown', handleInput);
@@ -1060,7 +1206,6 @@ function handleInput(e) {
   if (e.key === 'ArrowDown') pacman.nextDir = { r: 1, c: 0 };
   if (e.key === 'ArrowLeft') pacman.nextDir = { r: 0, c: -1 };
   if (e.key === 'ArrowRight') pacman.nextDir = { r: 0, c: 1 };
-  // Prevent scrolling
   if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
       e.preventDefault();
   }
@@ -1073,6 +1218,190 @@ function checkWin() {
     document.getElementById('reward-overlay').classList.remove('hidden');
     hasDiscount = true;
   }
+}
+
+// =========================================
+// GHOST AI
+// =========================================
+
+function initGhosts() {
+  ghosts = GHOST_SPAWN_DATA.map(g => ({ ...g, state: 'waiting' }));
+  gameTick       = 0;
+  ghostModeTick  = 0;
+  ghostModePhase = 0;
+  globalGhostMode = 'scatter';
+}
+
+function getGhostTarget(ghost) {
+  if (ghost.state === 'scatter') return ghost.scatter;
+
+  switch (ghost.id) {
+    case 'blinky':
+      return { r: pacman.r, c: pacman.c };
+
+    case 'pinky':
+      return { r: pacman.r + pacman.dir.r * 4, c: pacman.c + pacman.dir.c * 4 };
+
+    case 'inky': {
+      const blinky = ghosts.find(g => g.id === 'blinky');
+      const pr = pacman.r + pacman.dir.r * 2;
+      const pc = pacman.c + pacman.dir.c * 2;
+      return { r: pr + (pr - blinky.r), c: pc + (pc - blinky.c) };
+    }
+
+    case 'clyde': {
+      const dr = ghost.r - pacman.r;
+      const dc = ghost.c - pacman.c;
+      return (dr * dr + dc * dc) > 64 ? { r: pacman.r, c: pacman.c } : ghost.scatter;
+    }
+
+    default:
+      return { r: pacman.r, c: pacman.c };
+  }
+}
+
+function getValidGhostMoves(ghost) {
+  const ROWS = collisionMap.length;
+  const COLS = collisionMap[0].length;
+  const DIRS = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }];
+
+  return DIRS.filter(d => {
+    if (d.r === -ghost.dir.r && d.c === -ghost.dir.c) return false; // no U-turn
+
+    const nr = ghost.r + d.r;
+    const nc = (ghost.c + d.c + COLS) % COLS;
+
+    if (nr < 0 || nr >= ROWS) return false;
+
+    const ch = collisionMap[nr][nc];
+    return ch === 'P' || ch === 'C';
+  });
+}
+
+function moveGhost(ghost) {
+  const COLS  = collisionMap[0].length;
+  const moves = getValidGhostMoves(ghost);
+
+  if (moves.length === 0) {
+    // Boxed in — force reversal
+    const rev = { r: -ghost.dir.r, c: -ghost.dir.c };
+    const nr  = ghost.r + rev.r;
+    const nc  = (ghost.c + rev.c + COLS) % COLS;
+    const ch  = collisionMap[nr]?.[nc];
+    if (ch === 'P' || ch === 'C') { ghost.dir = rev; ghost.r = nr; ghost.c = nc; }
+    return;
+  }
+
+  let chosen;
+
+  if (ghost.state === 'frightened') {
+    chosen = moves[Math.floor(Math.random() * moves.length)];
+  } else {
+    const target = getGhostTarget(ghost);
+    let bestDist = Infinity;
+    let bestDir  = null;
+    for (const d of moves) {
+      const nr = ghost.r + d.r;
+      const nc = (ghost.c + d.c + COLS) % COLS;
+      const dist = (nr - target.r) ** 2 + (nc - target.c) ** 2;
+      if (dist < bestDist) { bestDist = dist; bestDir = d; }
+    }
+    chosen = bestDir;
+  }
+
+  if (!chosen) return;
+  ghost.dir = chosen;
+  ghost.r  += chosen.r;
+  ghost.c   = (ghost.c + chosen.c + COLS) % COLS;
+}
+
+function updateGhostModePhase() {
+  if (ghostModePhase >= GHOST_PHASE_SCHEDULE.length - 1) return;
+
+  ghostModeTick++;
+  if (ghostModeTick >= GHOST_PHASE_SCHEDULE[ghostModePhase].duration) {
+    ghostModeTick = 0;
+    ghostModePhase++;
+    globalGhostMode = GHOST_PHASE_SCHEDULE[ghostModePhase].mode;
+
+    ghosts.forEach(g => {
+      if (g.state !== 'frightened' && g.state !== 'waiting') {
+        g.state = globalGhostMode;
+        g.dir   = { r: -g.dir.r, c: -g.dir.c }; // reverse on mode switch
+      }
+    });
+  }
+}
+
+function updateGhosts() {
+  gameTick++;
+
+  ghosts.forEach(g => {
+    if (g.state === 'waiting' && gameTick >= g.releaseAt) g.state = globalGhostMode;
+  });
+
+  updateGhostModePhase();
+  ghosts.forEach(g => { if (g.state !== 'waiting') moveGhost(g); });
+  checkGhostCollision();
+}
+
+function checkGhostCollision() {
+  for (const ghost of ghosts) {
+    if (ghost.state === 'waiting') continue;
+    if (ghost.r === pacman.r && ghost.c === pacman.c) {
+      triggerGameOver();
+      return;
+    }
+  }
+}
+
+function triggerGameOver() {
+  clearInterval(gameInterval);
+  document.removeEventListener('keydown', handleInput);
+  document.getElementById('game-over-overlay').classList.remove('hidden');
+}
+
+function drawGhostBody(ctx, x, y, r, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y - r * 0.05, r, Math.PI, 0, false);
+  ctx.lineTo(x + r, y + r * 0.9);
+  const bumpW = (2 * r) / 3;
+  for (let i = 3; i > 0; i--) {
+    ctx.quadraticCurveTo(x + r - (i - 0.5) * bumpW, y + r * 1.1, x + r - i * bumpW, y + r * 0.9);
+  }
+  ctx.lineTo(x - r, y + r * 0.9);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawGhostEyes(ctx, x, y, r) {
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.32, y - r * 0.1, r * 0.22, r * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + r * 0.32, y - r * 0.1, r * 0.22, r * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0000CC';
+  ctx.beginPath();
+  ctx.ellipse(x - r * 0.28, y - r * 0.08, r * 0.12, r * 0.16, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + r * 0.36, y - r * 0.08, r * 0.12, r * 0.16, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawGhosts(ctx) {
+  const r = TILE_SIZE * 0.42;
+  ghosts.forEach(ghost => {
+    if (ghost.state === 'waiting') return;
+    const x = MAP_OFFSET_X + ghost.c * TILE_SIZE + TILE_SIZE / 2;
+    const y = MAP_OFFSET_Y + ghost.r * TILE_SIZE + TILE_SIZE / 2;
+    const bodyColor = ghost.state === 'frightened' ? '#0000DD' : ghost.color;
+    drawGhostBody(ctx, x, y, r, bodyColor);
+    drawGhostEyes(ctx, x, y, r);
+  });
 }
 
 // Skip game
@@ -1099,15 +1428,31 @@ document.getElementById('btn-replay')?.addEventListener('click', () => {
   startGame();
 });
 
+document.getElementById('btn-retry-game')?.addEventListener('click', () => {
+  document.getElementById('game-over-overlay').classList.add('hidden');
+  resetGame();
+  startGame();
+});
+
+document.getElementById('btn-skip-from-over')?.addEventListener('click', () => {
+  document.getElementById('game-over-overlay').classList.add('hidden');
+  hasDiscount = false;
+  renderArcadeCollection();
+  showScreen('arcadeCollection');
+  initArcadeCollection();
+});
+
 function resetGame() {
   pacman.r = 23; pacman.c = 13;
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
   score = 0;
-  document.getElementById('score-val').innerText = score;
+  const scoreVal = document.getElementById('score-val');
+  if (scoreVal) scoreVal.innerText = score;
   collectibles.forEach(c => c.collected = false);
   unlockedItems = [];
   generateMapAndPellets();
+  initGhosts();
 }
 
 // Play from Skip Screen
@@ -1269,17 +1614,21 @@ function initProductViewer(container, imageUrl) {
   
   // Specular Dynamic Lighting Setup
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+  ambientLight.name = 'productAmbientLight';
   productScene.add(ambientLight);
   
   const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
+  dirLight.name = 'productDirLight';
   dirLight.position.set(5, 5, 4);
   productScene.add(dirLight);
   
   const rimLight = new THREE.DirectionalLight(0x00ffff, 0.45); // Arcade Cyan rim highlight
+  rimLight.name = 'productRimLight';
   rimLight.position.set(-5, -3, -2);
   productScene.add(rimLight);
   
   const yellowLight = new THREE.DirectionalLight(0xffd43b, 0.4); // Pac-Man yellow ambient highlight
+  yellowLight.name = 'productYellowLight';
   yellowLight.position.set(2, -2, 3);
   productScene.add(yellowLight);
 
@@ -1297,17 +1646,30 @@ function initProductViewer(container, imageUrl) {
     const height = 2.4;
     const geom = new THREE.PlaneGeometry(width, height);
     
+    const isWhite = imageUrl.includes('white');
+    
     for (let i = 0; i < layerCount; i++) {
       // Calculate how close this layer is to the center (0 = outer, 1 = center)
       const centerFactor = 1.0 - Math.abs(i - (layerCount - 1) / 2) / ((layerCount - 1) / 2);
-      // Darken inner layers slightly to create a beautiful ambient occlusion edge depth effect
-      const tint = 1.0 - centerFactor * 0.42; 
+      
+      let tint, roughness, metalness;
+      if (isWhite) {
+        // Soft off-white cap to prevent clipping/burnout, plus ambient occlusion depth
+        tint = 0.93 - centerFactor * 0.38;
+        roughness = 0.95; // Fabric matte look, diffuses lighting beautifully
+        metalness = 0.0;  // Fully non-metallic to prevent hot shiny spots
+      } else {
+        // Standard original premium shading for dark/black items
+        tint = 1.0 - centerFactor * 0.42; 
+        roughness = 0.35;
+        metalness = 0.15;
+      }
       
       const mat = new THREE.MeshStandardMaterial({
         map: texture,
         transparent: true,
-        roughness: 0.35,
-        metalness: 0.15,
+        roughness: roughness,
+        metalness: metalness,
         side: THREE.DoubleSide,
         alphaTest: 0.05,
         color: new THREE.Color(tint, tint, tint)
@@ -1330,6 +1692,9 @@ function initProductViewer(container, imageUrl) {
       buildLayers(texture);
     });
   }
+  
+  // Call shading adjustment to set correct light intensities
+  adjustViewerShading(imageUrl.includes('white'));
   
   // Canvas-based radial soft shadow under the item
   const shadowCanvas = document.createElement('canvas');
@@ -1395,8 +1760,61 @@ function initProductViewer(container, imageUrl) {
   window.addEventListener('resize', productResizeHandler);
 }
 
+function adjustViewerShading(isWhite) {
+  if (!productScene) return;
+  
+  const ambientLight = productScene.getObjectByName('productAmbientLight');
+  const dirLight = productScene.getObjectByName('productDirLight');
+  const rimLight = productScene.getObjectByName('productRimLight');
+  const yellowLight = productScene.getObjectByName('productYellowLight');
+  
+  if (isWhite) {
+    if (ambientLight) ambientLight.intensity = 0.75; // Soft ambient fill
+    if (dirLight) {
+      dirLight.intensity = 0.35; // Soft, low specular key
+      dirLight.position.set(3, 4, 5); // Softer angle to avoid front blowout
+    }
+    if (rimLight) rimLight.intensity = 0.15; // Softened arcade highlights
+    if (yellowLight) yellowLight.intensity = 0.12;
+  } else {
+    // Restore premium high-contrast arcade shading for dark items
+    if (ambientLight) ambientLight.intensity = 0.65;
+    if (dirLight) {
+      dirLight.intensity = 1.3;
+      dirLight.position.set(5, 5, 4);
+    }
+    if (rimLight) rimLight.intensity = 0.45;
+    if (yellowLight) yellowLight.intensity = 0.4;
+  }
+
+  // Update material properties of existing sandwich layers if they exist
+  if (productGroup) {
+    const layerCount = productGroup.children.length;
+    productGroup.children.forEach((mesh, i) => {
+      if (mesh.material) {
+        const centerFactor = 1.0 - Math.abs(i - (layerCount - 1) / 2) / ((layerCount - 1) / 2);
+        
+        if (isWhite) {
+          const tint = 0.93 - centerFactor * 0.38;
+          mesh.material.color.setRGB(tint, tint, tint);
+          mesh.material.roughness = 0.95;
+          mesh.material.metalness = 0.0;
+        } else {
+          const tint = 1.0 - centerFactor * 0.42;
+          mesh.material.color.setRGB(tint, tint, tint);
+          mesh.material.roughness = 0.35;
+          mesh.material.metalness = 0.15;
+        }
+        mesh.material.needsUpdate = true;
+      }
+    });
+  }
+}
+
 function updateProductViewerTexture(imageUrl) {
   if (!productGroup) return;
+  
+  const isWhite = imageUrl.includes('white');
   
   const applyTexture = (texture) => {
     productGroup.children.forEach(mesh => {
@@ -1405,6 +1823,8 @@ function updateProductViewerTexture(imageUrl) {
         mesh.material.needsUpdate = true;
       }
     });
+    // Dynamically adjust lighting and material shading parameters for the active variant
+    adjustViewerShading(isWhite);
   };
   
   if (productTextureCache[imageUrl]) {
@@ -1496,6 +1916,25 @@ function openItemView(productId) {
     }
   });
 
+  // Reset size selector - select M by default
+  document.querySelectorAll('.size-btn').forEach(btn => {
+    if (btn.dataset.size === 'M') {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Hide size selector for non-apparel (cap and bag)
+  const sizeContainer = document.getElementById('item-view-size-container');
+  if (sizeContainer) {
+    if (item.id === 'tshirt' || item.id === 'sweatshirt') {
+      sizeContainer.style.display = 'block';
+    } else {
+      sizeContainer.style.display = 'none';
+    }
+  }
+
   const imgEl = document.getElementById('floating-item-image');
   if (imgEl) {
     imgEl.src = item.variants['black'];
@@ -1531,6 +1970,14 @@ document.querySelectorAll('.color-btn').forEach(btn => {
   });
 });
 
+// Bind Size Selectors
+document.querySelectorAll('.size-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+  });
+});
+
 // Bind Close Button
 document.getElementById('btn-close-item-view').addEventListener('click', () => {
   document.getElementById('item-view-overlay').classList.add('hidden');
@@ -1540,5 +1987,302 @@ document.getElementById('btn-close-item-view').addEventListener('click', () => {
   closeProductViewer();
 });
 
+// =========================================
+// SHOPPING BAG / CART SYSTEM STATE & OPERATIONS
+// =========================================
+let cartList = [];
+
+// Open / Close Shopping Bag
+function toggleShoppingBag(show) {
+  const drawer = document.getElementById('shopping-bag-drawer');
+  const backdrop = document.getElementById('drawer-backdrop');
+  if (!drawer || !backdrop) return;
+  
+  if (show) {
+    updateCartUI();
+    drawer.classList.add('active');
+    backdrop.classList.add('active');
+  } else {
+    drawer.classList.remove('active');
+    backdrop.classList.remove('active');
+  }
+}
+
+// Add item to bag
+function addToBag(productId, color, size) {
+  const product = productsData.find(p => p.id === productId);
+  if (!product) return;
+  
+  const imgUrl = product.variants[color];
+  
+  const existingItem = cartList.find(item => 
+    item.id === productId && 
+    item.color === color && 
+    (item.size === size || (!item.size && !size))
+  );
+  
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    cartList.push({
+      id: productId,
+      name: product.name,
+      price: product.price,
+      img: imgUrl,
+      color: color,
+      size: size || null,
+      quantity: 1
+    });
+  }
+  
+  updateCartUI();
+  triggerFlyToCartAnimation(imgUrl);
+  showAddedToast(product.name);
+}
+
+// Update item quantity
+function updateCartQty(productId, color, size, delta) {
+  const idx = cartList.findIndex(item => 
+    item.id === productId && 
+    item.color === color && 
+    (item.size === size || (!item.size && !size))
+  );
+  if (idx === -1) return;
+  
+  cartList[idx].quantity += delta;
+  
+  if (cartList[idx].quantity <= 0) {
+    const itemEl = document.querySelector(`.cart-item[data-id="${productId}"][data-color="${color}"][data-size="${size || ''}"]`);
+    if (itemEl) {
+      itemEl.classList.add('removing');
+      setTimeout(() => {
+        cartList.splice(idx, 1);
+        updateCartUI();
+      }, 350);
+    } else {
+      cartList.splice(idx, 1);
+      updateCartUI();
+    }
+  } else {
+    updateCartUI();
+  }
+}
+
+// Remove item from cart
+function removeFromCart(productId, color, size) {
+  const idx = cartList.findIndex(item => 
+    item.id === productId && 
+    item.color === color && 
+    (item.size === size || (!item.size && !size))
+  );
+  if (idx === -1) return;
+  
+  const itemEl = document.querySelector(`.cart-item[data-id="${productId}"][data-color="${color}"][data-size="${size || ''}"]`);
+  if (itemEl) {
+    itemEl.classList.add('removing');
+    setTimeout(() => {
+      cartList.splice(idx, 1);
+      updateCartUI();
+    }, 350);
+  } else {
+    cartList.splice(idx, 1);
+    updateCartUI();
+  }
+}
+
+// Render/update shopping bag UI
+function updateCartUI() {
+  const listEl = document.getElementById('cart-items-list');
+  const emptyEl = document.getElementById('cart-empty-message');
+  if (!listEl || !emptyEl) return;
+  
+  let subtotal = 0;
+  let totalItems = 0;
+  
+  listEl.innerHTML = '';
+  
+  if (cartList.length === 0) {
+    emptyEl.style.display = 'flex';
+    listEl.style.display = 'none';
+  } else {
+    emptyEl.style.display = 'none';
+    listEl.style.display = 'flex';
+    
+    cartList.forEach(item => {
+      subtotal += item.price * item.quantity;
+      totalItems += item.quantity;
+      
+      const itemEl = document.createElement('div');
+      itemEl.className = 'cart-item adding';
+      itemEl.setAttribute('data-id', item.id);
+      itemEl.setAttribute('data-color', item.color);
+      itemEl.setAttribute('data-size', item.size || '');
+      
+      const variantText = `${item.color.toUpperCase()} ${item.size ? `/ ${item.size.toUpperCase()}` : ''}`;
+      const itemPriceTotal = (item.price * item.quantity).toFixed(2);
+      
+      itemEl.innerHTML = `
+        <div class="cart-item-image-container">
+          <img src="${item.img}" alt="${item.name}" class="cart-item-img">
+        </div>
+        <div class="cart-item-info">
+          <span class="cart-item-name">${item.name}</span>
+          <span class="cart-item-variant">${variantText}</span>
+          <div class="cart-item-qty-row">
+            <button class="qty-control-btn minus-btn" onclick="updateCartQty('${item.id}', '${item.color}', ${item.size ? `'${item.size}'` : 'null'}, -1)">-</button>
+            <span class="cart-item-qty-val">${item.quantity}</span>
+            <button class="qty-control-btn plus-btn" onclick="updateCartQty('${item.id}', '${item.color}', ${item.size ? `'${item.size}'` : 'null'}, 1)">+</button>
+          </div>
+        </div>
+        <div class="cart-item-right">
+          <span class="cart-item-price">$${itemPriceTotal}</span>
+          <button class="cart-item-remove-btn" onclick="removeFromCart('${item.id}', '${item.color}', ${item.size ? `'${item.size}'` : 'null'})">REMOVE</button>
+        </div>
+      `;
+      
+      listEl.appendChild(itemEl);
+    });
+  }
+  
+  // Calculate pricing summary
+  document.getElementById('cart-subtotal-val').innerText = `$${subtotal.toFixed(2)}`;
+  
+  const discountRow = document.getElementById('cart-discount-row');
+  if (hasDiscount && cartList.length > 0) {
+    const discountVal = subtotal * 0.2;
+    const finalTotal = subtotal - discountVal;
+    discountRow.classList.remove('hidden');
+    document.getElementById('cart-discount-val').innerText = `-$${discountVal.toFixed(2)}`;
+    document.getElementById('cart-total-val').innerText = `$${finalTotal.toFixed(2)}`;
+  } else {
+    discountRow.classList.add('hidden');
+    document.getElementById('cart-total-val').innerText = `$${subtotal.toFixed(2)}`;
+  }
+  
+  // Update badge UI
+  const badge1 = document.getElementById('cart-count-badge');
+  const badge2 = document.getElementById('item-view-cart-count-badge');
+  if (badge1) badge1.innerText = totalItems;
+  if (badge2) badge2.innerText = totalItems;
+}
+
+// Curved fly-to-cart motion animation
+function triggerFlyToCartAnimation(imageUrl) {
+  const startEl = document.querySelector('.floating-item-scene');
+  const targetEl = document.getElementById('arcade-cart-btn');
+  
+  if (!startEl || !targetEl) return;
+  
+  const startRect = startEl.getBoundingClientRect();
+  const targetRect = targetEl.getBoundingClientRect();
+  
+  const flyEl = document.createElement('div');
+  flyEl.className = 'flying-cart-item';
+  flyEl.style.left = `${startRect.left + startRect.width / 2 - 25}px`;
+  flyEl.style.top = `${startRect.top + startRect.height / 2 - 25}px`;
+  
+  const img = document.createElement('img');
+  img.src = imageUrl;
+  flyEl.appendChild(img);
+  document.body.appendChild(flyEl);
+  
+  setTimeout(() => {
+    flyEl.style.transform = `translate(${targetRect.left - startRect.left - startRect.width/2 + 25 + 10}px, ${targetRect.top - startRect.top - startRect.height/2 + 25}px) scale(0.2)`;
+    flyEl.style.opacity = '0.3';
+  }, 50);
+  
+  setTimeout(() => {
+    flyEl.remove();
+    
+    // Pulse cart buttons
+    const cartBtns = document.querySelectorAll('.arcade-cart-btn-container');
+    cartBtns.forEach(btn => {
+      btn.classList.add('pulse-cart');
+      setTimeout(() => btn.classList.remove('pulse-cart'), 450);
+    });
+  }, 900);
+}
+
+// Added confirmation toast
+function showAddedToast(itemName) {
+  let toast = document.getElementById('cart-toast-notification');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'cart-toast-notification';
+    toast.className = 'cart-toast-notification';
+    document.body.appendChild(toast);
+  }
+  
+  toast.textContent = `ADDED: ${itemName.toUpperCase()}`;
+  toast.classList.add('active');
+  
+  if (toast.timeoutId) clearTimeout(toast.timeoutId);
+  
+  toast.timeoutId = setTimeout(() => {
+    toast.classList.remove('active');
+  }, 2200);
+}
+
+// Bind Cart System Events
+function initCartSystemBinds() {
+  // Open cart buttons
+  document.querySelectorAll('.arcade-cart-btn-container').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleShoppingBag(true);
+    });
+  });
+  
+  // Close cart drawer buttons
+  document.getElementById('btn-close-bag')?.addEventListener('click', () => toggleShoppingBag(false));
+  document.getElementById('btn-continue-shopping')?.addEventListener('click', () => toggleShoppingBag(false));
+  document.getElementById('drawer-backdrop')?.addEventListener('click', () => toggleShoppingBag(false));
+  
+  // Add to Bag action button
+  document.getElementById('btn-add-to-bag')?.addEventListener('click', () => {
+    if (!currentViewItem) return;
+    
+    // Read currently active color
+    const activeColorBtn = document.querySelector('.color-btn.active');
+    const color = activeColorBtn ? activeColorBtn.dataset.color : 'black';
+    
+    // Read currently active size (if apparel)
+    let size = null;
+    if (currentViewItem.id === 'tshirt' || currentViewItem.id === 'sweatshirt') {
+      const activeSizeBtn = document.querySelector('.size-btn.active');
+      size = activeSizeBtn ? activeSizeBtn.dataset.size : 'M';
+    }
+    
+    addToBag(currentViewItem.id, color, size);
+  });
+  
+  // Checkout sequence click
+  document.getElementById('btn-checkout')?.addEventListener('click', () => {
+    if (cartList.length === 0) return;
+    
+    const checkoutBtn = document.getElementById('btn-checkout');
+    checkoutBtn.innerText = 'INITIALIZING CHECKOUT...';
+    checkoutBtn.style.pointerEvents = 'none';
+    
+    setTimeout(() => {
+      checkoutBtn.innerText = 'PROCEED TO CHECKOUT';
+      checkoutBtn.style.pointerEvents = 'auto';
+      toggleShoppingBag(false);
+      
+      // Beautiful terminal alert success modal
+      alert(`THANK YOU FOR YOUR PURCHASE!\nUNIQLO x PAC-MAN cabinet order sent successfully!\nTotal paid: ${document.getElementById('cart-total-val').innerText}`);
+      
+      // Empty the cart list
+      cartList = [];
+      updateCartUI();
+    }, 1800);
+  });
+}
+
+// Expose functions globally for inline onclick binds
+window.updateCartQty = updateCartQty;
+window.removeFromCart = removeFromCart;
+
 // INIT
+initCartSystemBinds();
 showScreen('landing');
