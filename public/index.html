@@ -243,40 +243,43 @@
     <!-- SCREEN 6: PLAYABLE GAME SCREEN -->
     <div id="screen-gameplay" class="screen arcade-mode">
       <div class="game-container">
-        <div class="game-hud">
-          <div class="hud-col">
-            <span>1UP</span>
-            <span id="score-val">0</span>
+        <div class="game-left-area">
+          <div class="game-hud">
+            <div class="hud-col">
+              <span>1UP</span>
+              <span id="score-val">0</span>
+            </div>
+            <div class="hud-col">
+              <span>HIGH SCORE</span>
+              <span>10000</span>
+            </div>
+            <div class="hud-col">
+              <span>2UP</span>
+              <span>0</span>
+            </div>
+            <div class="hud-logo">
+              <img src="/assets/uniqlo-logo.png" alt="UNIQLO" onerror="this.style.display='none'">
+            </div>
           </div>
-          <div class="hud-col">
-            <span>HIGH SCORE</span>
-            <span>10000</span>
-          </div>
-          <div class="hud-col">
-            <span>2UP</span>
-            <span>0</span>
-          </div>
-          <div class="hud-logo">
-            <img src="/assets/uniqlo-logo.png" alt="UNIQLO" onerror="this.style.display='none'">
-          </div>
-        </div>
 
-        <div class="playfield">
-          <!-- Background maze -->
-          <img src="/assets/maze-without-pellets.png" class="maze-bg" alt="Maze">
+          <div class="playfield">
+            <!-- Background maze -->
+            <img src="/assets/maze-without-pellets.png" class="maze-bg" alt="Maze">
 
-          <!-- Game Canvas for Pac-Man and Items -->
-          <canvas id="game-canvas" width="448" height="496"></canvas>
+            <!-- Game Canvas for Pac-Man and Items -->
+            <canvas id="game-canvas" width="448" height="496"></canvas>
 
-          <!-- READY OVERLAY -->
-          <div id="game-ready-overlay" class="ready-overlay-container hidden">
-            <div class="player-text">PLAYER 1</div>
-            <div class="ready-text">READY!</div>
+            <!-- READY OVERLAY -->
+            <div id="game-ready-overlay" class="ready-overlay-container hidden">
+              <div class="player-text">PLAYER 1</div>
+              <div class="ready-text">READY!</div>
+            </div>
           </div>
         </div>
 
         <div class="game-controls">
           <button id="btn-skip-game" class="arcade-btn small secondary">SKIP THE GAME</button>
+          <button id="btn-copy-map" class="arcade-btn small hidden" style="background-color: var(--pacman-yellow); color: #000; border-color: var(--pacman-yellow);">COPY COLLISION MAP</button>
         </div>
       </div>
 
@@ -322,6 +325,9 @@
         <div class="wahba-title-area">
           <h1 id="arcade-main-title" class="wahba-title">UNLOCKED COLLECTION</h1>
           <p id="arcade-main-subtitle" class="wahba-subtitle">// SELECT YOUR ITEM</p>
+          <div style="margin-top: 20px;">
+            <button id="btn-replay-from-shop" class="wahba-btn secondary small hidden">// REPLAY PAC-MAN</button>
+          </div>
           <div id="skip-game-prompt" class="hidden" style="margin-top: 30px;">
             <p style="color: #ccc; margin-bottom: 15px; letter-spacing: 1px;">You skipped the game. Play Pac-Man to
               unlock 20% off.</p>

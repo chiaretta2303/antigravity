@@ -63,6 +63,7 @@ L'applicazione implementa una navigazione a stati gestita tramite la classe CSS 
   - L'utente può visualizzare il capo in 3D, scegliere il colore (Nero, Bianco) e la taglia (S, M, L, XL).
   - Cliccando su "ADD TO BAG", un'animazione curva "fly-to-cart" sposta l'icona del prodotto verso il carrello.
 - Il carrello (Shopping Bag Drawer) calcola in tempo reale subtotale, sconto del 20% (se attivo) e totale complessivo, permettendo di completare un checkout simulato con feedback finale.
+- È presente un pulsante **`// REPLAY PAC-MAN`** che permette all'utente di rigiocare (visibile solo se il gioco è già stato completato con successo e lo sconto è attivo). Se lo sconto del 20% è già stato sbloccato, esso non viene sovrascritto né cumulato (rimane attivo al 20% fisso).
 
 ---
 
@@ -149,4 +150,25 @@ Se si passa il codice a Claude per proseguire lo sviluppo, ecco i moduli priorit
 2. **Integrazione Effetti Sonori Retro (Web Audio API)**: Aggiungere il classico suono del movimento "waka waka", il jingle di inizio partita e gli effetti acustici di inserimento gettone e sblocco dei prodotti.
 3. **Ottimizzazione Mobile / Controlli Touch**: Attualmente il movimento è vincolato alle frecce della tastiera e l'avvicinamento al cabinato richiede la rotella del mouse. Sarebbe opportuno mappare gesture di swipe su schermi touch o mostrare un joystick virtuale a schermo.
 4. **Integrazione Carrello Reale**: Mappare il checkout verso un reale gateway di test o integrare le API di una piattaforma e-commerce per simulare un acquisto reale.
+
+---
+
+## 9. Editor Visuale della Mappa di Collisione (Visual Collision Editor)
+Per allineare e personalizzare le collisioni sopra l'immagine del labirinto, l'applicazione integra un **Editor Visuale delle Collisioni**:
+
+- **Attivazione**: Impostare `let EDIT_COLLISION_MAP = true;` in cima al file `script.js`.
+- **Comportamento Visivo**: Sovrappone una griglia colorata semi-trasparente sul labirinto di gioco:
+  - **Rosso (`W`)**: Muro / Bloccato.
+  - **Verde (`P`)**: Sentiero calpestabile (dove nascono i pellet).
+  - **Giallo (`C`)**: Oggetto speciale sbloccabile (Collectible).
+  - **Viola (`G`)**: Casa dei fantasmi / Zona bloccata per Pac-Man.
+- **Interattività**:
+  - **Coordinate**: Passando il mouse sopra una cella, viene visualizzata la coordinata `R{r}C{c}` (Riga/Colonna).
+  - **Ciclo di Modifica**: Cliccando su una cella, la sua tipologia cambia ciclicamente: `W → P → C → G → W`.
+- **Fantasmi in Pausa**: Quando l'editor è attivo (`EDIT_COLLISION_MAP = true`), i fantasmi vengono congelati sulle loro posizioni correnti e le collisioni di game over sono temporaneamente disattivate per consentire una modifica agevole del labirinto.
+- **Esportazione**: In fondo alla schermata di gioco comparirà il pulsante **"COPY COLLISION MAP"**. Cliccandolo, l'intera matrice aggiornata nel formato stringhe JavaScript viene copiata nella clipboard, pronta per essere incollata nel codice sorgente di `script.js`.
+- **Allineamento**: Se la griglia risulta spostata rispetto all'immagine del labirinto, è possibile regolarne la posizione e la scala nel codice modificando le seguenti variabili:
+  - `let TILE_SIZE = 24;` (Dimensione cella in pixel)
+  - `let MAP_OFFSET_X = 0;` (Offset orizzontale della griglia)
+  - `let MAP_OFFSET_Y = 0;` (Offset verticale della griglia)
 

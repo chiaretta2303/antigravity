@@ -775,10 +775,13 @@ body, html {
 ========================================= */
 .game-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  height: 100%;
-  padding-top: 20px;
+  justify-content: center;
+  gap: 40px;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
   /* CRT Effect */
   box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
 }
@@ -787,10 +790,17 @@ body, html {
   display: none;
 }
 
+.game-left-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .game-hud {
   display: flex;
   justify-content: space-between;
-  width: 448px; /* Same as maze width */
+  width: 448px; /* Managed dynamically by script */
   margin-bottom: 10px;
   z-index: 10;
 }
@@ -807,8 +817,9 @@ body, html {
 
 .playfield {
   position: relative;
-  width: 448px;
-  height: 496px;
+  height: 75vh;
+  max-height: 75vh;
+  aspect-ratio: 1110 / 1013;
   z-index: 10;
 }
 
@@ -827,7 +838,10 @@ body, html {
 }
 
 .game-controls {
-  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
   z-index: 10;
 }
 

@@ -864,43 +864,27 @@ document.getElementById('btn-close-popup')?.addEventListener('click', () => {
 // =========================================
 // SCREEN 6: GAMEPLAY
 // =========================================
-const DEBUG_MAP = true;
-const TILE_SIZE = 16;
-const MAP_OFFSET_X = 0;
-const MAP_OFFSET_Y = 0;
+let EDIT_COLLISION_MAP = true;
 
 const collisionMap = [
-  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW",
-  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
-  "WCWWWWPWWWWWPWWPWWWWWPWWWWCW",
-  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW",
-  "WPWWWWPWWPWWWWWWWWPWWPWWWWPW",
-  "WPWWWWPWWPWWWWWWWWPWWPWWWWPW",
-  "WPPPPPPWWPPPPWWPPPPWWPPPPPPW",
-  "WWWWWWPWWWWWPWWPWWWWWPWWWWWW",
-  "WWWWWWPWWWWWPWWPWWWWWPWWWWWW",
-  "WWWWWWPWWPPPPPPPPPPWWPWWWWWW",
-  "WWWWWWPWWPWWGGWWWWPWWPWWWWWW",
-  "WWWWWWPWWPWGGGGGGWPWWPWWWWWW",
-  "PPPPPPPWWPWGGGGGGWPWWPPPPPPP",
-  "WWWWWWPWWPWGGGGGGWPWWPWWWWWW",
-  "WWWWWWPWWPWWWWWWWWPWWPWWWWWW",
-  "WWWWWWPWWPPPPPPPPPPWWPWWWWWW",
-  "WWWWWWPWWPWWWWWWWWPWWPWWWWWW",
-  "WWWWWWPWWPWWWWWWWWPWWPWWWWWW",
-  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW",
-  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
-  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW",
-  "WCPPPWPPPPPPPPPPPPPPPPWPPPCW",
-  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW",
-  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW",
-  "WPPPPPPWWPPPPWWPPPPWWPPPPPPW",
-  "WPWWWWWWWWWWPWWPWWWWWWWWWWPW",
-  "WPWWWWWWWWWWPWWPWWWWWWWWWWPW",
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW",
-  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+  "WWWWWWWWWWWWWW", // Row 0
+  "WPPPPPWWPPPPPW", // Row 1
+  "WPWWWWWWWWWWPW", // Row 2
+  "WPPPPPPPPPPPPW", // Row 3
+  "WPWWWPWWWPWWPW", // Row 4
+  "WPPPPPPPPPPPPW", // Row 5
+  "WWWWWPWGGWPWWW", // Row 6
+  "WWWWWPWGGWPWWW", // Row 7
+  "PPPPPPWGGWPPPP", // Row 8
+  "WWWWWPWWPWWWWW", // Row 9
+  "WPPPPPPPPPPPPW", // Row 10
+  "WPWWWWWWWWWWPW", // Row 11
+  "WPPPPPPPPPPPPW", // Row 12
+  "WWWWWPWWPWWWWW", // Row 13
+  "WPPPPPPPPPPPPW", // Row 14
+  "WPWWWWWWWWWWPW", // Row 15
+  "WPPPPPPPPPPPPW", // Row 16
+  "WWWWWWWWWWWWWW"  // Row 17
 ];
 
 let gameInterval;
@@ -909,18 +893,18 @@ let gamePellets = [];
 let hoveredCell = null;
 
 const pacman =  {
-  r: 23,
-  c: 13,
+  r: 16,
+  c: 6,
   dir: { r: 0, c: 0 },
   nextDir: { r: 0, c: 0 },
   open: 0,
   openDir: 1
 };
 const collectibles = [
-  { id: 'tshirt',     r: 3,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
-  { id: 'sweatshirt', r: 3,  c: 26, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
-  { id: 'cap',        r: 23, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
-  { id: 'bag',        r: 23, c: 26, color: '#96ceb4', collected: false, name: 'Bag' },
+  { id: 'tshirt',     r: 1,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
+  { id: 'sweatshirt', r: 1,  c: 12, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
+  { id: 'cap',        r: 16, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
+  { id: 'bag',        r: 16, c: 12, color: '#96ceb4', collected: false, name: 'Bag' },
 ];
 
 let score = 0;
@@ -937,10 +921,10 @@ const GHOST_PHASE_SCHEDULE = [
   { mode: 'chase',   duration: Infinity            },
 ];
 const GHOST_SPAWN_DATA = [
-  { id: 'blinky', r: 11, c: 13, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 26 }, releaseAt: 0   },
-  { id: 'pinky',  r: 17, c: 13, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
-  { id: 'inky',   r: 11, c: 9,  dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 29, c: 26 }, releaseAt: 66  },
-  { id: 'clyde',  r: 17, c: 17, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 29, c: 1  }, releaseAt: 100 },
+  { id: 'blinky', r: 5,  c: 6, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 12 }, releaseAt: 0   },
+  { id: 'pinky',  r: 7,  c: 6, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
+  { id: 'inky',   r: 7,  c: 7, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 16, c: 12 }, releaseAt: 66  },
+  { id: 'clyde',  r: 8,  c: 6, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 16, c: 1  }, releaseAt: 100 },
 ];
 let ghosts        = [];
 let gameTick      = 0;
@@ -969,7 +953,7 @@ function generateMapAndPellets() {
       
       if (char === 'P') {
         // Spawn pellets on all walkable path tiles except Pac-Man start tile
-        const isStart = (r === 23 && c === 13);
+        const isStart = (r === 16 && c === 6);
         if (!isStart) {
           gamePellets.push({ r, c, active: true });
         }
@@ -979,20 +963,66 @@ function generateMapAndPellets() {
   }
 }
 
-// Set up grid hover listener
+// Set up grid hover and click listener
+let debugMouseListenersInitialized = false;
+
+function getGridGeometry(canvas) {
+  const startX = 0.0054 * canvas.width;
+  const startY = 0.0039 * canvas.height;
+  const mapW = 0.9901 * canvas.width;
+  const mapH = 0.9872 * canvas.height;
+  
+  const cols = collisionMap[0].length;
+  const rows = collisionMap.length;
+  
+  const stepW = mapW / cols;
+  const stepH = mapH / rows;
+  const tileSize = Math.min(stepW, stepH) * 0.76; // 76% size to make them slightly smaller and fit inside corridors
+  
+  return { startX, startY, stepW, stepH, tileSize };
+}
+
 function initDebugMouseListener() {
   const canvas = document.getElementById('game-canvas');
   if (!canvas) return;
   
+  if (debugMouseListenersInitialized) return;
+  debugMouseListenersInitialized = true;
+  
+  if (EDIT_COLLISION_MAP) {
+    const copyBtn = document.getElementById('btn-copy-map');
+    if (copyBtn) {
+      copyBtn.classList.remove('hidden');
+      copyBtn.addEventListener('click', () => {
+        let code = `const collisionMap = [\n`;
+        for (let r = 0; r < collisionMap.length; r++) {
+          code += `  "${collisionMap[r]}"${r === collisionMap.length - 1 ? '' : ','}\n`;
+        }
+        code += `];`;
+        navigator.clipboard.writeText(code).then(() => {
+          alert('Collision map copied to clipboard!');
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+      });
+    }
+  }
+
   canvas.addEventListener('mousemove', (e) => {
+    if (!EDIT_COLLISION_MAP) {
+      hoveredCell = null;
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
     
-    const c = Math.floor((mouseX - MAP_OFFSET_X) / TILE_SIZE);
-    const r = Math.floor((mouseY - MAP_OFFSET_Y) / TILE_SIZE);
+    const { startX, startY, stepW, stepH } = getGridGeometry(canvas);
     
-    if (r >= 0 && r < collisionMap.length && c >= 0 && c < collisionMap[r].length) {
+    const c = Math.floor((mouseX - startX) / stepW);
+    const r = Math.floor((mouseY - startY) / stepH);
+    
+    if (r >= 0 && r < collisionMap.length && c >= 0 && c < collisionMap[0].length) {
       hoveredCell = { r, c };
     } else {
       hoveredCell = null;
@@ -1002,56 +1032,104 @@ function initDebugMouseListener() {
   canvas.addEventListener('mouseleave', () => {
     hoveredCell = null;
   });
+
+  canvas.addEventListener('click', (e) => {
+    if (!EDIT_COLLISION_MAP) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    
+    const { startX, startY, stepW, stepH } = getGridGeometry(canvas);
+    
+    const c = Math.floor((mouseX - startX) / stepW);
+    const r = Math.floor((mouseY - startY) / stepH);
+    
+    if (r >= 0 && r < collisionMap.length && c >= 0 && c < collisionMap[0].length) {
+      const char = collisionMap[r][c];
+      let newChar = 'W';
+      if (char === 'W') newChar = 'P';
+      else if (char === 'P') newChar = 'C';
+      else if (char === 'C') newChar = 'G';
+      else if (char === 'G') newChar = 'W';
+      
+      const rowStr = collisionMap[r];
+      collisionMap[r] = rowStr.substring(0, c) + newChar + rowStr.substring(c + 1);
+      
+      // Immediate visual feedback redraw
+      drawGame();
+    }
+  });
 }
 
 function resizePlayfield() {
   const playfield = document.querySelector('.playfield');
   const canvas = document.getElementById('game-canvas');
-  if (playfield && canvas) {
-    const width = collisionMap[0].length * TILE_SIZE;
-    const height = collisionMap.length * TILE_SIZE;
-    canvas.width = width;
-    canvas.height = height;
-    playfield.style.width = `${width}px`;
-    playfield.style.height = `${height}px`;
+  const mazeElement = document.querySelector('.maze-bg');
+  
+  if (playfield && canvas && mazeElement) {
+    // Clear inline sizes to let CSS fluid units calculate the correct layout
+    playfield.style.width = '';
+    playfield.style.height = '';
     
     const hud = document.querySelector('.game-hud');
-    if (hud) hud.style.width = `${width}px`;
+    if (hud) hud.style.width = '';
+
+    // Get actual bounding box of the rendered maze image in the DOM
+    const rect = mazeElement.getBoundingClientRect();
+    
+    // Set canvas dimensions to match the image exactly
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    
+    // Adjust playfield dimensions to wrap the image
+    playfield.style.width = `${rect.width}px`;
+    playfield.style.height = `${rect.height}px`;
+    
+    if (hud) hud.style.width = `${rect.width}px`;
   }
 }
 
 function drawDebugGrid(ctx) {
+  const canvas = ctx.canvas;
+  const { startX, startY, stepW, stepH, tileSize } = getGridGeometry(canvas);
+
   for (let r = 0; r < collisionMap.length; r++) {
     for (let c = 0; c < collisionMap[r].length; c++) {
       const char = collisionMap[r][c];
-      const x = MAP_OFFSET_X + c * TILE_SIZE;
-      const y = MAP_OFFSET_Y + r * TILE_SIZE;
+      
+      const centerX = startX + c * stepW + stepW / 2;
+      const centerY = startY + r * stepH + stepH / 2;
+      const x = centerX - tileSize / 2;
+      const y = centerY - tileSize / 2;
       
       // Grid line borders
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.lineWidth = 1;
-      ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+      ctx.strokeRect(x, y, tileSize, tileSize);
       
       // Color overlays
-      if (char === 'W' || char === 'G') {
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.25)'; // Red blocked wall
+      if (char === 'W') {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; // Red blocked wall
       } else if (char === 'P') {
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.08)'; // Green walkable path
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.15)'; // Green walkable path
       } else if (char === 'C') {
-        ctx.fillStyle = 'rgba(255, 255, 0, 0.25)'; // Yellow collectible
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.4)'; // Yellow collectible
+      } else if (char === 'G') {
+        ctx.fillStyle = 'rgba(128, 0, 128, 0.4)'; // Purple ghost house
       }
-      ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+      ctx.fillRect(x, y, tileSize, tileSize);
       
       // Highlight hovered coordinate cell
       if (hoveredCell && hoveredCell.r === r && hoveredCell.c === c) {
         ctx.fillStyle = 'rgba(0, 255, 255, 0.35)';
-        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillRect(x, y, tileSize, tileSize);
         
         ctx.fillStyle = '#00ffff';
         ctx.font = 'bold 9px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`R${r}C${c}`, x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+        ctx.fillText(`R${r}C${c}`, centerX, centerY);
       }
     }
   }
@@ -1063,14 +1141,16 @@ function drawGame() {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  const { startX, startY, stepW, stepH, tileSize } = getGridGeometry(canvas);
+
   // Draw pellets
   ctx.fillStyle = '#ffb8ae';
   gamePellets.forEach(p => {
     if (p.active) {
-      const x = MAP_OFFSET_X + p.c * TILE_SIZE + TILE_SIZE / 2;
-      const y = MAP_OFFSET_Y + p.r * TILE_SIZE + TILE_SIZE / 2;
+      const centerX = startX + p.c * stepW + stepW / 2;
+      const centerY = startY + p.r * stepH + stepH / 2;
       ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
       ctx.fill();
     }
   });
@@ -1079,10 +1159,10 @@ function drawGame() {
   collectibles.forEach(c => {
     if (!c.collected) {
       ctx.fillStyle = c.color;
-      const x = MAP_OFFSET_X + c.c * TILE_SIZE + TILE_SIZE / 2;
-      const y = MAP_OFFSET_Y + c.r * TILE_SIZE + TILE_SIZE / 2;
+      const centerX = startX + c.c * stepW + stepW / 2;
+      const centerY = startY + c.r * stepH + stepH / 2;
       ctx.beginPath();
-      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, 7, 0, Math.PI * 2);
       ctx.fill();
       
       ctx.strokeStyle = '#fff';
@@ -1097,8 +1177,8 @@ function drawGame() {
   // Draw Pac-Man
   ctx.fillStyle = '#FFD43B';
   ctx.beginPath();
-  const x = MAP_OFFSET_X + pacman.c * TILE_SIZE + TILE_SIZE / 2;
-  const y = MAP_OFFSET_Y + pacman.r * TILE_SIZE + TILE_SIZE / 2;
+  const centerX = startX + pacman.c * stepW + stepW / 2;
+  const centerY = startY + pacman.r * stepH + stepH / 2;
   
   let angleOffset = 0;
   if (pacman.dir.c === 1) angleOffset = 0;
@@ -1107,14 +1187,14 @@ function drawGame() {
   else if (pacman.dir.r === -1) angleOffset = -Math.PI / 2;
 
   const mouthAngle = (0.2 * pacman.open) * Math.PI;
-  ctx.arc(x, y, TILE_SIZE * 0.45, angleOffset + mouthAngle, angleOffset + 2 * Math.PI - mouthAngle);
-  ctx.lineTo(x, y);
+  ctx.arc(centerX, centerY, tileSize * 0.45, angleOffset + mouthAngle, angleOffset + 2 * Math.PI - mouthAngle);
+  ctx.lineTo(centerX, centerY);
   ctx.fill();
 
   pacman.open += 0.2 * pacman.openDir;
   if (pacman.open >= 1 || pacman.open <= 0) pacman.openDir *= -1;
 
-  if (DEBUG_MAP) { true;
+  if (EDIT_COLLISION_MAP) {
     drawDebugGrid(ctx);
   }
 }
@@ -1274,7 +1354,7 @@ function getValidGhostMoves(ghost) {
     if (nr < 0 || nr >= ROWS) return false;
 
     const ch = collisionMap[nr][nc];
-    return ch === 'P' || ch === 'C';
+    return ch === 'P' || ch === 'C' || ch === 'G';
   });
 }
 
@@ -1288,7 +1368,7 @@ function moveGhost(ghost) {
     const nr  = ghost.r + rev.r;
     const nc  = (ghost.c + rev.c + COLS) % COLS;
     const ch  = collisionMap[nr]?.[nc];
-    if (ch === 'P' || ch === 'C') { ghost.dir = rev; ghost.r = nr; ghost.c = nc; }
+    if (ch === 'P' || ch === 'C' || ch === 'G') { ghost.dir = rev; ghost.r = nr; ghost.c = nc; }
     return;
   }
 
@@ -1334,6 +1414,7 @@ function updateGhostModePhase() {
 }
 
 function updateGhosts() {
+  if (EDIT_COLLISION_MAP) return; // Pause ghosts when editing map
   gameTick++;
 
   ghosts.forEach(g => {
@@ -1393,11 +1474,14 @@ function drawGhostEyes(ctx, x, y, r) {
 }
 
 function drawGhosts(ctx) {
-  const r = TILE_SIZE * 0.42;
+  const canvas = ctx.canvas;
+  const { startX, startY, stepW, stepH, tileSize } = getGridGeometry(canvas);
+  const r = tileSize * 0.42;
+
   ghosts.forEach(ghost => {
     if (ghost.state === 'waiting') return;
-    const x = MAP_OFFSET_X + ghost.c * TILE_SIZE + TILE_SIZE / 2;
-    const y = MAP_OFFSET_Y + ghost.r * TILE_SIZE + TILE_SIZE / 2;
+    const x = startX + ghost.c * stepW + stepW / 2;
+    const y = startY + ghost.r * stepH + stepH / 2;
     const bodyColor = ghost.state === 'frightened' ? '#0000DD' : ghost.color;
     drawGhostBody(ctx, x, y, r, bodyColor);
     drawGhostEyes(ctx, x, y, r);
@@ -1408,7 +1492,7 @@ function drawGhosts(ctx) {
 document.getElementById('btn-skip-game')?.addEventListener('click', () => {
   clearInterval(gameInterval);
   document.removeEventListener('keydown', handleInput);
-  hasDiscount = false;
+  hasDiscount = hasDiscount || false;
   renderArcadeCollection();
   showScreen('arcadeCollection');
   initArcadeCollection();
@@ -1428,6 +1512,14 @@ document.getElementById('btn-replay')?.addEventListener('click', () => {
   startGame();
 });
 
+document.getElementById('btn-replay-from-shop')?.addEventListener('click', () => {
+  arcadeCollectionActive = false;
+  document.removeEventListener('keydown', handleArcadeKeyboard);
+  resetGame();
+  showScreen('gameplay');
+  startGame();
+});
+
 document.getElementById('btn-retry-game')?.addEventListener('click', () => {
   document.getElementById('game-over-overlay').classList.add('hidden');
   resetGame();
@@ -1436,14 +1528,14 @@ document.getElementById('btn-retry-game')?.addEventListener('click', () => {
 
 document.getElementById('btn-skip-from-over')?.addEventListener('click', () => {
   document.getElementById('game-over-overlay').classList.add('hidden');
-  hasDiscount = false;
+  hasDiscount = hasDiscount || false;
   renderArcadeCollection();
   showScreen('arcadeCollection');
   initArcadeCollection();
 });
 
 function resetGame() {
-  pacman.r = 23; pacman.c = 13;
+  pacman.r = 16; pacman.c = 6;
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
   score = 0;
@@ -1457,6 +1549,8 @@ function resetGame() {
 
 // Play from Skip Screen
 document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
+  arcadeCollectionActive = false;
+  document.removeEventListener('keydown', handleArcadeKeyboard);
   resetGame();
   showScreen('gameStart');
 });
@@ -1494,6 +1588,7 @@ function renderArcadeCollection() {
     titleEl.innerText = 'UNLOCKED COLLECTION';
     subtitleEl.innerText = '// SELECT YOUR ITEM';
     document.getElementById('skip-game-prompt')?.classList.add('hidden');
+    document.getElementById('btn-replay-from-shop')?.classList.remove('hidden');
   } else {
     statusEl.innerText = '[ STANDARD STORE ]';
     statusEl.classList.remove('blink-fast');
@@ -1501,6 +1596,7 @@ function renderArcadeCollection() {
     titleEl.innerText = 'UNIQLO x PAC-MAN';
     subtitleEl.innerText = '// BROWSE COLLECTION';
     document.getElementById('skip-game-prompt')?.classList.remove('hidden');
+    document.getElementById('btn-replay-from-shop')?.classList.add('hidden');
   }
 
   productsData.forEach((p, index) => {
@@ -2285,4 +2381,31 @@ window.removeFromCart = removeFromCart;
 
 // INIT
 initCartSystemBinds();
+
+if (EDIT_COLLISION_MAP) {
+  document.getElementById('btn-copy-map')?.classList.remove('hidden');
+} else {
+  document.getElementById('btn-copy-map')?.classList.add('hidden');
+}
+
+document.getElementById('btn-copy-map')?.addEventListener('click', () => {
+  const mapStr = collisionMap.map(row => `  "${row}"`).join(",\n");
+  const formatted = `const collisionMap = [\n${mapStr}\n];`;
+  
+  navigator.clipboard.writeText(formatted).then(() => {
+    alert("Collision Map copied to clipboard!");
+  }).catch(err => {
+    console.error("Failed to copy map: ", err);
+    // fallback
+    const textarea = document.createElement("textarea");
+    textarea.value = formatted;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    alert("Collision Map copied to clipboard!");
+  });
+});
+
+window.addEventListener('resize', resizePlayfield);
 showScreen('landing');
