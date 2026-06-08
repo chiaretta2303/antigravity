@@ -880,41 +880,40 @@ document.getElementById('btn-close-popup')?.addEventListener('click', () => {
 let DEBUG_MAP = true;
 let EDIT_COLLISION_MAP = DEBUG_MAP;
 
-// 28 cols × 31 rows. Symmetric. Outer border + central ghost house (cols 12-15
-// rows 13-14, gate at row 12 cols 14-15). Two tunnel rows (12 and 14) wrap
-// horizontally via col 0 / col 27. Pac-Man spawn at (23, 13). Collectibles at
-// the 4 corners.
+// 28 cols × 31 rows. Auto-traced from the maze image (per-cell blue density,
+// L-R symmetrized, isolated pockets pruned). Central ghost house at rows 12-14
+// cols 12-15. Pac-Man spawn at (24, 14). Collectibles at the 4 corners.
 const collisionMap = [
   "WWWWWWWWWWWWWWWWWWWWWWWWWWWW", // Row 0
-  "WCPPPPPPPPPPPPPPPPPPPPPPPPCW", // Row 1
-  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 2
-  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 3
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 4
-  "WPWWPWWWWPWWPWWPWWPWWWWPWWPW", // Row 5
-  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 6
-  "WPWWPWPWWPWWPWWPWWPWWPWPWWPW", // Row 7
-  "WPPPPWPWWPPPPWWPPPPWWPWPPPPW", // Row 8
-  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW", // Row 9
-  "WWWWPPPWWPPWWWWWWPPWWPPPWWWW", // Row 10
-  "WWWWPWWWWWWWWWWWWWWWWWWPWWWW", // Row 11
-  "PPPPPWWWWWWWWGGWWWWWWWWPPPPP", // Row 12 (tunnel + ghost-house gate)
-  "WWWWPWWWWWWWGGGGWWWWWWWPWWWW", // Row 13 (ghost-house body)
-  "PPPPPWWWWWWWGGGGWWWWWWWPPPPP", // Row 14 (tunnel + ghost-house body)
-  "WWWWPWWWWWWWWWWWWWWWWWWPWWWW", // Row 15 (ghost-house floor)
-  "WWWWPPPWWPPWWWWWWPPWWPPPWWWW", // Row 16
-  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW", // Row 17
-  "WPPPPWPWWPPPPWWPPPPWWPWPPPPW", // Row 18
-  "WPWWPWPWWPWWPWWPWWPWWPWPWWPW", // Row 19
-  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 20
-  "WPWWPWWWWPWWPWWPWWPWWWWPWWPW", // Row 21
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 22
-  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 23 (Pac-Man spawn)
-  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 24
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 25
-  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW", // Row 26
-  "WCPPPPPPPPPPPPPPPPPPPPPPPPCW", // Row 27
-  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW", // Row 28
-  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 29
+  "WCPPPPPPPPPPPWWPPPPPPPPPPPCW", // Row 1
+  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 2
+  "WPWWWWWWWPWWPWWPWWPWWWWWWWPW", // Row 3
+  "WPPPPPPPWPWWPPPPWWPWPPPPPPPW", // Row 4
+  "WWWPWWWWWPWWWWWWWWPWWWWWPWWW", // Row 5
+  "WWWPWWWWWPWWWWWWWWPWWWWWPWWW", // Row 6
+  "WWWPWWWPPPWWPWWPWWPPPWWWPWWW", // Row 7
+  "WWWPWWWWWWWWPWWPWWWWWWWWPWWW", // Row 8
+  "WPPPWWWWWWWWPWWPWWWWWWWWPPPW", // Row 9
+  "WPPPWWWWWWWWPWWPWWWWWWWWPPPW", // Row 10
+  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 11
+  "WPPPPPPPPPPWGGGGWPPPPPPPPPPW", // Row 12 (ghost-house top + gate)
+  "WWWPWWWWPPWWGGGGWWPPWWWWPWWW", // Row 13 (ghost-house body)
+  "WPPPWWWWPWWWGGGGWWWPWWWWPPPW", // Row 14 (ghost-house body)
+  "WPPPPPPPPWWWWWWWWWWPPPPPPPPW", // Row 15
+  "WWWPWWWWPWWWWWWWWWWPWWWWPWWW", // Row 16
+  "WWWPWWWWPPWWWWWWWWPPWWWWPWWW", // Row 17
+  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 18
+  "WPPPWWWWWWWPPWWPPWWWWWWWPPPW", // Row 19
+  "WPPPWWWWWWWPWWWWPWWWWWWWPPPW", // Row 20
+  "WWWPWWWWWWWPPWWPPWWWWWWWPWWW", // Row 21
+  "WWWPWWWWWWWPPWWPPWWWWWWWPWWW", // Row 22
+  "WWWPWWWWWWWPPWWPPWWWWWWWPWWW", // Row 23
+  "WWPPWWWWWWWPPPPPPWWWWWWWPPWW", // Row 24 (Pac-Man spawn at c=14)
+  "WPPPWWWWWWWPPPPPPWWWWWWWPPPW", // Row 25
+  "WPWWWWWWWWWPWWWWPWWWWWWWWWPW", // Row 26
+  "WPWWWWWWWWWPPWWPPWWWWWWWWWPW", // Row 27
+  "WPWWWWWWWWWPPWWPPWWWWWWWWWPW", // Row 28
+  "WCPPPPPPPPPPPWWPPPPPPPPPPPCW", // Row 29
   "WWWWWWWWWWWWWWWWWWWWWWWWWWWW"  // Row 30
 ];
 
@@ -924,8 +923,8 @@ let gamePellets = [];
 let hoveredCell = null;
 
 const pacman =  {
-  r: 23,
-  c: 13,
+  r: 24,
+  c: 14,
   dir: { r: 0, c: 0 },
   nextDir: { r: 0, c: 0 },
   open: 0,
@@ -934,8 +933,8 @@ const pacman =  {
 const collectibles = [
   { id: 'tshirt',     r: 1,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
   { id: 'sweatshirt', r: 1,  c: 26, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
-  { id: 'cap',        r: 27, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
-  { id: 'tote',       r: 27, c: 26, color: '#96ceb4', collected: false, name: 'Bag' },
+  { id: 'cap',        r: 29, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
+  { id: 'tote',       r: 29, c: 26, color: '#96ceb4', collected: false, name: 'Bag' },
 ];
 
 let score = 0;
@@ -952,10 +951,10 @@ const GHOST_PHASE_SCHEDULE = [
   { mode: 'chase',   duration: Infinity            },
 ];
 const GHOST_SPAWN_DATA = [
-  { id: 'blinky', r: 13, c: 13, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 26 }, releaseAt: 0   },
-  { id: 'pinky',  r: 13, c: 14, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
-  { id: 'inky',   r: 14, c: 13, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 29, c: 26 }, releaseAt: 66  },
-  { id: 'clyde',  r: 14, c: 14, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 29, c: 1  }, releaseAt: 100 },
+  { id: 'blinky', r: 12, c: 13, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 26 }, releaseAt: 0   },
+  { id: 'pinky',  r: 12, c: 14, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
+  { id: 'inky',   r: 13, c: 13, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 29, c: 26 }, releaseAt: 66  },
+  { id: 'clyde',  r: 13, c: 14, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 29, c: 1  }, releaseAt: 100 },
 ];
 let ghosts        = [];
 let gameTick      = 0;
@@ -998,15 +997,23 @@ function generateMapAndPellets() {
 let debugMouseListenersInitialized = false;
 
 function getGridGeometry(canvas) {
-  // Canvas is sized in resizePlayfield() to exactly match the rendered maze
-  // image (mazeElement.getBoundingClientRect()), so tileW/tileH come straight
-  // from the image dimensions divided by grid size.
+  // The maze artwork doesn't fill the whole image: it sits inside an inset
+  // bounding box (measured at ~40px left/right and ~105px top / ~70px bottom
+  // in the 2048x2048 source). These fractions align the grid to the visible
+  // neon-blue walls instead of the empty black margin.
+  const ORIGIN_X = 0.0195;
+  const ORIGIN_Y = 0.0513;
+  const SPAN_X   = 0.9609;
+  const SPAN_Y   = 0.9150;
+
   const cols = collisionMap[0].length;
   const rows = collisionMap.length;
-  const stepW = canvas.width / cols;
-  const stepH = canvas.height / rows;
+  const startX = ORIGIN_X * canvas.width;
+  const startY = ORIGIN_Y * canvas.height;
+  const stepW  = SPAN_X * canvas.width  / cols;
+  const stepH  = SPAN_Y * canvas.height / rows;
   const tileSize = Math.min(stepW, stepH) * 0.76; // shrunk so Pac-Man fits inside corridors
-  return { startX: 0, startY: 0, stepW, stepH, tileSize };
+  return { startX, startY, stepW, stepH, tileSize };
 }
 
 function initDebugMouseListener() {
@@ -1577,7 +1584,7 @@ document.getElementById('btn-skip-from-over')?.addEventListener('click', () => {
 });
 
 function resetGame() {
-  pacman.r = 23; pacman.c = 13;
+  pacman.r = 24; pacman.c = 14;
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
   score = 0;
