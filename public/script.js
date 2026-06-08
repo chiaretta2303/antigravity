@@ -874,27 +874,48 @@ document.getElementById('btn-close-popup')?.addEventListener('click', () => {
 // =========================================
 // SCREEN 6: GAMEPLAY
 // =========================================
-let EDIT_COLLISION_MAP = true;
+// DEBUG_MAP: when true, draws the collision-grid overlay (red=W, green=P,
+// yellow=C, purple=G) and shows row/col on hover/click. EDIT_COLLISION_MAP is
+// kept as an internal alias so all existing debug code keeps working.
+let DEBUG_MAP = true;
+let EDIT_COLLISION_MAP = DEBUG_MAP;
 
+// 28 cols × 31 rows. Symmetric. Outer border + central ghost house (cols 12-15
+// rows 13-14, gate at row 12 cols 14-15). Two tunnel rows (12 and 14) wrap
+// horizontally via col 0 / col 27. Pac-Man spawn at (23, 13). Collectibles at
+// the 4 corners.
 const collisionMap = [
-  "WWWWWWWWWWWWWW", // Row 0
-  "WPPPPPWWPPPPPW", // Row 1
-  "WPWWWWWWWWWWPW", // Row 2
-  "WPPPPPPPPPPPPW", // Row 3
-  "WPWWWPWWWPWWPW", // Row 4
-  "WPPPPPPPPPPPPW", // Row 5
-  "WWWWWPWGGWPWWW", // Row 6
-  "WWWWWPWGGWPWWW", // Row 7
-  "PPPPPPWGGWPPPP", // Row 8
-  "WWWWWPWWPWWWWW", // Row 9
-  "WPPPPPPPPPPPPW", // Row 10
-  "WPWWWWWWWWWWPW", // Row 11
-  "WPPPPPPPPPPPPW", // Row 12
-  "WWWWWPWWPWWWWW", // Row 13
-  "WPPPPPPPPPPPPW", // Row 14
-  "WPWWWWWWWWWWPW", // Row 15
-  "WPPPPPPPPPPPPW", // Row 16
-  "WWWWWWWWWWWWWW"  // Row 17
+  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW", // Row 0
+  "WCPPPPPPPPPPPPPPPPPPPPPPPPCW", // Row 1
+  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 2
+  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 3
+  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 4
+  "WPWWPWWWWPWWPWWPWWPWWWWPWWPW", // Row 5
+  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 6
+  "WPWWPWPWWPWWPWWPWWPWWPWPWWPW", // Row 7
+  "WPPPPWPWWPPPPWWPPPPWWPWPPPPW", // Row 8
+  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW", // Row 9
+  "WWWWPPPWWPPWWWWWWPPWWPPPWWWW", // Row 10
+  "WWWWPWWWWWWWWWWWWWWWWWWPWWWW", // Row 11
+  "PPPPPWWWWWWWWGGWWWWWWWWPPPPP", // Row 12 (tunnel + ghost-house gate)
+  "WWWWPWWWWWWWGGGGWWWWWWWPWWWW", // Row 13 (ghost-house body)
+  "PPPPPWWWWWWWGGGGWWWWWWWPPPPP", // Row 14 (tunnel + ghost-house body)
+  "WWWWPWWWWWWWWWWWWWWWWWWPWWWW", // Row 15 (ghost-house floor)
+  "WWWWPPPWWPPWWWWWWPPWWPPPWWWW", // Row 16
+  "WWWWPWPWWPWWWWWWWWPWWPWPWWWW", // Row 17
+  "WPPPPWPWWPPPPWWPPPPWWPWPPPPW", // Row 18
+  "WPWWPWPWWPWWPWWPWWPWWPWPWWPW", // Row 19
+  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 20
+  "WPWWPWWWWPWWPWWPWWPWWWWPWWPW", // Row 21
+  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 22
+  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 23 (Pac-Man spawn)
+  "WPWWWWPWWWWWWPPWWWWWWPWWWWPW", // Row 24
+  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 25
+  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW", // Row 26
+  "WCPPPPPPPPPPPPPPPPPPPPPPPPCW", // Row 27
+  "WPWWWWPWWWWWPWWPWWWWWPWWWWPW", // Row 28
+  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 29
+  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW"  // Row 30
 ];
 
 let gameInterval;
@@ -903,8 +924,8 @@ let gamePellets = [];
 let hoveredCell = null;
 
 const pacman =  {
-  r: 16,
-  c: 6,
+  r: 23,
+  c: 13,
   dir: { r: 0, c: 0 },
   nextDir: { r: 0, c: 0 },
   open: 0,
@@ -912,9 +933,9 @@ const pacman =  {
 };
 const collectibles = [
   { id: 'tshirt',     r: 1,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
-  { id: 'sweatshirt', r: 1,  c: 12, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
-  { id: 'cap',        r: 16, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
-  { id: 'tote',       r: 16, c: 12, color: '#96ceb4', collected: false, name: 'Bag' },
+  { id: 'sweatshirt', r: 1,  c: 26, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
+  { id: 'cap',        r: 27, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
+  { id: 'tote',       r: 27, c: 26, color: '#96ceb4', collected: false, name: 'Bag' },
 ];
 
 let score = 0;
@@ -931,10 +952,10 @@ const GHOST_PHASE_SCHEDULE = [
   { mode: 'chase',   duration: Infinity            },
 ];
 const GHOST_SPAWN_DATA = [
-  { id: 'blinky', r: 5,  c: 6, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 12 }, releaseAt: 0   },
-  { id: 'pinky',  r: 7,  c: 6, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
-  { id: 'inky',   r: 7,  c: 7, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 16, c: 12 }, releaseAt: 66  },
-  { id: 'clyde',  r: 8,  c: 6, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 16, c: 1  }, releaseAt: 100 },
+  { id: 'blinky', r: 13, c: 13, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 26 }, releaseAt: 0   },
+  { id: 'pinky',  r: 13, c: 14, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
+  { id: 'inky',   r: 14, c: 13, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 29, c: 26 }, releaseAt: 66  },
+  { id: 'clyde',  r: 14, c: 14, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 29, c: 1  }, releaseAt: 100 },
 ];
 let ghosts        = [];
 let gameTick      = 0;
@@ -977,19 +998,15 @@ function generateMapAndPellets() {
 let debugMouseListenersInitialized = false;
 
 function getGridGeometry(canvas) {
-  const startX = 0.0054 * canvas.width;
-  const startY = 0.0039 * canvas.height;
-  const mapW = 0.9901 * canvas.width;
-  const mapH = 0.9872 * canvas.height;
-  
+  // Canvas is sized in resizePlayfield() to exactly match the rendered maze
+  // image (mazeElement.getBoundingClientRect()), so tileW/tileH come straight
+  // from the image dimensions divided by grid size.
   const cols = collisionMap[0].length;
   const rows = collisionMap.length;
-  
-  const stepW = mapW / cols;
-  const stepH = mapH / rows;
-  const tileSize = Math.min(stepW, stepH) * 0.76; // 76% size to make them slightly smaller and fit inside corridors
-  
-  return { startX, startY, stepW, stepH, tileSize };
+  const stepW = canvas.width / cols;
+  const stepH = canvas.height / rows;
+  const tileSize = Math.min(stepW, stepH) * 0.76; // shrunk so Pac-Man fits inside corridors
+  return { startX: 0, startY: 0, stepW, stepH, tileSize };
 }
 
 function initDebugMouseListener() {
@@ -1560,7 +1577,7 @@ document.getElementById('btn-skip-from-over')?.addEventListener('click', () => {
 });
 
 function resetGame() {
-  pacman.r = 16; pacman.c = 6;
+  pacman.r = 23; pacman.c = 13;
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
   score = 0;
