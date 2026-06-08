@@ -982,14 +982,14 @@ function generateMapAndPellets() {
 let debugMouseListenersInitialized = false;
 
 function getGridGeometry(canvas) {
-  // The maze artwork doesn't fill the whole image: it sits inside an inset
-  // bounding box (measured at ~40px left/right and ~105px top / ~70px bottom
-  // in the 2048x2048 source). These fractions align the grid to the visible
-  // neon-blue walls instead of the empty black margin.
-  const ORIGIN_X = 0.0195;
-  const ORIGIN_Y = 0.0513;
-  const SPAN_X   = 0.9609;
-  const SPAN_Y   = 0.9150;
+  // The maze artwork is centered-left in the source PNG (4961x3508), with a
+  // big black margin on the right. These fractions match the bounding box of
+  // the visible neon-blue walls so the grid aligns to the artwork and not to
+  // the empty black canvas area.
+  const ORIGIN_X = 0.1131;
+  const ORIGIN_Y = 0.0182;
+  const SPAN_X   = 0.7674;
+  const SPAN_Y   = 0.9689;
 
   const cols = collisionMap[0].length;
   const rows = collisionMap.length;
