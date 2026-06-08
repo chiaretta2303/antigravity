@@ -213,7 +213,7 @@ function initThreeJSCabinet() {
   cabinetScene.add(fillLight);
   
   const loader = new THREE.GLTFLoader();
-  loader.load('/assets/cabinet.glb', (gltf) => {
+  loader.load('/assets/pacman-cabinet.glb', (gltf) => {
     const rawModel = gltf.scene;
     
     // Auto-center the model natively
@@ -404,19 +404,25 @@ function animateCabinet() {
     cabinetCamera.position.z = currentCameraZ;
     cabinetCamera.lookAt(0, currentCameraY, 0);
 
-  // ── NEW STATES ───────────────────────────────────────────────
+  // ─── NEW STATES ───────────────────────────────────────────
   } else if (cabinetState === 'dropping') {
     if (!cabinetModel) { cabinetRenderer.render(cabinetScene, cabinetCamera); return; }
-    cabinetDropProgress += 1 / (60 * 2.2); // 2.2 s drop
+    
+    // Smooth time-delta based falling animation (runs beautifully regardless of refresh rate/FPS)
+    if (!window.droppingStartTime) window.droppingStartTime = performance.now();
+    const elapsed = (performance.now() - window.droppingStartTime) / 1000;
+    cabinetDropProgress = elapsed / 1.1; // 1.1s total drop duration
+    
     if (cabinetDropProgress >= 1) {
       cabinetDropProgress = 1;
-      // Transition to settling sway phase
+      // Transition to settling wobble phase
       cabinetState = 'settling';
-      settlingTime = 0;
-      createDustBurst(); // Trigger subtle dust cloud / burst on landing!
+      window.droppingStartTime = null; // Clear drop timer
+      window.settlingStartTime = performance.now(); // Start settling timer
+      createDustBurst(); // Trigger extremely subtle ground reaction
     }
-    // Bounce-out easing: overshoots slightly then settles
-    const dropEase = bounceOut(Math.min(cabinetDropProgress, 1));
+    // Believable gravity fall (quadratic curve, no cartoony bounce)
+    const dropEase = Math.pow(Math.min(cabinetDropProgress, 1), 2);
     cabinetModel.position.y = THREE.MathUtils.lerp(cabinetDropStartY, 0, dropEase);
     cabinetModel.position.x = cabinetMaxDim * 0.35; // Stay on the right side
     cabinetModel.rotation.y = -0.25; // Stay angled
@@ -432,17 +438,18 @@ function animateCabinet() {
     cabinetCamera.lookAt(0, 0, 0);
 
   } else if (cabinetState === 'settling') {
-    // Damped oscillation — left/right sway as cabinet stabilises on its surface
-    settlingTime += 1 / 60;
+    // Damped wobble: heavy cabinet stabilizing after impact (Shopify TV motion reference)
+    if (!window.settlingStartTime) window.settlingStartTime = performance.now();
+    const settlingTime = (performance.now() - window.settlingStartTime) / 1000;
     
     // Maintain X position and basic Y rotation
     cabinetModel.position.x = cabinetMaxDim * 0.35;
     cabinetModel.rotation.y = -0.25;
     
-    // Z-axis rotation: main left-right lean  (amplitude 0.052 rad ≈ 3°)
-    const sway = 0.052 * Math.exp(-2.6 * settlingTime) * Math.sin(7.5 * settlingTime);
+    // Z-axis rotation: slight left-right wobble, stabilizing quickly (stiff frequency, high damping)
+    const sway = 0.045 * Math.exp(-4.5 * settlingTime) * Math.sin(14 * settlingTime);
     // X-axis rotation: very subtle forward-back rock
-    const rock = 0.016 * Math.exp(-3.2 * settlingTime) * Math.sin(6.8 * settlingTime);
+    const rock = 0.015 * Math.exp(-5.0 * settlingTime) * Math.sin(12 * settlingTime);
     
     cabinetModel.rotation.z = sway;
     cabinetModel.rotation.x = rock;
@@ -451,11 +458,12 @@ function animateCabinet() {
     updateDustParticles();
     
     cabinetCamera.lookAt(0, 0, 0);
-    // When oscillation becomes imperceptible (≈1.7 s), switch to scroll mode
-    if (settlingTime > 1.7) {
+    // Switch to scroll mode once stabilized (≈ 1.0 second)
+    if (settlingTime > 1.0) {
       cabinetModel.rotation.z = 0;
       cabinetModel.rotation.x = 0;
       cabinetState = 'scroll_idle';
+      window.settlingStartTime = null; // Clear settling timer
       setupScrollListener();
     }
 
@@ -475,7 +483,7 @@ function animateCabinet() {
     
     const cameraX = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.35, easeX);
     const cameraY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, easeY);
-    const cameraZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.42, easeZ);
+    const cameraZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.28, easeZ); // Zooms close to screen for frontal close-up
     
     cabinetCamera.position.set(cameraX, cameraY, cameraZ);
     
@@ -700,6 +708,8 @@ function onPressStartClick() {
       cabinetState = 'dropping';
       cabinetDropProgress = 0;
       enterTriggered = false;
+      window.droppingStartTime = null; // Reset time-delta drop timer
+      window.settlingStartTime = null; // Reset time-delta settling timer
       initThreeJSCabinet();
       animateCabinet();
     }, 450);
@@ -718,8 +728,9 @@ function createDustBurst() {
   });
   dustParticles = [];
   
-  const particleCount = 35;
-  const geom = new THREE.SphereGeometry(cabinetMaxDim * 0.012, 5, 5);
+  // Extremely subtle ground reaction (few and small particles)
+  const particleCount = 6;
+  const geom = new THREE.SphereGeometry(cabinetMaxDim * 0.006, 5, 5);
   
   const baseX = cabinetModel.position.x;
   const baseY = -cabinetMaxDim * 0.45; // Bottom base footprint level
@@ -729,7 +740,7 @@ function createDustBurst() {
     const mat = new THREE.MeshBasicMaterial({
       color: 0xcccccc,
       transparent: true,
-      opacity: 0.35 + Math.random() * 0.15,
+      opacity: 0.1 + Math.random() * 0.05,
       depthWrite: false
     });
     
@@ -737,26 +748,26 @@ function createDustBurst() {
     
     // Spread in a circular base ring
     const angle = Math.random() * Math.PI * 2;
-    const distance = cabinetMaxDim * (0.08 + Math.random() * 0.28);
+    const distance = cabinetMaxDim * (0.05 + Math.random() * 0.15);
     
     mesh.position.set(
       baseX + Math.cos(angle) * distance,
-      baseY + (Math.random() * 0.04 - 0.02),
+      baseY + (Math.random() * 0.02 - 0.01),
       baseZ + Math.sin(angle) * distance
     );
     
     cabinetScene.add(mesh);
     
     // Radial outwards movement + gentle upward lift
-    const speed = (0.2 + Math.random() * 0.35) * 0.024;
+    const speed = (0.1 + Math.random() * 0.2) * 0.015;
     dustParticles.push({
       mesh: mesh,
       vx: Math.cos(angle) * speed,
-      vy: (0.1 + Math.random() * 0.25) * 0.026, // rises slightly
+      vy: (0.05 + Math.random() * 0.1) * 0.015, // rises very slightly
       vz: Math.sin(angle) * speed,
       alpha: mat.opacity,
-      decay: 0.011 + Math.random() * 0.007,
-      growth: 1.018 + Math.random() * 0.012
+      decay: 0.035 + Math.random() * 0.02, // fades quickly
+      growth: 1.005 + Math.random() * 0.005
     });
   }
 }
@@ -842,9 +853,8 @@ function enterCabinetScreen() {
     if (crt) crt.classList.add('active');
     container.style.transition = 'none';
     container.style.opacity = '1';
-  }, 620);
+  }, 2200); // Holds black for 1.5 - 3 seconds (2.2 seconds total delay)
 }
-
 // =========================================
 // SCREEN 5: GAME START
 // =========================================
@@ -904,7 +914,7 @@ const collectibles = [
   { id: 'tshirt',     r: 1,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
   { id: 'sweatshirt', r: 1,  c: 12, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
   { id: 'cap',        r: 16, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
-  { id: 'bag',        r: 16, c: 12, color: '#96ceb4', collected: false, name: 'Bag' },
+  { id: 'tote',       r: 16, c: 12, color: '#96ceb4', collected: false, name: 'Bag' },
 ];
 
 let score = 0;
@@ -1487,6 +1497,21 @@ function drawGhosts(ctx) {
     drawGhostEyes(ctx, x, y, r);
   });
 }
+
+// Back to start menu
+document.getElementById('btn-back-to-menu')?.addEventListener('click', () => {
+  clearInterval(gameInterval);
+  document.removeEventListener('keydown', handleInput);
+  showScreen('gameStart');
+  // Ensure the menu content is visible and other startup phases are hidden
+  document.getElementById('startup-self-test')?.classList.add('hidden');
+  document.getElementById('startup-attract')?.classList.add('hidden');
+  const menuContent = document.getElementById('start-menu-content');
+  if (menuContent) {
+    menuContent.classList.remove('hidden');
+    menuContent.style.opacity = '1';
+  }
+});
 
 // Skip game
 document.getElementById('btn-skip-game')?.addEventListener('click', () => {

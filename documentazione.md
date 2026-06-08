@@ -87,7 +87,7 @@ Il design dell'applicazione sfrutta diversi bias cognitivi teorici indicati nel 
 ---
 
 ## 6. Specifiche Tecniche per lo Sviluppo (Developer Handoff Guide)
-Per facilitare il proseguimento dello sviluppo da parte di altri agenti/sviluppatori (incluso Claude), di seguito sono elencati i dettagli implementativi interni del codice:
+Per facilitare il proseguimento dello sviluppo da parte di altri agenti/sviluppatori (inclusi assistenti AI), di seguito sono elencati i dettagli implementativi interni del codice:
 
 ### A. Gestione dello Stato Globale (`script.js`)
 Lo stato dell'applicazione è guidato da variabili globali:
@@ -145,7 +145,7 @@ Poiché l'applicazione carica risorse esterne (modelli 3D `.glb` e immagini dell
 ---
 
 ## 8. Sviluppi Futuri ed Estensioni Consigliate
-Se si passa il codice a Claude per proseguire lo sviluppo, ecco i moduli prioritari da implementare per completare il prototipo:
+Se si passa il codice a un altro sviluppatore o assistente AI per proseguire lo sviluppo, ecco i moduli prioritari da implementare per completare il prototipo:
 1. **Implementazione dei Fantasmi Attivi**: Attualmente la lista dei fantasmi viene mostrata solo nella schermata di presentazione. Manca la logica di intelligenza artificiale per far inseguire Pac-Man dai fantasmi nel labirinto, con relativi stati di "Frightened" (quando Pac-Man mangia un pellet grande) e game over.
 2. **Integrazione Effetti Sonori Retro (Web Audio API)**: Aggiungere il classico suono del movimento "waka waka", il jingle di inizio partita e gli effetti acustici di inserimento gettone e sblocco dei prodotti.
 3. **Ottimizzazione Mobile / Controlli Touch**: Attualmente il movimento è vincolato alle frecce della tastiera e l'avvicinamento al cabinato richiede la rotella del mouse. Sarebbe opportuno mappare gesture di swipe su schermi touch o mostrare un joystick virtuale a schermo.

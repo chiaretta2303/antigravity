@@ -773,6 +773,34 @@ body, html {
 /* =========================================
    SCREEN 6: GAMEPLAY
 ========================================= */
+.arcade-back-arrow {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  background: transparent;
+  color: var(--text-white);
+  border: 2px solid var(--crt-gray);
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 100;
+}
+
+.arcade-back-arrow:hover {
+  border-color: var(--uniqlo-red);
+  color: var(--uniqlo-red);
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(230, 0, 18, 0.5);
+}
+
 .game-container {
   display: flex;
   flex-direction: row;
