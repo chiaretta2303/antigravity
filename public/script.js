@@ -880,42 +880,26 @@ document.getElementById('btn-close-popup')?.addEventListener('click', () => {
 let DEBUG_MAP = true;
 let EDIT_COLLISION_MAP = DEBUG_MAP;
 
-// 28 cols × 31 rows. Auto-traced from the maze image with a high blue-density
-// threshold (0.28) so only the thin neon-blue outlines become walls — chamber
-// interiors stay walkable. L-R symmetric, central ghost house at rows 12-14
-// cols 12-15 (gate at row 12 cols 13-14). Pac-Man spawn at (24, 14).
+// 15 cols × 14 rows — the maze image's natural grid (per the comb-fit of the
+// neon walls). At this resolution each corridor is exactly 1 tile wide.
+// Auto-traced by blue density (threshold 0.25): only the thin neon outlines
+// become W, chamber interiors stay P. L-R symmetric. Ghost house at rows 6-7
+// cols 6-8, gate at row 5 col 7. Pac-Man spawn at (11, 7).
 const collisionMap = [
-  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW", // Row 0
-  "WCPPPPPPPPPPPPPPPPPPPPPPPPCW", // Row 1
-  "WPWWWWWWWPWWPWWPWWPWWWWWWWPW", // Row 2
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 3
-  "WWWPWWWWWPPPWWWWPPPWWWWWPWWW", // Row 4
-  "WWWPPWWWWPPPWPPWPPPWWWWPPWWW", // Row 5
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 6
-  "WWWPPPWPPPWPPPPPPWPPPWPPPWWW", // Row 7
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 8
-  "WPPPPPPPPPPWPWWPWPPPPPPPPPPW", // Row 9
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 10
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 11
-  "WWWPPPPWWWWWGGGGWWWWWPPPPWWW", // Row 12 (ghost-house top + gate)
-  "WPPPWWWWWWWWGGGGWWWWWWWWPPPW", // Row 13 (ghost-house body)
-  "WPPPPPPPPWWWGGGGWWWPPPPPPPPW", // Row 14 (ghost-house body)
-  "WWPPPWWWPWWWWWWWWWWPWWWPPPWW", // Row 15
-  "WWWPWWWWWWWWWWWWWWWWWWWWPWWW", // Row 16
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 17
-  "WPPPWWWWWWWPPWWPPWWWWWWWPPPW", // Row 18
-  "WPPPPPPPPPPPWWWWPPPPPPPPPPPW", // Row 19
-  "WWWPPPPWWWPPPPPPPPWWWPPPPWWW", // Row 20
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 21
-  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 22
-  "WWPPPPPPPPPPPPPPPPPPPPPPPPWW", // Row 23
-  "WPPPPPPPPPPPPPPPPPPPPPPPPPPW", // Row 24 (Pac-Man spawn at c=14)
-  "WPPPPPWPPPPPWWWWPPPPPWPPPPPW", // Row 25
-  "WPPPPPPPPPPPPWWPPPPPPPPPPPPW", // Row 26
-  "WPWWWWWWWWWPPPPPPWWWWWWWWWPW", // Row 27
-  "WCPPPPPPPPPPPPPPPPPPPPPPPPCW", // Row 28
-  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW", // Row 29
-  "WWWWWWWWWWWWWWWWWWWWWWWWWWWW"  // Row 30
+  "WWWWWWWWWWWWWWW", // Row 0
+  "WCPPPPPPPPPPPCW", // Row 1
+  "WWPWWPPPPPWWPWW", // Row 2
+  "WWPPPPPPPPPPPWW", // Row 3
+  "WPPPPPPPPPPPPPW", // Row 4
+  "WPPPPWWPWWPPPPW", // Row 5
+  "WPPPPWGGGWPPPPW", // Row 6 (ghost house top)
+  "WPWWPWGGGWPWWPW", // Row 7 (ghost house body)
+  "WPPPPPPWPPPPPPW", // Row 8
+  "WPPPPPPPPPPPPPW", // Row 9
+  "WPPPPPPPPPPPPPW", // Row 10
+  "WPPPPPPPPPPPPPW", // Row 11 (Pac-Man spawn at c=7)
+  "WCPPPPPPPPPPPCW", // Row 12
+  "WWWWWWWWWWWWWWW"  // Row 13
 ];
 
 let gameInterval;
@@ -924,8 +908,8 @@ let gamePellets = [];
 let hoveredCell = null;
 
 const pacman =  {
-  r: 24,
-  c: 14,
+  r: 11,
+  c: 7,
   dir: { r: 0, c: 0 },
   nextDir: { r: 0, c: 0 },
   open: 0,
@@ -933,9 +917,9 @@ const pacman =  {
 };
 const collectibles = [
   { id: 'tshirt',     r: 1,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
-  { id: 'sweatshirt', r: 1,  c: 26, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
-  { id: 'cap',        r: 28, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
-  { id: 'tote',       r: 28, c: 26, color: '#96ceb4', collected: false, name: 'Bag' },
+  { id: 'sweatshirt', r: 1,  c: 13, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
+  { id: 'cap',        r: 12, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
+  { id: 'tote',       r: 12, c: 13, color: '#96ceb4', collected: false, name: 'Bag' },
 ];
 
 let score = 0;
@@ -952,10 +936,10 @@ const GHOST_PHASE_SCHEDULE = [
   { mode: 'chase',   duration: Infinity            },
 ];
 const GHOST_SPAWN_DATA = [
-  { id: 'blinky', r: 12, c: 13, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 26 }, releaseAt: 0   },
-  { id: 'pinky',  r: 12, c: 14, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
-  { id: 'inky',   r: 13, c: 13, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 28, c: 26 }, releaseAt: 66  },
-  { id: 'clyde',  r: 13, c: 14, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 28, c: 1  }, releaseAt: 100 },
+  { id: 'blinky', r: 6, c: 6, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 13 }, releaseAt: 0   },
+  { id: 'pinky',  r: 6, c: 8, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
+  { id: 'inky',   r: 7, c: 6, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 12, c: 13 }, releaseAt: 66  },
+  { id: 'clyde',  r: 7, c: 8, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 12, c: 1  }, releaseAt: 100 },
 ];
 let ghosts        = [];
 let gameTick      = 0;
@@ -1585,7 +1569,7 @@ document.getElementById('btn-skip-from-over')?.addEventListener('click', () => {
 });
 
 function resetGame() {
-  pacman.r = 24; pacman.c = 14;
+  pacman.r = 11; pacman.c = 7;
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
   score = 0;
