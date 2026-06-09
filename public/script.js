@@ -880,25 +880,25 @@ document.getElementById('btn-close-popup')?.addEventListener('click', () => {
 let DEBUG_MAP = true;
 let EDIT_COLLISION_MAP = DEBUG_MAP;
 
-// 15 cols × 14 rows — the maze image's natural grid (per the comb-fit of the
-// neon walls). At this resolution each corridor is exactly 1 tile wide.
-// Auto-traced by blue density (threshold 0.25): only the thin neon outlines
-// become W, chamber interiors stay P. L-R symmetric. Ghost house at rows 6-7
-// cols 6-8, gate at row 5 col 7. Pac-Man spawn at (11, 7).
+// 15 cols × 14 rows. Re-traced for the latest 4961x3508 maze image (the
+// artwork now fills nearly the whole PNG instead of being inset on the
+// right). Threshold 0.20 keeps walls 1 tile thick, chamber interiors stay
+// walkable. L-R symmetric. Ghost house at rows 6-7 cols 6-8 with the gate
+// cell at (5, 7). Pac-Man spawn at (11, 7).
 const collisionMap = [
   "WWWWWWWWWWWWWWW", // Row 0
   "WCPPPPPPPPPPPCW", // Row 1
-  "WWPWWPPPPPWWPWW", // Row 2
-  "WWPPPPPPPPPPPWW", // Row 3
-  "WPPPPPPPPPPPPPW", // Row 4
-  "WPPPPWWPWWPPPPW", // Row 5
+  "WPWWPPPPPPPWWPW", // Row 2
+  "WPPPPPPWPPPPPPW", // Row 3
+  "WPPPPPPWPPPPPPW", // Row 4
+  "WPPPPPPPPPPPPPW", // Row 5
   "WPPPPWGGGWPPPPW", // Row 6 (ghost house top)
-  "WPWWPWGGGWPWWPW", // Row 7 (ghost house body)
-  "WPPPPPPWPPPPPPW", // Row 8
-  "WPPPPPPPPPPPPPW", // Row 9
-  "WPPPPPPPPPPPPPW", // Row 10
+  "WPPPPWGGGWPPPPW", // Row 7 (ghost house body)
+  "WPPPPPPPPPPPPPW", // Row 8
+  "WPPPPWPWPWPPPPW", // Row 9
+  "WPPPPPPWPPPPPPW", // Row 10
   "WPPPPPPPPPPPPPW", // Row 11 (Pac-Man spawn at c=7)
-  "WCPPPPPPPPPPPCW", // Row 12
+  "WCPPPPPWPPPPPCW", // Row 12
   "WWWWWWWWWWWWWWW"  // Row 13
 ];
 
@@ -982,14 +982,13 @@ function generateMapAndPellets() {
 let debugMouseListenersInitialized = false;
 
 function getGridGeometry(canvas) {
-  // The maze artwork is centered-left in the source PNG (4961x3508), with a
-  // big black margin on the right. These fractions match the bounding box of
-  // the visible neon-blue walls so the grid aligns to the artwork and not to
-  // the empty black canvas area.
-  const ORIGIN_X = 0.1131;
-  const ORIGIN_Y = 0.0182;
-  const SPAN_X   = 0.7674;
-  const SPAN_Y   = 0.9689;
+  // Bounding box of the visible neon-blue walls in the latest 4961x3508 PNG.
+  // The artwork is now mostly centered with small symmetric margins; these
+  // fractions align the grid to the walls rather than the black image edges.
+  const ORIGIN_X = 0.0935;
+  const ORIGIN_Y = 0.0291;
+  const SPAN_X   = 0.8127;
+  const SPAN_Y   = 0.9381;
 
   const cols = collisionMap[0].length;
   const rows = collisionMap.length;
