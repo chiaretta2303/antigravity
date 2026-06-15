@@ -877,7 +877,7 @@ document.getElementById('btn-close-popup')?.addEventListener('click', () => {
 // DEBUG_MAP: when true, draws the collision-grid overlay (red=W, green=P,
 // yellow=C, purple=G) and shows row/col on hover/click. EDIT_COLLISION_MAP is
 // kept as an internal alias so all existing debug code keeps working.
-let DEBUG_MAP = true;
+let DEBUG_MAP = false;
 let EDIT_COLLISION_MAP = DEBUG_MAP;
 
 // 15 cols × 14 rows. Re-traced for the latest 4961x3508 maze image (the
@@ -918,12 +918,19 @@ const pacman =  {
   open: 0,
   openDir: 1
 };
+// Collectibles sit on the 'C' power-pellet tiles of the new map.
+// Eating them unlocks the UNIQLO item AND triggers frightened mode.
 const collectibles = [
   { id: 'tshirt',     r: 1,  c: 1,  color: '#ff6b6b', collected: false, name: 'T-Shirt' },
   { id: 'sweatshirt', r: 1,  c: 13, color: '#4ecdc4', collected: false, name: 'Sweatshirt' },
-  { id: 'cap',        r: 12, c: 1,  color: '#45b7d1', collected: false, name: 'Cap' },
-  { id: 'tote',       r: 12, c: 13, color: '#96ceb4', collected: false, name: 'Bag' },
+  { id: 'cap',        r: 13, c: 0,  color: '#45b7d1', collected: false, name: 'Cap' },
+  { id: 'tote',       r: 13, c: 14, color: '#96ceb4', collected: false, name: 'Bag' },
 ];
+
+// Power-pellet / frightened-mode state
+let frightenedTimer = 0;         // ticks remaining while ghosts are frightened
+const FRIGHTENED_TICKS = Math.round(7000 / 150); // ~7 seconds at 150 ms/tick
+let powerPelletPulse = 0;        // animation counter for the pulsing big dot
 
 let score = 0;
 
@@ -951,30 +958,32 @@ let ghostModePhase = 0;
 let globalGhostMode = 'scatter';
 
 // Setup Map & Pellet Spawning based on collisionMap array
+// 'P' tiles get normal pellets; 'C' tiles get power pellets (energizers).
 function generateMapAndPellets() {
   map = [];
   gamePellets = [];
-  
+
   for (let r = 0; r < collisionMap.length; r++) {
     const row = [];
     for (let c = 0; c < collisionMap[r].length; c++) {
       const char = collisionMap[r][c];
-      let val = 0; // Blocked wall by default
-      
+      let val = 0;
+
       if (char === 'P' || char === 'C') {
         val = 1; // Walkable path
       } else if (char === 'G') {
         val = 4; // Ghost house / gate
       }
-      
+
       row.push(val);
-      
+
       if (char === 'P') {
-        // Spawn pellets on all walkable path tiles except Pac-Man start tile
-        const isStart = (r === 16 && c === 6);
-        if (!isStart) {
-          gamePellets.push({ r, c, active: true });
-        }
+        // Normal pellet — skip Pac-Man spawn tile
+        const isSpawn = (r === pacman.r && c === pacman.c);
+        if (!isSpawn) gamePellets.push({ r, c, power: false, active: true });
+      } else if (char === 'C') {
+        // Power pellet (energizer) — always spawned
+        gamePellets.push({ r, c, power: true, active: true });
       }
     }
     map.push(row);
@@ -1164,33 +1173,36 @@ function drawGame() {
 
   const { startX, startY, stepW, stepH, tileSize } = getGridGeometry(canvas);
 
-  // Draw pellets
+  // Draw normal pellets
   ctx.fillStyle = '#ffb8ae';
   gamePellets.forEach(p => {
-    if (p.active) {
-      const centerX = startX + p.c * stepW + stepW / 2;
-      const centerY = startY + p.r * stepH + stepH / 2;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    if (!p.active || p.power) return;
+    const centerX = startX + p.c * stepW + stepW / 2;
+    const centerY = startY + p.r * stepH + stepH / 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+    ctx.fill();
   });
 
-  // Draw collectibles
-  collectibles.forEach(c => {
-    if (!c.collected) {
-      ctx.fillStyle = c.color;
-      const centerX = startX + c.c * stepW + stepW / 2;
-      const centerY = startY + c.r * stepH + stepH / 2;
+  // Draw power pellets (energizers) — pulsating big white dot
+  powerPelletPulse += 0.15;
+  const pelletVis = Math.sin(powerPelletPulse) > 0; // blink every ~0.5 s
+  if (pelletVis) {
+    gamePellets.forEach(p => {
+      if (!p.active || !p.power) return;
+      const centerX = startX + p.c * stepW + stepW / 2;
+      const centerY = startY + p.r * stepH + stepH / 2;
+      const pulseR = 7 + Math.sin(powerPelletPulse) * 2;
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(centerX, centerY, 7, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, pulseR, 0, Math.PI * 2);
       ctx.fill();
-      
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.5;
+      // Glow ring
+      ctx.strokeStyle = 'rgba(255,220,100,0.6)';
+      ctx.lineWidth = 2;
       ctx.stroke();
-    }
-  });
+    });
+  }
 
   // Draw Ghosts (behind Pac-Man)
   drawGhosts(ctx);
@@ -1262,16 +1274,29 @@ function updateGame() {
     }
   }
 
-  // 3. Collect pellets
+  // 3. Collect pellets (normal + power)
   const pellet = gamePellets.find(p => p.active && p.r === pacman.r && p.c === pacman.c);
   if (pellet) {
     pellet.active = false;
-    score += 10;
+    if (pellet.power) {
+      // Power pellet eaten → frighten all active ghosts
+      score += 50;
+      frightenedTimer = FRIGHTENED_TICKS;
+      ghosts.forEach(g => {
+        if (g.state !== 'waiting') {
+          g.state = 'frightened';
+          // Reverse direction on frighten (original arcade behaviour)
+          g.dir = { r: -g.dir.r, c: -g.dir.c };
+        }
+      });
+    } else {
+      score += 10;
+    }
     const scoreVal = document.getElementById('score-val');
     if (scoreVal) scoreVal.innerText = score;
   }
 
-  // 4. Collect products
+  // 4. Collect products (UNIQLO items — also sit on power-pellet tiles)
   collectibles.forEach(c => {
     if (!c.collected && c.r === pacman.r && c.c === pacman.c) {
       c.collected = true;
@@ -1452,8 +1477,18 @@ function updateGhostModePhase() {
 }
 
 function updateGhosts() {
-  if (EDIT_COLLISION_MAP) return; // Pause ghosts when editing map
   gameTick++;
+
+  // Count down frightened timer
+  if (frightenedTimer > 0) {
+    frightenedTimer--;
+    if (frightenedTimer === 0) {
+      // Frightened time expired → restore scatter/chase state
+      ghosts.forEach(g => {
+        if (g.state === 'frightened') g.state = globalGhostMode;
+      });
+    }
+  }
 
   ghosts.forEach(g => {
     if (g.state === 'waiting' && gameTick >= g.releaseAt) g.state = globalGhostMode;
@@ -1468,8 +1503,26 @@ function checkGhostCollision() {
   for (const ghost of ghosts) {
     if (ghost.state === 'waiting') continue;
     if (ghost.r === pacman.r && ghost.c === pacman.c) {
-      triggerGameOver();
-      return;
+      if (ghost.state === 'frightened') {
+        // Pac-Man eats the frightened ghost → send it back to house
+        score += 200;
+        const scoreVal = document.getElementById('score-val');
+        if (scoreVal) scoreVal.innerText = score;
+        ghost.r = GHOST_SPAWN_DATA.find(d => d.id === ghost.id).r;
+        ghost.c = GHOST_SPAWN_DATA.find(d => d.id === ghost.id).c;
+        ghost.dir = GHOST_SPAWN_DATA.find(d => d.id === ghost.id).dir;
+        ghost.state = 'waiting';
+        // Re-release quickly so the game keeps moving
+        ghost._reentry = gameTick + 20;
+      } else {
+        triggerGameOver();
+        return;
+      }
+    }
+    // Handle re-entry after being eaten
+    if (ghost.state === 'waiting' && ghost._reentry && gameTick >= ghost._reentry) {
+      ghost.state = globalGhostMode;
+      ghost._reentry = null;
     }
   }
 }
@@ -1516,13 +1569,29 @@ function drawGhosts(ctx) {
   const { startX, startY, stepW, stepH, tileSize } = getGridGeometry(canvas);
   const r = tileSize * 0.42;
 
+  // Flash threshold: last 2 seconds (original arcade warning)
+  const FLASH_TICKS = Math.round(2000 / 150);
+
   ghosts.forEach(ghost => {
     if (ghost.state === 'waiting') return;
     const x = startX + ghost.c * stepW + stepW / 2;
     const y = startY + ghost.r * stepH + stepH / 2;
-    const bodyColor = ghost.state === 'frightened' ? '#0000DD' : ghost.color;
+
+    let bodyColor = ghost.color;
+    let showEyes = true;
+
+    if (ghost.state === 'frightened') {
+      showEyes = false;
+      if (frightenedTimer <= FLASH_TICKS) {
+        // Flash between blue and white — uses gameTick so it's frame-rate synced
+        bodyColor = (gameTick % 4 < 2) ? '#0000DD' : '#ffffff';
+      } else {
+        bodyColor = '#0000DD';
+      }
+    }
+
     drawGhostBody(ctx, x, y, r, bodyColor);
-    drawGhostEyes(ctx, x, y, r);
+    if (showEyes) drawGhostEyes(ctx, x, y, r);
   });
 }
 
@@ -1592,6 +1661,8 @@ function resetGame() {
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
   score = 0;
+  frightenedTimer = 0;
+  powerPelletPulse = 0;
   const scoreVal = document.getElementById('score-val');
   if (scoreVal) scoreVal.innerText = score;
   collectibles.forEach(c => c.collected = false);
