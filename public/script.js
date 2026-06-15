@@ -886,25 +886,24 @@ let EDIT_COLLISION_MAP = DEBUG_MAP;
 // walkable. L-R symmetric. Ghost house at rows 6-7 cols 6-8 with the gate
 // cell at (5, 7). Pac-Man spawn at (11, 7).
 const collisionMap = [
-  "WWWWWWWWWWWWWWW", // Row 0
-  "WCPPPPPPPPPPPCW", // Row 1
-  "WPWWPPPPPPPWWPW", // Row 2
-  "WPPPPPPWPPPPPPW", // Row 3
-  "WPPPPPPWPPPPPPW", // Row 4
-  "PPPPPPPPPPPPPPP", // Row 5  ← TUNNEL (left ↔ right)
-  "WPPPPWGGGWPPPPW", // Row 6 (ghost house top)
-  "WPPPPWGGGWPPPPW", // Row 7 (ghost house body)
-  "PPPPPPPPPPPPPPP", // Row 8  ← TUNNEL (left ↔ right)
-  "WPPPPWPWPWPPPPW", // Row 9
-  "WPPPPPPWPPPPPPW", // Row 10
-  "WPPPPPPPPPPPPPW", // Row 11 (Pac-Man spawn at c=7)
-  "WCPPPPPWPPPPPCW", // Row 12
-  "WWWWWWWWWWWWWWW"  // Row 13
+  "PPWWWWPWPPPWWWP", // Row 0
+  "PCPPPWPPPWPPPCP", // Row 1
+  "WPWWPWPPPWPWWPW", // Row 2
+  "WPWWPPPWPWPPPPW", // Row 3
+  "PPWWWWPWPWWWWPP", // Row 4
+  "WPPPPPPPPPPPPPW", // Row 5
+  "PPPPPGGGGGPPPPP", // Row 6  ← TUNNEL ONLY: R6C0 ↔ R6C14
+  "WPWWPGGGGGPWWPW", // Row 7
+  "PPPPPPPPPPPPPPP", // Row 8
+  "PPWWWWPWPWWWWPP", // Row 9
+  "WPWPPPPWPWWWWPW", // Row 10
+  "PPPPWWPPPWWWWPP", // Row 11
+  "PWWWWWPWPWWWWPP", // Row 12
+  "CPPPPPPWPPPPPPC"  // Row 13
 ];
 
-// Rows where Pac-Man (and ghosts) can wrap around left ↔ right edge (tunnel rows).
-// Only rows whose left and right border are open passages count as tunnels.
-const TUNNEL_ROWS = new Set([5, 8]);
+// Tunnel wrap: ONLY row 6 (R6C0 ↔ R6C14). No other row wraps.
+const TUNNEL_ROWS = new Set([6]);
 
 let gameInterval;
 let map = [];
