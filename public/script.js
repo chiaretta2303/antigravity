@@ -891,16 +891,20 @@ const collisionMap = [
   "WPWWPPPPPPPWWPW", // Row 2
   "WPPPPPPWPPPPPPW", // Row 3
   "WPPPPPPWPPPPPPW", // Row 4
-  "WPPPPPPPPPPPPPW", // Row 5
+  "PPPPPPPPPPPPPPP", // Row 5  ← TUNNEL (left ↔ right)
   "WPPPPWGGGWPPPPW", // Row 6 (ghost house top)
   "WPPPPWGGGWPPPPW", // Row 7 (ghost house body)
-  "WPPPPPPPPPPPPPW", // Row 8
+  "PPPPPPPPPPPPPPP", // Row 8  ← TUNNEL (left ↔ right)
   "WPPPPWPWPWPPPPW", // Row 9
   "WPPPPPPWPPPPPPW", // Row 10
   "WPPPPPPPPPPPPPW", // Row 11 (Pac-Man spawn at c=7)
   "WCPPPPPWPPPPPCW", // Row 12
   "WWWWWWWWWWWWWWW"  // Row 13
 ];
+
+// Rows where Pac-Man (and ghosts) can wrap around left ↔ right edge (tunnel rows).
+// Only rows whose left and right border are open passages count as tunnels.
+const TUNNEL_ROWS = new Set([5, 8]);
 
 let gameInterval;
 let map = [];
@@ -1225,11 +1229,14 @@ function updateGame() {
   if (pacman.nextDir.r !== 0 || pacman.nextDir.c !== 0) {
     let nextR = pacman.r + pacman.nextDir.r;
     let nextC = pacman.c + pacman.nextDir.c;
-    
-    if (nextC < 0) nextC = COLS_COUNT - 1;
-    else if (nextC >= COLS_COUNT) nextC = 0;
-    
-    if (nextR >= 0 && nextR < ROWS_COUNT) {
+
+    // Wrap only on designated tunnel rows
+    if (TUNNEL_ROWS.has(pacman.r)) {
+      if (nextC < 0) nextC = COLS_COUNT - 1;
+      else if (nextC >= COLS_COUNT) nextC = 0;
+    }
+
+    if (nextR >= 0 && nextR < ROWS_COUNT && nextC >= 0 && nextC < COLS_COUNT) {
       const char = collisionMap[nextR][nextC];
       if (char === 'P' || char === 'C') {
         pacman.dir = { ...pacman.nextDir };
@@ -1241,11 +1248,14 @@ function updateGame() {
   // 2. Drive Pac-Man in the current active direction
   let nextR = pacman.r + pacman.dir.r;
   let nextC = pacman.c + pacman.dir.c;
-  
-  if (nextC < 0) nextC = COLS_COUNT - 1;
-  else if (nextC >= COLS_COUNT) nextC = 0;
 
-  if (nextR >= 0 && nextR < ROWS_COUNT) {
+  // Wrap only on designated tunnel rows
+  if (TUNNEL_ROWS.has(pacman.r)) {
+    if (nextC < 0) nextC = COLS_COUNT - 1;
+    else if (nextC >= COLS_COUNT) nextC = 0;
+  }
+
+  if (nextR >= 0 && nextR < ROWS_COUNT && nextC >= 0 && nextC < COLS_COUNT) {
     const char = collisionMap[nextR][nextC];
     if (char === 'P' || char === 'C') {
       pacman.r = nextR;
@@ -1367,9 +1377,13 @@ function getValidGhostMoves(ghost) {
     if (d.r === -ghost.dir.r && d.c === -ghost.dir.c) return false; // no U-turn
 
     const nr = ghost.r + d.r;
-    const nc = (ghost.c + d.c + COLS) % COLS;
+    // Ghosts can only wrap horizontally on tunnel rows
+    let nc = ghost.c + d.c;
+    if (TUNNEL_ROWS.has(ghost.r)) {
+      nc = (nc + COLS) % COLS;
+    }
 
-    if (nr < 0 || nr >= ROWS) return false;
+    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return false;
 
     const ch = collisionMap[nr][nc];
     return ch === 'P' || ch === 'C' || ch === 'G';
@@ -1400,7 +1414,9 @@ function moveGhost(ghost) {
     let bestDir  = null;
     for (const d of moves) {
       const nr = ghost.r + d.r;
-      const nc = (ghost.c + d.c + COLS) % COLS;
+      // Use tunnel-aware wrap for distance calculation too
+      let nc = ghost.c + d.c;
+      if (TUNNEL_ROWS.has(ghost.r)) nc = (nc + COLS) % COLS;
       const dist = (nr - target.r) ** 2 + (nc - target.c) ** 2;
       if (dist < bestDist) { bestDist = dist; bestDir = d; }
     }
@@ -1410,7 +1426,12 @@ function moveGhost(ghost) {
   if (!chosen) return;
   ghost.dir = chosen;
   ghost.r  += chosen.r;
-  ghost.c   = (ghost.c + chosen.c + COLS) % COLS;
+  // Apply horizontal wrap only on tunnel rows
+  if (TUNNEL_ROWS.has(ghost.r)) {
+    ghost.c = (ghost.c + chosen.c + COLS) % COLS;
+  } else {
+    ghost.c += chosen.c;
+  }
 }
 
 function updateGhostModePhase() {
