@@ -62,11 +62,15 @@ function showScreen(screenKey) {
 const easterEgg = document.getElementById('pacman-easter-egg');
 if (easterEgg) {
   easterEgg.addEventListener('click', () => {
+    easterEgg.classList.add('clicked');
     easterEggClicks++;
     if (easterEggClicks >= 3) {
       startTransition();
     } else {
-      easterEgg.style.transform = `scale(${1 + easterEggClicks * 0.2})`;
+      // Grow the Pac-Man but preserve the translateY(-50%) centering
+      const scale = 1 + easterEggClicks * 0.5;
+      easterEgg.style.transform = `translateY(-50%) scale(${scale})`;
+      easterEgg.style.opacity = '0.9';
     }
   });
 }
@@ -930,9 +934,139 @@ const collectibles = [
 // Power-pellet / frightened-mode state
 let frightenedTimer = 0;         // ticks remaining while ghosts are frightened
 const FRIGHTENED_TICKS = Math.round(7000 / 150); // ~7 seconds at 150 ms/tick
-let powerPelletPulse = 0;        // animation counter for the pulsing big dot
+let powerPelletBlink = 0;        // tick counter for power pellet blink cycle
+// In the original arcade, power pellets blink ~once per second:
+// visible for ~6 ticks (~900ms), hidden for ~2 ticks (~300ms) — ratio 3:1
+const PELLET_BLINK_PERIOD = 8;   // total ticks per cycle
+const PELLET_BLINK_OFF    = 2;   // ticks per cycle where pellet is hidden
 
 let score = 0;
+let pelletTick = 0; // alternates between two pellet beeps for the "waka" rhythm
+
+// ── Movement interpolation: tile-based logic runs every TICK_MS, the canvas
+//    redraws at 60fps with a smooth lerp between previous and current tile.
+const TICK_MS = 150;
+let lastTickAt = 0;
+let renderId = 0;
+function tickProgress() {
+  if (isPaused) return 1;          // freeze entity at its current tile
+  if (!lastTickAt) return 0;
+  return Math.min(1, (performance.now() - lastTickAt) / TICK_MS);
+}
+function lerpRow(e) {
+  if (e.prevR == null) return e.r;
+  const d = e.r - e.prevR;
+  if (Math.abs(d) > 1) return e.r; // big jump (teleport / wrap): snap
+  return e.prevR + d * tickProgress();
+}
+function lerpCol(e) {
+  if (e.prevC == null) return e.c;
+  const d = e.c - e.prevC;
+  if (Math.abs(d) > 1) return e.c; // tunnel wrap: snap (don't slide across the maze)
+  return e.prevC + d * tickProgress();
+}
+let highScore = +(localStorage.getItem('pacHi') || 10000);
+
+function updateHud() {
+  const s = document.getElementById('score-val');
+  const h = document.getElementById('high-score-val');
+  if (s) s.textContent = score;
+  if (score > highScore) {
+    highScore = score;
+    try { localStorage.setItem('pacHi', String(highScore)); } catch (_) {}
+  }
+  if (h) h.textContent = String(highScore).padStart(5, '0');
+}
+
+// ── Web Audio: tiny 8-bit synth (no asset files, no copyrighted samples) ──
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (Ctor) audioCtx = new Ctor();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function blip({ freq = 440, dur = 0.08, type = 'square', vol = 0.07, slide = 0, delay = 0 } = {}) {
+  const ctx = ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime + delay;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t0);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t0 + dur);
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(ctx.destination);
+  o.start(t0); o.stop(t0 + dur);
+}
+const SFX = {
+  // Original arcade-style start jingle: ascending C-major arpeggios into a
+  // high flourish. Triangle wave + short note durations = classic chiptune
+  // feel. ~2.4s total. NOT a transcription of any copyrighted arcade tune.
+  ready: () => {
+    const seq = [
+      // arpeggio 1: C major triad ascending (C4 - E4 - G4)
+      { f: 262, d: 0.12, t: 0.00 }, { f: 330, d: 0.12, t: 0.13 }, { f: 392, d: 0.12, t: 0.26 },
+      // arpeggio 2: same pattern an octave up (C5 - E5 - G5)
+      { f: 523, d: 0.12, t: 0.42 }, { f: 659, d: 0.12, t: 0.55 }, { f: 784, d: 0.12, t: 0.68 },
+      // climb: G5 - A5 - B5 - C6 (resolves up)
+      { f: 784, d: 0.10, t: 0.86 }, { f: 880, d: 0.10, t: 0.99 }, { f: 988, d: 0.10, t: 1.12 },
+      { f: 1047, d: 0.18, t: 1.25 },
+      // little bounce: G5 - C6 (perfect-fourth flourish)
+      { f: 784, d: 0.10, t: 1.55 }, { f: 1047, d: 0.10, t: 1.68 },
+      // final triumphant high E6 hold
+      { f: 1319, d: 0.40, t: 1.85 },
+    ];
+    seq.forEach(n => blip({ freq: n.f, dur: n.d, type: 'triangle', vol: 0.10, delay: n.t }));
+  },
+  pelletA:     () => blip({ freq: 380, dur: 0.045, vol: 0.045 }),
+  pelletB:     () => blip({ freq: 280, dur: 0.045, vol: 0.045 }),
+  collectible: () => { blip({ freq: 660, dur: 0.08, type: 'triangle', vol: 0.1 }); blip({ freq: 990, dur: 0.12, type: 'triangle', vol: 0.1, delay: 0.08 }); },
+  power:       () => blip({ freq: 200, dur: 0.4, type: 'square', slide: -100, vol: 0.08 }),
+  eatGhost:    () => { blip({ freq: 200, dur: 0.06, type: 'sawtooth', vol: 0.1 }); blip({ freq: 800, dur: 0.12, type: 'triangle', vol: 0.1, delay: 0.06 }); },
+  death:       () => blip({ freq: 520, dur: 0.7, type: 'sawtooth', slide: -480, vol: 0.12 }),
+  reward:      () => [523, 659, 784, 1046].forEach((f, i) => blip({ freq: f, dur: 0.18, type: 'triangle', vol: 0.1, delay: i * 0.15 })),
+  pause:       () => blip({ freq: 300, dur: 0.08, type: 'square', vol: 0.07 }),
+  uiHover:     () => blip({ freq: 1200, dur: 0.03, type: 'square', vol: 0.035 }),
+  uiClick:     () => blip({ freq: 600, dur: 0.07, type: 'square', vol: 0.06, slide: 200 }),
+};
+
+// ── Global UI sound delegation ──
+// Plays a soft hover blip when the pointer enters an interactive element
+// (throttled), and a click blip on activation. Uses event delegation so it
+// covers buttons added at any time without per-button wiring.
+const UI_INTERACTIVE_SELECTOR = [
+  'button',
+  '.arcade-btn', '.arcade-img-button',
+  '.uq-tab', '.uq-icon-btn', '.uq-btn-primary', '.uq-btn-ghost',
+  '.wahba-btn', '.wahba-cta-btn',
+  '[role="button"]',
+  '#pacman-easter-egg', // landing-page hidden Pac-Man (only sound source on landing)
+].join(', ');
+// The UNIQLO landing page stays silent EXCEPT for the hidden Pac-Man easter
+// egg — its hover/click does fire the UI blip as a subtle "you found it" cue.
+function _uiSoundsAllowed(el) {
+  if (!el.closest('#screen-landing')) return true; // arcade flow: sounds on
+  return !!el.closest('#pacman-easter-egg');       // landing: only easter egg
+}
+let _lastUiHoverAt = 0;
+document.addEventListener('mouseover', (e) => {
+  const tgt = e.target.closest && e.target.closest(UI_INTERACTIVE_SELECTOR);
+  if (!tgt || tgt.disabled || !_uiSoundsAllowed(tgt)) return;
+  // Skip if we're just moving between children of the same button
+  const from = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(UI_INTERACTIVE_SELECTOR);
+  if (from === tgt) return;
+  const now = performance.now();
+  if (now - _lastUiHoverAt < 80) return; // throttle to avoid spam
+  _lastUiHoverAt = now;
+  SFX.uiHover();
+});
+document.addEventListener('click', (e) => {
+  const tgt = e.target.closest && e.target.closest(UI_INTERACTIVE_SELECTOR);
+  if (!tgt || tgt.disabled || !_uiSoundsAllowed(tgt)) return;
+  SFX.uiClick();
+}, true); // capture phase so we play even if a handler stops propagation
 
 // ── GHOST AI — constants ──────────────────────────────────────────
 const GHOST_SCATTER_TICKS = Math.round(7000 / 150);   // ~47 ticks ≈ 7 s
@@ -945,11 +1079,15 @@ const GHOST_PHASE_SCHEDULE = [
   { mode: 'scatter', duration: GHOST_SCATTER_TICKS },
   { mode: 'chase',   duration: Infinity            },
 ];
+// Ghost house gate is at row 5, col 7 (the P cell just above the G zone).
+// Blinky starts OUTSIDE (at gate position), the others start INSIDE the house.
+// houseR/houseC = their idle bobbing center inside the house.
+const GHOST_HOUSE_GATE = { r: 5, c: 7 };
 const GHOST_SPAWN_DATA = [
-  { id: 'blinky', r: 6, c: 6, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 13 }, releaseAt: 0   },
-  { id: 'pinky',  r: 6, c: 8, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33  },
-  { id: 'inky',   r: 7, c: 6, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 12, c: 13 }, releaseAt: 66  },
-  { id: 'clyde',  r: 7, c: 8, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 12, c: 1  }, releaseAt: 100 },
+  { id: 'blinky', r: 5, c: 7, dir: { r: 0, c: -1 }, color: '#FF0000', scatter: { r: 1,  c: 13 }, releaseAt: 0,   houseR: 6, houseC: 7 },
+  { id: 'pinky',  r: 6, c: 7, dir: { r: 0, c:  1 }, color: '#FFB8FF', scatter: { r: 1,  c: 1  }, releaseAt: 33,  houseR: 6, houseC: 7 },
+  { id: 'inky',   r: 7, c: 6, dir: { r: 0, c: -1 }, color: '#00FFFF', scatter: { r: 12, c: 13 }, releaseAt: 66,  houseR: 7, houseC: 6 },
+  { id: 'clyde',  r: 7, c: 8, dir: { r: 0, c:  1 }, color: '#FFB852', scatter: { r: 12, c: 1  }, releaseAt: 100, houseR: 7, houseC: 8 },
 ];
 let ghosts        = [];
 let gameTick      = 0;
@@ -1184,48 +1322,51 @@ function drawGame() {
     ctx.fill();
   });
 
-  // Draw power pellets (energizers) — pulsating big white dot
-  powerPelletPulse += 0.15;
-  const pelletVis = Math.sin(powerPelletPulse) > 0; // blink every ~0.5 s
-  if (pelletVis) {
-    gamePellets.forEach(p => {
-      if (!p.active || !p.power) return;
-      const centerX = startX + p.c * stepW + stepW / 2;
-      const centerY = startY + p.r * stepH + stepH / 2;
-      const pulseR = 7 + Math.sin(powerPelletPulse) * 2;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, pulseR, 0, Math.PI * 2);
-      ctx.fill();
-      // Glow ring
-      ctx.strokeStyle = 'rgba(255,220,100,0.6)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    });
-  }
+  // Draw power pellets (energizers) — blink like the original arcade
+  // The pellet is VISIBLE most of the time (6 out of 8 ticks), only briefly hidden.
+  // powerPelletBlink is incremented in updateGame(), keeping it synced with game logic.
+  const pelletVisible = (powerPelletBlink % PELLET_BLINK_PERIOD) < (PELLET_BLINK_PERIOD - PELLET_BLINK_OFF);
+  gamePellets.forEach(p => {
+    if (!p.active || !p.power) return;
+    const centerX = startX + p.c * stepW + stepW / 2;
+    const centerY = startY + p.r * stepH + stepH / 2;
+    if (!pelletVisible) return; // brief blink-off phase
+    const pulseRadius = tileSize * 0.32; // fixed size, no wobble — closer to original
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+    ctx.fill();
+  });
 
   // Draw Ghosts (behind Pac-Man)
   drawGhosts(ctx);
 
-  // Draw Pac-Man
+  // Draw Pac-Man (use interpolated tile coords for smooth motion)
   ctx.fillStyle = '#FFD43B';
   ctx.beginPath();
-  const centerX = startX + pacman.c * stepW + stepW / 2;
-  const centerY = startY + pacman.r * stepH + stepH / 2;
+  const centerX = startX + lerpCol(pacman) * stepW + stepW / 2;
+  const centerY = startY + lerpRow(pacman) * stepH + stepH / 2;
   
   let angleOffset = 0;
-  if (pacman.dir.c === 1) angleOffset = 0;
-  else if (pacman.dir.r === 1) angleOffset = Math.PI / 2;
+  if (pacman.dir.c === 1)       angleOffset = 0;
+  else if (pacman.dir.r === 1)  angleOffset = Math.PI / 2;
   else if (pacman.dir.c === -1) angleOffset = Math.PI;
   else if (pacman.dir.r === -1) angleOffset = -Math.PI / 2;
 
-  const mouthAngle = (0.2 * pacman.open) * Math.PI;
+  // Mouth animates only while moving (original arcade behaviour)
+  const isMoving = pacman.dir.r !== 0 || pacman.dir.c !== 0;
+  if (isMoving) {
+    pacman.open += 0.2 * pacman.openDir;
+    if (pacman.open >= 1) { pacman.open = 1; pacman.openDir = -1; }
+    if (pacman.open <= 0) { pacman.open = 0; pacman.openDir =  1; }
+  } else {
+    pacman.open = 0.35; // slightly open when idle, like the original
+  }
+
+  const mouthAngle = pacman.open * 0.25 * Math.PI; // max 45° opening (original)
   ctx.arc(centerX, centerY, tileSize * 0.45, angleOffset + mouthAngle, angleOffset + 2 * Math.PI - mouthAngle);
   ctx.lineTo(centerX, centerY);
   ctx.fill();
-
-  pacman.open += 0.2 * pacman.openDir;
-  if (pacman.open >= 1 || pacman.open <= 0) pacman.openDir *= -1;
 
   if (EDIT_COLLISION_MAP) {
     drawDebugGrid(ctx);
@@ -1235,6 +1376,9 @@ function drawGame() {
 function updateGame() {
   const COLS_COUNT = collisionMap[0].length;
   const ROWS_COUNT = collisionMap.length;
+
+  // Advance pellet blink counter every game tick
+  powerPelletBlink++;
 
   // 1. Try to shift direction
   if (pacman.nextDir.r !== 0 || pacman.nextDir.c !== 0) {
@@ -1289,11 +1433,12 @@ function updateGame() {
           g.dir = { r: -g.dir.r, c: -g.dir.c };
         }
       });
+      SFX.power();
     } else {
       score += 10;
+      SFX[(pelletTick++ & 1) ? 'pelletA' : 'pelletB']();
     }
-    const scoreVal = document.getElementById('score-val');
-    if (scoreVal) scoreVal.innerText = score;
+    updateHud();
   }
 
   // 4. Collect products (UNIQLO items — also sit on power-pellet tiles)
@@ -1302,38 +1447,90 @@ function updateGame() {
       c.collected = true;
       unlockedItems.push(c.id);
       score += 1000;
-      const scoreVal = document.getElementById('score-val');
-      if (scoreVal) scoreVal.innerText = score;
+      SFX.collectible();
+      updateHud();
       checkWin();
     }
   });
 }
 
+let isPaused = false;
+function togglePause() {
+  if (!gameInterval) return; // only meaningful during an active session
+  isPaused = !isPaused;
+  document.getElementById('paused-overlay')?.classList.toggle('hidden', !isPaused);
+  const btn = document.getElementById('btn-pause');
+  if (btn) btn.textContent = isPaused ? 'RESUME' : 'PAUSE';
+  SFX.pause();
+  if (audioCtx) isPaused ? audioCtx.suspend() : audioCtx.resume();
+}
+function clearPauseState() {
+  isPaused = false;
+  document.getElementById('paused-overlay')?.classList.add('hidden');
+  const btn = document.getElementById('btn-pause');
+  if (btn) btn.textContent = 'PAUSE';
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+
 function gameLoop() {
+  if (isPaused) return; // freeze movement, ghosts, mode timers, collisions
+  // Snapshot tile positions BEFORE moves — the render loop will lerp from
+  // these to the new r/c values across the next 150 ms.
+  pacman.prevR = pacman.r; pacman.prevC = pacman.c;
+  ghosts.forEach(g => { g.prevR = g.r; g.prevC = g.c; });
   updateGame();
   updateGhosts();
-  drawGame();
+  lastTickAt = performance.now();
+}
+
+function renderLoop() {
+  renderId = requestAnimationFrame(renderLoop);
+  drawGame(); // drawing decoupled from logic tick — runs at ~60 fps
 }
 
 function startGame() {
   const readyOverlay = document.getElementById('game-ready-overlay');
   if (readyOverlay) readyOverlay.classList.remove('hidden');
-  
+
   resizePlayfield();
   initDebugMouseListener();
   resetGame();
   drawGame();
-  
+  clearPauseState();
+
+  const pauseBtn = document.getElementById('btn-pause');
+  if (pauseBtn && !pauseBtn.dataset.wired) {
+    pauseBtn.addEventListener('click', togglePause);
+    pauseBtn.dataset.wired = '1';
+  }
+
+  SFX.ready();
+
+  // READY blinks while the start jingle plays, then game starts.
+  let blink = 0;
+  const blinkId = setInterval(() => {
+    if (readyOverlay) readyOverlay.style.opacity = (++blink % 2) ? '0.3' : '1';
+  }, 300);
+
   setTimeout(() => {
-    if (readyOverlay) readyOverlay.classList.add('hidden');
+    clearInterval(blinkId);
+    if (readyOverlay) {
+      readyOverlay.classList.add('hidden');
+      readyOverlay.style.opacity = '';
+    }
     document.addEventListener('keydown', handleInput);
-    
+
     clearInterval(gameInterval);
-    gameInterval = setInterval(gameLoop, 150);
-  }, 2200);
+    lastTickAt = performance.now();
+    gameInterval = setInterval(gameLoop, TICK_MS);
+    cancelAnimationFrame(renderId);
+    renderId = requestAnimationFrame(renderLoop);
+  }, 3000);
 }
 
 function handleInput(e) {
+  if (e.key === 'p' || e.key === 'P') { togglePause(); e.preventDefault(); return; }
+  if (isPaused) return; // ignore movement input while paused
   if (e.key === 'ArrowUp') pacman.nextDir = { r: -1, c: 0 };
   if (e.key === 'ArrowDown') pacman.nextDir = { r: 1, c: 0 };
   if (e.key === 'ArrowLeft') pacman.nextDir = { r: 0, c: -1 };
@@ -1346,9 +1543,13 @@ function handleInput(e) {
 function checkWin() {
   if (unlockedItems.length === TOTAL_ITEMS) {
     clearInterval(gameInterval);
+    gameInterval = null;
+    cancelAnimationFrame(renderId);
+    clearPauseState();
     document.removeEventListener('keydown', handleInput);
     document.getElementById('reward-overlay').classList.remove('hidden');
     hasDiscount = true;
+    SFX.reward();
   }
 }
 
@@ -1357,15 +1558,36 @@ function checkWin() {
 // =========================================
 
 function initGhosts() {
-  ghosts = GHOST_SPAWN_DATA.map(g => ({ ...g, state: 'waiting' }));
+  ghosts = GHOST_SPAWN_DATA.map(g => ({
+    ...g,
+    // Blinky (releaseAt:0) starts in scatter immediately; others start 'waiting' inside house
+    state: g.releaseAt === 0 ? globalGhostMode || 'scatter' : 'waiting',
+    bobOffset: 0,    // sub-tile bobbing offset for waiting ghosts (0.0–1.0 fractional row)
+    bobDir: 1,       // +1 = moving down, -1 = moving up
+    exitStep: 0,     // used during 'exiting' state
+  }));
   gameTick       = 0;
   ghostModeTick  = 0;
   ghostModePhase = 0;
   globalGhostMode = 'scatter';
 }
 
+// Ghost AI: each personality picks a target tile; the navigation in
+// moveGhost() greedily steps toward it on the collision grid.
+//   blinky → direct chase: aims straight at Pac-Man's tile.
+//   pinky  → ambush: aims 4 tiles ahead of Pac-Man's facing direction.
+//   inky   → flanking: aims at the tile vector from Blinky through a point
+//            2 tiles ahead of Pac-Man (so it depends on Blinky's position).
+//   clyde  → shy: chases when far (> 8 tiles) but retreats to his scatter
+//            corner when close, producing the "wandering" feel.
+// In scatter mode all four head for their own corner instead.
+// Cruise Elroy: when only a handful of pellets remain, Blinky stays in
+// chase even during scatter phases — gives the end-game extra pressure.
 function getGhostTarget(ghost) {
-  if (ghost.state === 'scatter') return ghost.scatter;
+  const activePellets = gamePellets.filter(p => p.active).length;
+  const cruiseElroy = ghost.id === 'blinky' && activePellets <= 20;
+
+  if (ghost.state === 'scatter' && !cruiseElroy) return ghost.scatter;
 
   switch (ghost.id) {
     case 'blinky':
@@ -1378,6 +1600,8 @@ function getGhostTarget(ghost) {
       const blinky = ghosts.find(g => g.id === 'blinky');
       const pr = pacman.r + pacman.dir.r * 2;
       const pc = pacman.c + pacman.dir.c * 2;
+      // Fall back to direct chase if Blinky isn't on the board yet.
+      if (!blinky) return { r: pacman.r, c: pacman.c };
       return { r: pr + (pr - blinky.r), c: pc + (pc - blinky.c) };
     }
 
@@ -1419,10 +1643,14 @@ function moveGhost(ghost) {
   const moves = getValidGhostMoves(ghost);
 
   if (moves.length === 0) {
-    // Boxed in — force reversal
+    // Dead end — allow a U-turn back the way the ghost came.
+    // Only wrap horizontally when on a designated tunnel row, otherwise the
+    // ghost would teleport across the map and appear to pass through walls.
     const rev = { r: -ghost.dir.r, c: -ghost.dir.c };
     const nr  = ghost.r + rev.r;
-    const nc  = (ghost.c + rev.c + COLS) % COLS;
+    let nc    = ghost.c + rev.c;
+    if (TUNNEL_ROWS.has(ghost.r)) nc = (nc + COLS) % COLS;
+    if (nr < 0 || nr >= collisionMap.length || nc < 0 || nc >= COLS) return;
     const ch  = collisionMap[nr]?.[nc];
     if (ch === 'P' || ch === 'C' || ch === 'G') { ghost.dir = rev; ghost.r = nr; ghost.c = nc; }
     return;
@@ -1490,28 +1718,90 @@ function updateGhosts() {
     }
   }
 
+  // Release waiting ghosts → transition to 'exiting' state so they navigate out of the house
   ghosts.forEach(g => {
-    if (g.state === 'waiting' && gameTick >= g.releaseAt) g.state = globalGhostMode;
+    if (g.state === 'waiting' && gameTick >= g.releaseAt) {
+      g.state = 'exiting';
+      g.exitStep = 0;
+    }
+  });
+
+  // Animate waiting ghosts (bob up/down inside house) and exiting ghosts
+  ghosts.forEach(g => {
+    if (g.state === 'waiting') {
+      // Sub-tile bobbing: bobOffset oscillates between 0 and 0.5 (half a cell)
+      g.bobOffset = (g.bobOffset || 0) + 0.05 * (g.bobDir || 1);
+      if (g.bobOffset >= 0.4) g.bobDir = -1;
+      if (g.bobOffset <= 0.0) g.bobDir = 1;
+    } else if (g.state === 'exiting') {
+      moveGhostExiting(g);
+    }
   });
 
   updateGhostModePhase();
-  ghosts.forEach(g => { if (g.state !== 'waiting') moveGhost(g); });
+  ghosts.forEach(g => {
+    if (g.state === 'waiting' || g.state === 'exiting') return;
+    // Frightened ghosts move at half speed (every other tick) — classic
+    // arcade behaviour: gives Pac-Man a fair window to catch them.
+    if (g.state === 'frightened' && (gameTick & 1)) return;
+    moveGhost(g);
+  });
   checkGhostCollision();
+}
+
+// Moves a ghost step-by-step out of the ghost house.
+// Path: move to center col (col 7), then move up to gate row (row 5), then enter scatter/chase.
+// Movement is throttled: one cell every 2 ticks to feel like the original arcade exit speed.
+function moveGhostExiting(ghost) {
+  const GATE_COL = GHOST_HOUSE_GATE.c; // 7
+  const GATE_ROW = GHOST_HOUSE_GATE.r; // 5
+
+  // Throttle: only move one step every 2 game ticks
+  ghost._exitCooldown = (ghost._exitCooldown || 0) - 1;
+  if (ghost._exitCooldown > 0) return;
+  ghost._exitCooldown = 2;
+
+  // Step 1: Navigate horizontally to the center column (col 7)
+  if (ghost.c !== GATE_COL) {
+    const dc = ghost.c < GATE_COL ? 1 : -1;
+    ghost.c += dc;
+    ghost.dir = { r: 0, c: dc };
+    return;
+  }
+
+  // Step 2: Navigate upward to the gate row
+  if (ghost.r > GATE_ROW) {
+    ghost.r -= 1;
+    ghost.dir = { r: -1, c: 0 };
+    return;
+  }
+
+  // Step 3: Ghost has reached the gate — enter the maze
+  ghost.r = GATE_ROW;
+  ghost.c = GATE_COL;
+  ghost.dir = { r: 0, c: -1 }; // exit heading left (original Pac-Man behaviour)
+  ghost.state = globalGhostMode;
+  ghost.bobOffset = 0;
+  ghost._exitCooldown = 0;
 }
 
 function checkGhostCollision() {
   for (const ghost of ghosts) {
-    if (ghost.state === 'waiting') continue;
+    if (ghost.state === 'waiting' || ghost.state === 'exiting') continue;
     if (ghost.r === pacman.r && ghost.c === pacman.c) {
       if (ghost.state === 'frightened') {
         // Pac-Man eats the frightened ghost → send it back to house
         score += 200;
-        const scoreVal = document.getElementById('score-val');
-        if (scoreVal) scoreVal.innerText = score;
-        ghost.r = GHOST_SPAWN_DATA.find(d => d.id === ghost.id).r;
-        ghost.c = GHOST_SPAWN_DATA.find(d => d.id === ghost.id).c;
-        ghost.dir = GHOST_SPAWN_DATA.find(d => d.id === ghost.id).dir;
+        SFX.eatGhost();
+        updateHud();
+        const spawnData = GHOST_SPAWN_DATA.find(d => d.id === ghost.id);
+        // Return to center of house
+        ghost.r = spawnData.houseR;
+        ghost.c = spawnData.houseC;
+        ghost.dir = spawnData.dir;
         ghost.state = 'waiting';
+        ghost.bobOffset = 0;
+        ghost.bobDir = 1;
         // Re-release quickly so the game keeps moving
         ghost._reentry = gameTick + 20;
       } else {
@@ -1521,7 +1811,8 @@ function checkGhostCollision() {
     }
     // Handle re-entry after being eaten
     if (ghost.state === 'waiting' && ghost._reentry && gameTick >= ghost._reentry) {
-      ghost.state = globalGhostMode;
+      ghost.state = 'exiting';
+      ghost.exitStep = 0;
       ghost._reentry = null;
     }
   }
@@ -1529,6 +1820,10 @@ function checkGhostCollision() {
 
 function triggerGameOver() {
   clearInterval(gameInterval);
+  gameInterval = null;
+  cancelAnimationFrame(renderId);
+  clearPauseState();
+  SFX.death();
   document.removeEventListener('keydown', handleInput);
   document.getElementById('game-over-overlay').classList.remove('hidden');
 }
@@ -1573,17 +1868,33 @@ function drawGhosts(ctx) {
   const FLASH_TICKS = Math.round(2000 / 150);
 
   ghosts.forEach(ghost => {
-    if (ghost.state === 'waiting') return;
-    const x = startX + ghost.c * stepW + stepW / 2;
-    const y = startY + ghost.r * stepH + stepH / 2;
+    let x, y;
+
+    if (ghost.state === 'waiting') {
+      // Draw inside ghost house with bobbing animation
+      x = startX + ghost.c * stepW + stepW / 2;
+      // bobOffset moves the ghost up/down by up to half a cell
+      y = startY + ghost.r * stepH + stepH / 2 + (ghost.bobOffset || 0) * stepH - stepH * 0.2;
+      // Draw with slightly reduced opacity to indicate they're locked in
+      ctx.globalAlpha = 0.85;
+      drawGhostBody(ctx, x, y, r * 0.9, ghost.color);
+      drawGhostEyes(ctx, x, y, r * 0.9);
+      ctx.globalAlpha = 1.0;
+      return;
+    }
+
+    x = startX + lerpCol(ghost) * stepW + stepW / 2;
+    y = startY + lerpRow(ghost) * stepH + stepH / 2;
 
     let bodyColor = ghost.color;
-    let showEyes = true;
+    let showEyes  = true;
+    let frightened = false;
 
     if (ghost.state === 'frightened') {
+      frightened = true;
       showEyes = false;
       if (frightenedTimer <= FLASH_TICKS) {
-        // Flash between blue and white — uses gameTick so it's frame-rate synced
+        // Flash between blue and white — frame-rate synced via gameTick
         bodyColor = (gameTick % 4 < 2) ? '#0000DD' : '#ffffff';
       } else {
         bodyColor = '#0000DD';
@@ -1591,13 +1902,54 @@ function drawGhosts(ctx) {
     }
 
     drawGhostBody(ctx, x, y, r, bodyColor);
-    if (showEyes) drawGhostEyes(ctx, x, y, r);
+    if (frightened) {
+      drawFrightenedFace(ctx, x, y, r, bodyColor);
+    } else if (showEyes) {
+      drawGhostEyes(ctx, x, y, r);
+    }
   });
 }
+
+// Draws the classic frightened ghost face: white eyes + zigzag mouth
+function drawFrightenedFace(ctx, x, y, r, bodyColor) {
+  // Eyes: two small white dots
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(x - r * 0.3, y - r * 0.15, r * 0.13, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + r * 0.3, y - r * 0.15, r * 0.13, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Mouth: classic zigzag (wavy line)
+  const mouthY = y + r * 0.25;
+  const mouthLeft  = x - r * 0.45;
+  const mouthRight = x + r * 0.45;
+  const zigH = r * 0.18;
+  const segs = 4;
+  const segW = (mouthRight - mouthLeft) / segs;
+
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = Math.max(1, r * 0.1);
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(mouthLeft, mouthY);
+  for (let i = 0; i < segs; i++) {
+    const px = mouthLeft + (i + 0.5) * segW;
+    const py = mouthY + (i % 2 === 0 ? zigH : -zigH);
+    ctx.lineTo(px, py);
+  }
+  ctx.lineTo(mouthRight, mouthY);
+  ctx.stroke();
+}
+
 
 // Back to start menu
 document.getElementById('btn-back-to-menu')?.addEventListener('click', () => {
   clearInterval(gameInterval);
+  gameInterval = null;
+  cancelAnimationFrame(renderId);
+  clearPauseState();
   document.removeEventListener('keydown', handleInput);
   showScreen('gameStart');
   // Ensure the menu content is visible and other startup phases are hidden
@@ -1613,6 +1965,9 @@ document.getElementById('btn-back-to-menu')?.addEventListener('click', () => {
 // Skip game
 document.getElementById('btn-skip-game')?.addEventListener('click', () => {
   clearInterval(gameInterval);
+  gameInterval = null;
+  cancelAnimationFrame(renderId);
+  clearPauseState();
   document.removeEventListener('keydown', handleInput);
   hasDiscount = hasDiscount || false;
   renderArcadeCollection();
@@ -1660,11 +2015,12 @@ function resetGame() {
   pacman.r = 11; pacman.c = 7;
   pacman.dir = { r: 0, c: 0 };
   pacman.nextDir = { r: 0, c: 0 };
+  pacman.open = 0;
+  pacman.openDir = 1;
   score = 0;
   frightenedTimer = 0;
-  powerPelletPulse = 0;
-  const scoreVal = document.getElementById('score-val');
-  if (scoreVal) scoreVal.innerText = score;
+  powerPelletBlink = 0;
+  updateHud();
   collectibles.forEach(c => c.collected = false);
   unlockedItems = [];
   generateMapAndPellets();
@@ -1683,10 +2039,10 @@ document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
 // SCREEN 7: COLLECTION
 // =========================================
 const productsData = [
-  { id: 'tshirt', name: 'Pac-Man Graphic T-Shirt', price: 24.90, img: '👕', hasVariants: true, variants: { black: '/assets/item-tshirt-black.png', white: '/assets/item-tshirt-white.png' } },
-  { id: 'sweatshirt', name: 'Pac-Man Arcade Sweatshirt', price: 49.90, img: '🧥', hasVariants: true, variants: { black: '/assets/item-sweatshirt-black.png', white: '/assets/item-sweatshirt-white.png' } },
-  { id: 'cap', name: 'Pac-Man Logo Cap', price: 19.90, img: '🧢', hasVariants: true, variants: { black: '/assets/item-cap-black.png', white: '/assets/item-cap-white.png' } },
-  { id: 'tote', name: 'UNIQLO x Pac-Man Bag', price: 14.90, img: '👜', hasVariants: true, variants: { black: '/assets/item-bag-black.png', white: '/assets/item-bag-white.png' } }
+  { id: 'tshirt',     name: 'Pac-Man Graphic T-Shirt',    price: 24.90, pixelIcon: '/assets/icon-tshirt-pixel.png.png',     hasVariants: true, variants: { black: '/assets/item-tshirt-black.png',     white: '/assets/item-tshirt-white.png'     } },
+  { id: 'sweatshirt', name: 'Pac-Man Arcade Sweatshirt',  price: 49.90, pixelIcon: '/assets/icon-sweatshirt-pixel.png.png', hasVariants: true, variants: { black: '/assets/item-sweatshirt-black.png', white: '/assets/item-sweatshirt-white.png' } },
+  { id: 'cap',        name: 'Pac-Man Logo Cap',           price: 19.90, pixelIcon: '/assets/icon-cap-pixel.png.png',       hasVariants: true, variants: { black: '/assets/item-cap-black.png',       white: '/assets/item-cap-white.png'       } },
+  { id: 'tote',       name: 'UNIQLO x Pac-Man Bag',       price: 14.90, pixelIcon: '/assets/icon-bag-pixel.png.png',       hasVariants: true, variants: { black: '/assets/item-bag-black.png',       white: '/assets/item-bag-white.png'       } }
 ];
 
 
@@ -1742,7 +2098,9 @@ function renderArcadeCollection() {
     
     item.innerHTML = `
       <div class="cursor-indicator">›</div>
-      <div class="item-icon">${p.img}</div>
+      <div class="item-icon">
+        <img src="${p.pixelIcon}" alt="${p.name}" class="pixel-icon-img">
+      </div>
       <div class="item-details">
         <div class="item-name">${p.name}</div>
         <div class="item-price-row">

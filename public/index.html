@@ -16,97 +16,319 @@
 
     <!-- SCREEN 1: UNIQLO LANDING PAGE -->
     <div id="screen-landing" class="screen active">
-      <header class="uq-header">
-        <div class="uq-logo-container">
-          <div class="uq-logo">
-            <!-- The hidden Easter Egg -->
-            <img src="/assets/pacman-icon.png" alt="Pac-Man Easter Egg" id="pacman-easter-egg"
-              onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgMTAwQTEgMSAwIDExNTAgMGExIDEgMCAwMTAgMTAwWiIgZmlsbD0iI0ZGRDQzQiIvPjxwYXRoIGQ9Ik01MCA1MGw1MC0yNGE1MCA1MCAwIDAwMCA0OFoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='">
-            <img src="/assets/uniqlo-logo.png" alt="UNIQLO Logo" id="logo-img"
-              onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0icmVkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjE0IiBmb250LWZhbWlseT0iQXJpYWwiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlVOSVFMTzwvdGV4dD48L3N2Zz4='">
+
+      <!-- ── TOP UTILITY BAR ── -->
+      <div class="uq-utility-bar">
+        <span>Spedizione gratuita per ordini superiori a 39,90 €</span>
+        <span>Scopri le ultime novità</span>
+        <span>Negozi &nbsp;|&nbsp; FAQ &nbsp;|&nbsp; App</span>
+      </div>
+
+      <!-- ── MAIN HEADER ── -->
+      <header class="uq-header-v2">
+        <!-- Logo block (red square with hidden Pac-Man) -->
+        <div class="uq-logo-v2" id="uq-logo-area">
+          <!-- Hidden easter egg: Pac-Man peeks from behind/beside logo -->
+          <div id="pacman-easter-egg" class="pacman-egg-svg" title="">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="14" fill="#FFD43B"/>
+              <path d="M16 16 L30 10 A14 14 0 0 1 30 22 Z" fill="#fff"/>
+              <circle cx="16" cy="8" r="2.5" fill="#333"/>
+            </svg>
+          </div>
+          <!-- UNIQLO red logo -->
+          <div class="uq-logo-block">
+            <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
+              <rect width="56" height="56" fill="#E60012"/>
+              <text x="50%" y="32%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Helvetica Neue,Arial,sans-serif" font-weight="900" font-size="9.5" letter-spacing="0.5">UNI</text>
+              <text x="50%" y="68%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Helvetica Neue,Arial,sans-serif" font-weight="900" font-size="9.5" letter-spacing="0.5">QLO</text>
+            </svg>
           </div>
         </div>
-        <nav class="uq-nav">
-          <a href="#" class="active">WOMEN</a>
-          <a href="#">MEN</a>
-          <a href="#">KIDS</a>
-          <a href="#">BABY</a>
-          <a href="#" style="color: var(--uniqlo-red);">UT: GRAPHIC TEES</a>
+
+        <!-- Main nav tabs -->
+        <nav class="uq-nav-v2">
+          <a href="#" class="uq-tab active">DONNA</a>
+          <a href="#" class="uq-tab">UOMO</a>
+          <a href="#" class="uq-tab">BAMBINI</a>
+          <a href="#" class="uq-tab">NEONATI</a>
         </nav>
-        <div class="uq-header-right">
-          <div class="search-bar"><span class="search-icon">🔍</span> Search</div>
-          <span class="header-icon">🤍</span>
-          <span class="header-icon">🛍️</span>
+
+        <!-- Search + icons -->
+        <div class="uq-header-actions">
+          <div class="uq-search-pill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span class="uq-search-placeholder">Cosa cerchi?</span>
+          </div>
+          <!-- Wishlist -->
+          <button class="uq-icon-btn" aria-label="Preferiti">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+          <!-- Account -->
+          <button class="uq-icon-btn" aria-label="Account">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
+          <!-- Cart -->
+          <button class="uq-icon-btn" aria-label="Carrello">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </button>
+          <!-- Menu -->
+          <button class="uq-icon-btn" aria-label="Menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
         </div>
       </header>
 
-      <main class="uq-main">
-        <section class="uq-hero-banner">
-          <div class="hero-left">
-            <span class="capsule-tag">UT CAPSULE COLLECTION</span>
-            <h1>UNIQLO x PAC-MAN</h1>
-            <p>Retro gaming heritage meets minimalist Japanese design. A unique collection featuring classic 8-bit characters and signature comfortable fits.</p>
-            <button class="uq-shop-btn">EXPLORE THE COLLECTION ➔</button>
+      <!-- ── PAGE BODY (scrollable) ── -->
+      <div class="uq-page-body">
+
+        <!-- ── HERO BANNER ── -->
+        <section class="uq-hero-v2">
+          <div class="uq-hero-bg">
+            <!-- Gradient editorial backdrop — Pac-Man / UT capsule themed -->
+            <div class="uq-hero-gradient"></div>
           </div>
-          <div class="hero-right-visual">
-            <div class="fashion-model-shot">
-              <span class="model-caption">UT PAC-MAN OVERSIZED FIT</span>
+          <div class="uq-hero-content">
+            <div class="uq-hero-eyebrow">UT CAPSULE COLLECTION · ESTATE 2025</div>
+            <h1 class="uq-hero-title">UNIQLO<br>× PAC&#8209;MAN</h1>
+            <p class="uq-hero-desc">Il patrimonio del gaming retrò incontra il design minimalista giapponese.<br>Una collezione unica con i personaggi 8-bit più amati di sempre.</p>
+            <div class="uq-hero-cta-row">
+              <button class="uq-btn-primary">SCOPRI LA COLLEZIONE</button>
+              <button class="uq-btn-ghost">A PARTIRE DA 14,90 €</button>
+            </div>
+          </div>
+          <!-- Decorative pixel art floating elements -->
+          <div class="uq-hero-deco">
+            <div class="deco-pill red">NOVITÀ</div>
+          </div>
+        </section>
+
+        <!-- ── RICERCA PER CATEGORIA ── -->
+        <section class="uq-categories-section">
+          <h2 class="uq-section-label">Ricerca per categoria</h2>
+          <div class="uq-cat-grid">
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="15" y="20" width="50" height="45" rx="3" fill="#f8c8c8"/><rect x="5" y="22" width="14" height="20" rx="3" fill="#f8c8c8"/><rect x="61" y="22" width="14" height="20" rx="3" fill="#f8c8c8"/><rect x="28" y="8" width="24" height="14" rx="3" fill="#f8c8c8"/></svg>
+              </div>
+              <span>T-shirt, Felpe &amp; Top con Reggiseno</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="12" width="40" height="55" rx="2" fill="#c8b0e8"/><rect x="20" y="12" width="16" height="28" rx="2" fill="#b89fd4"/><rect x="44" y="12" width="16" height="28" rx="2" fill="#b89fd4"/></svg>
+              </div>
+              <span>Canotte, Top &amp; Bluse Senza Maniche</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="44" height="58" rx="3" fill="#a8c8e8"/><rect x="24" y="10" width="32" height="8" fill="#a8c8e8"/><line x1="40" y1="18" x2="40" y2="68" stroke="#8ab0d0" stroke-width="2"/></svg>
+              </div>
+              <span>Jeans, Pantaloni &amp; Pantaloncini</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="28" width="56" height="36" rx="3" fill="#e8d0a0"/><path d="M12 32 Q40 20 68 32" fill="#d4bc8c"/></svg>
+              </div>
+              <span>Pantaloncini, Gonne &amp; Pantaloni Cropped</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="15" y="15" width="50" height="50" rx="3" fill="#f0e8d8"/><rect x="5" y="18" width="14" height="22" rx="3" fill="#f0e8d8"/><rect x="61" y="18" width="14" height="22" rx="3" fill="#f0e8d8"/><rect x="28" y="5" width="24" height="12" rx="2" fill="#ddd0c0"/></svg>
+              </div>
+              <span>Camicie, Bluse &amp; Polo</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="10" width="52" height="58" rx="4" fill="#c8d8b0"/><rect x="14" y="10" width="20" height="30" rx="3" fill="#b0c498"/><rect x="46" y="10" width="20" height="30" rx="3" fill="#b0c498"/><rect x="24" y="8" width="32" height="10" rx="2" fill="#c8d8b0"/></svg>
+              </div>
+              <span>Giacche &amp; Giubbotti</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="28" rx="22" ry="18" fill="#c8e0f0"/><rect x="18" y="28" width="44" height="32" rx="2" fill="#c8e0f0"/></svg>
+              </div>
+              <span>Maglioni &amp; Cardigan</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><path d="M40 8 Q58 8 62 28 L58 68 Q40 72 22 68 L18 28 Q22 8 40 8Z" fill="#e87070"/></svg>
+              </div>
+              <span>Vestiti, Gonne &amp; Tute</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="35" rx="20" ry="14" fill="#f0d8c0" stroke="#d4b890" stroke-width="2"/><path d="M22 35 Q30 50 40 52 Q50 50 58 35" fill="none" stroke="#d4b890" stroke-width="2"/></svg>
+              </div>
+              <span>Intimo &amp; Calze</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="30" width="48" height="36" rx="4" fill="#90c890"/><path d="M24 30 Q24 18 40 18 Q56 18 56 30" fill="none" stroke="#90c890" stroke-width="4"/></svg>
+              </div>
+              <span>Accessori</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img" style="background:#f5f5f5; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                <span style="font-size:10px; font-weight:800; color:#111; letter-spacing:1px; text-align:center; line-height:1.2;">NUOVI<br>ARRIVI</span>
+              </div>
+              <span>Novità</span>
+            </div>
+
+            <div class="uq-cat-item">
+              <div class="uq-cat-img" style="background:#111; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                <span style="font-size:9px; font-weight:800; color:#fff; letter-spacing:0.5px; text-align:center; line-height:1.3;">COLLEZIONI<br>SPECIALI</span>
+              </div>
+              <span>Collezioni Speciali</span>
+            </div>
+
+          </div>
+          <button class="uq-btn-outline-full">VEDI TUTTE LE CATEGORIE</button>
+        </section>
+
+        <!-- ── EDITORIAL PROMO TILES ── -->
+        <section class="uq-promo-grid">
+
+          <div class="uq-promo-tile uq-promo-dark">
+            <div class="uq-promo-bg" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);"></div>
+            <div class="uq-promo-body">
+              <div class="uq-promo-eyebrow" style="color:#FFD43B;">AIRism</div>
+              <div class="uq-promo-title">Un solo strato,<br>nessun fastidio.</div>
+              <div class="uq-promo-price">A partire da 14,90 €</div>
+              <button class="uq-btn-white-sm">SCOPRI</button>
+            </div>
+          </div>
+
+          <div class="uq-promo-tile uq-promo-light">
+            <div class="uq-promo-bg" style="background: linear-gradient(135deg, #f5f0e8 0%, #ede3d0 100%);"></div>
+            <div class="uq-promo-body">
+              <div class="uq-promo-eyebrow">Collezione Lino</div>
+              <div class="uq-promo-title" style="color:#111;">Fresco.<br>Naturale.<br>Senza tempo.</div>
+              <div class="uq-promo-price" style="color:#555;">A partire da 24,90 €</div>
+              <button class="uq-btn-dark-sm">SCOPRI</button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ── UT × PAC-MAN CAPSULE EDITORIAL ── -->
+        <section class="uq-ut-editorial">
+          <div class="uq-ut-left">
+            <div class="uq-ut-label">UT GRAPHIC COLLECTION</div>
+            <h2 class="uq-ut-title">UNIQLO × PAC&#8209;MAN</h2>
+            <p class="uq-ut-desc">
+              Trent'anni di storia arcade, raccontati attraverso il cotone premium UNIQLO.<br>
+              Magliette, felpe, cappellini e accessori ispirati all'era d'oro dell'arcade gaming.
+            </p>
+            <div class="uq-ut-prices">
+              <span class="uq-ut-price-item">T-Shirt · <strong>€24,90</strong></span>
+              <span class="uq-ut-price-item">Felpa · <strong>€49,90</strong></span>
+              <span class="uq-ut-price-item">Cappellino · <strong>€19,90</strong></span>
+            </div>
+            <button class="uq-btn-primary" style="margin-top:32px;">ESPLORA LA COLLEZIONE</button>
+          </div>
+          <div class="uq-ut-right">
+            <!-- Pixel art decorative grid -->
+            <div class="uq-pixel-grid">
+              <div class="px-ghost red-g"></div>
+              <div class="px-ghost pink-g"></div>
+              <div class="px-ghost cyan-g"></div>
+              <div class="px-ghost orange-g"></div>
+              <div class="px-pacman"></div>
+              <div class="px-pellets"></div>
             </div>
           </div>
         </section>
 
-        <h2 class="section-title">NEW UT COLLABORATION ARRIVALS</h2>
-        <div class="uq-product-grid">
-          <!-- Product Card 1 -->
-          <div class="uq-product-card">
-            <div class="product-image-container">
-              <div class="product-badge red">NEW</div>
-              <div class="shirt-graphic red-shirt">
-                <div class="mini-pixel-ghost"></div>
-              </div>
-            </div>
-            <div class="product-details">
-              <span class="prod-category">UT Graphic Tees</span>
-              <h3>UNIQLO x PAC-MAN Oversized Tee</h3>
-              <div class="prod-rating">★★★★★ <span class="review-count">(42)</span></div>
-              <div class="prod-price">€19.90</div>
-            </div>
+        <!-- ── PROMO BANNER STRIP ── -->
+        <div class="uq-banner-strip">
+          <div class="uq-strip-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h5l3 5v3h-8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <span>Spedizione gratuita da 39,90 €</span>
           </div>
-
-          <!-- Product Card 2 -->
-          <div class="uq-product-card">
-            <div class="product-image-container">
-              <div class="product-badge red">NEW</div>
-              <div class="shirt-graphic black-shirt">
-                <div class="mini-pixel-pacman"></div>
-              </div>
-            </div>
-            <div class="product-details">
-              <span class="prod-category">Sweatshirts & Hoodies</span>
-              <h3>PAC-MAN Retro Print Hoodie</h3>
-              <div class="prod-rating">★★★★★ <span class="review-count">(18)</span></div>
-              <div class="prod-price">€29.90</div>
-            </div>
+          <div class="uq-strip-divider"></div>
+          <div class="uq-strip-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span>Reso gratuito in 30 giorni</span>
           </div>
-
-          <!-- Product Card 3 -->
-          <div class="uq-product-card">
-            <div class="product-image-container">
-              <div class="product-badge">LIMITED</div>
-              <div class="shirt-graphic white-tote">
-                <div class="mini-pixel-cherry"></div>
-              </div>
-            </div>
-            <div class="product-details">
-              <span class="prod-category">Accessories</span>
-              <h3>Canvas Tote Bag (Special Edition)</h3>
-              <div class="prod-rating">★★★★☆ <span class="review-count">(29)</span></div>
-              <div class="prod-price">€14.90</div>
-            </div>
+          <div class="uq-strip-divider"></div>
+          <div class="uq-strip-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>Pagamento sicuro garantito</span>
+          </div>
+          <div class="uq-strip-divider"></div>
+          <div class="uq-strip-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            <span>App disponibile su iOS &amp; Android</span>
           </div>
         </div>
-      </main>
-    </div>
+
+        <!-- ── FOOTER ── -->
+        <footer class="uq-footer">
+          <div class="uq-footer-grid">
+            <div class="uq-footer-col">
+              <div class="uq-footer-heading">Assistenza</div>
+              <ul>
+                <li><a href="#">Il mio account</a></li>
+                <li><a href="#">Informazioni sulle spedizioni</a></li>
+                <li><a href="#">Resi &amp; Cambi</a></li>
+                <li><a href="#">Negozi</a></li>
+                <li><a href="#">Domande frequenti / FAQ</a></li>
+                <li><a href="#">Gift Card</a></li>
+              </ul>
+            </div>
+            <div class="uq-footer-col">
+              <div class="uq-footer-heading">Su UNIQLO</div>
+              <ul>
+                <li><a href="#">Chi siamo</a></li>
+                <li><a href="#">Sostenibilità</a></li>
+                <li><a href="#">Lavora con noi</a></li>
+                <li><a href="#">Newsroom</a></li>
+                <li><a href="#">App UNIQLO</a></li>
+              </ul>
+            </div>
+            <div class="uq-footer-col">
+              <div class="uq-footer-heading">Seguici</div>
+              <ul>
+                <li><a href="#">Instagram</a></li>
+                <li><a href="#">Facebook</a></li>
+                <li><a href="#">TikTok</a></li>
+                <li><a href="#">Pinterest</a></li>
+              </ul>
+            </div>
+            <div class="uq-footer-col">
+              <div class="uq-footer-heading">Newsletter</div>
+              <p style="font-size:13px; color:#555; margin-bottom:16px; line-height:1.5;">Diventa membro UNIQLO e risparmia <strong style="color:#E60012;">30 €</strong> sul primo ordine.</p>
+              <div class="uq-newsletter-row">
+                <input type="email" placeholder="Il tuo indirizzo email" class="uq-email-input">
+                <button class="uq-btn-red-sm">ISCRIVITI</button>
+              </div>
+            </div>
+          </div>
+          <div class="uq-footer-bottom">
+            <span>© UNIQLO Co., Ltd. Tutti i diritti riservati.</span>
+            <span class="uq-footer-links">
+              <a href="#">Privacy Policy</a> &nbsp;|&nbsp;
+              <a href="#">Termini e Condizioni</a> &nbsp;|&nbsp;
+              <a href="#">Cookie</a> &nbsp;|&nbsp;
+              <a href="#">Accessibilità</a>
+            </span>
+            <span class="uq-country-btn">🇮🇹 Italia</span>
+          </div>
+        </footer>
+
+      </div><!-- /uq-page-body -->
+    </div><!-- /screen-landing -->
 
     <!-- SCREEN 2: PAC-MAN EATS THE PAGE (TRANSITION) -->
     <div id="screen-transition" class="screen">
@@ -213,7 +435,7 @@
         <!-- 3. ACTUAL START MENU -->
         <div id="start-menu-content" class="arcade-start-menu hidden">
           <div class="uq-arcade-header">UNIQLO x PAC-MAN</div>
-          <h1>PAC-MAN</h1>
+          <img src="/assets/pac-man-logo.png" alt="PAC-MAN" class="arcade-pacman-logo">
           <p class="subtitle">UNIQLO CAPSULE COLLECTION</p>
           <div class="start-actions">
             <button id="btn-play-game" class="arcade-btn">PLAY PLAYER 1</button>
@@ -252,11 +474,11 @@
             </div>
             <div class="hud-col">
               <span>HIGH SCORE</span>
-              <span>10000</span>
+              <span id="high-score-val">10000</span>
             </div>
             <div class="hud-col">
               <span>2UP</span>
-              <span>0</span>
+              <span id="p2-score-val">0</span>
             </div>
             <div class="hud-logo">
               <img src="/assets/uniqlo-logo.png" alt="UNIQLO" onerror="this.style.display='none'">
@@ -275,10 +497,16 @@
               <div class="player-text">PLAYER 1</div>
               <div class="ready-text">READY!</div>
             </div>
+
+            <!-- PAUSED OVERLAY -->
+            <div id="paused-overlay" class="ready-overlay-container hidden">
+              <div class="ready-text">PAUSED</div>
+            </div>
           </div>
         </div>
 
         <div class="game-controls">
+          <button id="btn-pause" class="arcade-btn small" aria-label="Pause game">PAUSE</button>
           <button id="btn-skip-game" class="arcade-btn small secondary">SKIP THE GAME</button>
           <button id="btn-copy-map" class="arcade-btn small hidden" style="background-color: var(--pacman-yellow); color: #000; border-color: var(--pacman-yellow);">COPY COLLISION MAP</button>
         </div>
@@ -316,7 +544,7 @@
         <div class="terminal-header-right" style="display: flex; align-items: center; gap: 20px;">
           <span id="arcade-header-status" class="status blink-fast">[ REWARD: 20% OFF ACTIVE ]</span>
           <div id="arcade-cart-btn" class="arcade-cart-btn-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
-            <span class="cart-icon" style="font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,212,59,0.5)); transition: transform 0.2s;">🛍️</span>
+            <img src="/assets/cart-pixel.png" alt="Cart" class="arcade-cart-icon">
             <span id="cart-count-badge" class="cart-count-badge" style="background: var(--uniqlo-red); color: white; font-family: monospace; font-size: 0.8rem; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(230,0,18,0.6);">0</span>
           </div>
         </div>
@@ -354,7 +582,7 @@
         </div>
         <div class="terminal-header-right">
           <div id="item-view-cart-btn" class="arcade-cart-btn-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
-            <span class="cart-icon" style="font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,212,59,0.5)); transition: transform 0.2s;">🛍️</span>
+            <img src="/assets/cart-pixel.png" alt="Cart" class="arcade-cart-icon">
             <span id="item-view-cart-count-badge" class="cart-count-badge" style="background: var(--uniqlo-red); color: white; font-family: monospace; font-size: 0.8rem; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(230,0,18,0.6);">0</span>
           </div>
         </div>

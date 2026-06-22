@@ -70,335 +70,783 @@ body, html {
 }
 
 /* =========================================
-   SCREEN 1: UNIQLO LANDING PAGE
+   SCREEN 1: UNIQLO ITALY LANDING PAGE (v2)
+   Faithful recreation of uniqlo.com/it/it/
 ========================================= */
-.uq-header {
+
+/* ── Landing screen layout ── */
+#screen-landing {
+  background: #fff;
+  color: #111;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Utility bar (top announcement strip) ── */
+.uq-utility-bar {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e8e8e8;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 40px;
-  border-bottom: 1px solid #e5e5e5;
-  background-color: var(--bg-store);
-  z-index: 10;
-  position: relative;
+  padding: 7px 32px;
+  font-size: 11px;
+  color: #555;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
 }
 
-.uq-logo-container {
+/* ── Main Header v2 ── */
+.uq-header-v2 {
   display: flex;
   align-items: center;
-}
-
-.uq-logo {
-  position: relative;
-  width: 50px;
-  height: 50px;
-}
-
-.uq-logo #logo-img {
-  position: absolute;
+  gap: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fff;
+  height: 56px;
+  flex-shrink: 0;
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 100;
+}
+
+/* Logo area: red block + hidden pac-man */
+.uq-logo-v2 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 32px;
+}
+
+.uq-logo-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  position: relative;
   z-index: 2;
 }
 
+/* Pac-Man easter egg — tiny, hidden behind the logo but flashing and peeking out */
 #pacman-easter-egg {
   position: absolute;
-  top: -10px;
-  left: -10px;
-  width: 24px;
-  height: 24px;
-  z-index: 1; /* Partially hidden behind the main logo graphic */
+  top: 50%;
+  left: 40px; /* Peeks out from behind the right side of the 56px logo */
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.uq-nav {
-  display: flex;
-  gap: 25px;
-}
-
-.uq-nav a {
-  text-decoration: none;
-  color: var(--text-primary);
-  font-weight: bold;
-  font-size: 13px;
-  letter-spacing: 1px;
-  padding: 5px 0;
-  border-bottom: 2px solid transparent;
-  transition: border-bottom 0.2s;
-}
-
-.uq-nav a.active, .uq-nav a:hover {
-  border-bottom: 2px solid var(--text-primary);
-}
-
-.uq-header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.uq-header-right .search-bar {
-  background: #f4f4f4;
-  padding: 8px 15px;
-  font-size: 12px;
-  color: #777;
-  border-radius: 3px;
-  width: 160px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.uq-header-right .header-icon {
-  font-size: 18px;
-  cursor: pointer;
-}
-
-/* Hero Section */
-.uq-hero-banner {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  background-color: #f7f7f7;
-  border-radius: 4px;
-  margin-bottom: 60px;
-  overflow: hidden;
-  height: 380px;
-}
-
-.hero-left {
-  padding: 50px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.hero-left .capsule-tag {
-  background-color: var(--uniqlo-red);
-  color: #fff;
-  font-size: 10px;
-  font-weight: bold;
-  padding: 4px 8px;
-  letter-spacing: 1px;
-  margin-bottom: 20px;
-}
-
-.hero-left h1 {
-  font-size: 2.8rem;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -1px;
-  margin-bottom: 15px;
-  color: var(--text-primary);
-}
-
-.hero-left p {
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 25px;
-}
-
-.uq-shop-btn {
-  background-color: var(--text-primary);
-  color: #fff;
-  border: none;
-  padding: 12px 30px;
-  font-size: 13px;
-  font-weight: bold;
-  cursor: pointer;
-  letter-spacing: 1px;
-  transition: background-color 0.2s;
-}
-
-.uq-shop-btn:hover {
-  background-color: #333;
-}
-
-.hero-right-visual {
-  background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.3)), url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgNjAwIDQwMCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2UzZTNlMyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjYWFhIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPlVOSVFMTyBGQVNISU9OIFZJU1VBTDwvdGV4dD48L3N2Zz4=');
-  background-size: cover;
-  background-position: center;
-  position: relative;
-}
-
-.model-caption {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background-color: #fff;
-  font-size: 10px;
-  font-weight: bold;
-  padding: 5px 10px;
-  letter-spacing: 1px;
-}
-
-/* Product Grid */
-.section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  letter-spacing: -0.5px;
-  margin-bottom: 30px;
-  text-align: center;
-}
-
-.uq-product-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  margin-bottom: 50px;
-}
-
-.uq-product-card {
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  border-radius: 4px;
-  overflow: hidden;
-  transition: transform 0.2s;
-}
-
-.uq-product-card:hover {
-  transform: translateY(-5px);
-}
-
-.product-image-container {
-  height: 220px;
-  background-color: #f7f7f7;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.product-badge {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  background-color: #333;
-  color: #fff;
-  font-size: 9px;
-  font-weight: bold;
-  padding: 3px 6px;
-  letter-spacing: 0.5px;
-}
-
-.product-badge.red {
-  background-color: var(--uniqlo-red);
-}
-
-.product-details {
-  padding: 15px 5px;
-}
-
-.prod-category {
-  font-size: 11px;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 5px;
-  display: block;
-}
-
-.product-details h3 {
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.prod-rating {
-  color: #f1c40f;
-  font-size: 11px;
-  margin-bottom: 10px;
-}
-
-.review-count {
-  color: #999;
-}
-
-.prod-price {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-/* Pure CSS Clothing Graphics for premium mockup vibe */
-.shirt-graphic {
-  width: 90px;
-  height: 90px;
-  position: relative;
-}
-
-.shirt-graphic.red-shirt {
-  background-color: var(--uniqlo-red);
-  clip-path: polygon(25% 0%, 75% 0%, 85% 15%, 100% 25%, 85% 50%, 75% 40%, 75% 100%, 25% 100%, 25% 40%, 15% 50%, 0% 25%, 15% 15%);
-}
-
-.shirt-graphic.black-shirt {
-  background-color: #111111;
-  clip-path: polygon(25% 0%, 75% 0%, 85% 15%, 100% 25%, 85% 50%, 75% 40%, 75% 100%, 25% 100%, 25% 40%, 15% 50%, 0% 25%, 15% 15%);
-}
-
-.shirt-graphic.white-tote {
-  background-color: #fff;
-  border: 2px solid #ccc;
-  width: 70px;
-  height: 70px;
-  border-radius: 2px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-.mini-pixel-ghost {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 14px; height: 14px;
-  background-color: #ff3333;
-  border-radius: 7px 7px 0 0;
-}
-
-.mini-pixel-pacman {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 14px; height: 14px;
-  background-color: var(--pacman-yellow);
-  border-radius: 50%;
-  clip-path: polygon(0 0, 100% 0, 100% 30%, 50% 50%, 100% 70%, 100% 100%, 0 100%);
-}
-
-.mini-pixel-cherry {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 12px; height: 12px;
-  background-color: var(--uniqlo-red);
-  border-radius: 50%;
-}
-
-/* Easter Egg */
-#pacman-easter-egg {
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  opacity: 0.6;
-  transition: transform 0.2s, top 0.2s, left 0.2s;
-  z-index: 1; /* Partially hidden behind the logo */
+  z-index: 1; /* Positioned behind .uq-logo-block */
+  animation: pacman-flash-pulse 1.4s infinite alternate ease-in-out;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s;
 }
 
 #pacman-easter-egg:hover {
-  transform: scale(1.2);
-  top: -6px;
-  left: -6px;
-  opacity: 0.9;
+  animation: none; /* Stop flashing on hover */
+  opacity: 0.95;
+  transform: translateY(-50%) scale(1.2);
 }
+
+#pacman-easter-egg.clicked {
+  animation: none !important; /* Stop flashing when clicked */
+}
+
+@keyframes pacman-flash-pulse {
+  0% {
+    opacity: 0.2;
+    filter: drop-shadow(0 0 2px rgba(255, 212, 59, 0.4));
+  }
+  100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 10px rgba(255, 212, 59, 0.9));
+  }
+}
+
+.pacman-egg-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Navigation tabs */
+.uq-nav-v2 {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  gap: 0;
+}
+
+.uq-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  border-bottom: 3px solid transparent;
+  border-top: 3px solid transparent;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+
+.uq-tab.active {
+  border-bottom-color: #111;
+}
+
+.uq-tab:hover {
+  border-bottom-color: #555;
+}
+
+/* Header right: search + icon buttons */
+.uq-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.uq-search-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f2f2f2;
+  border-radius: 20px;
+  padding: 7px 16px;
+  width: 260px;
+  cursor: text;
+  margin-right: 8px;
+}
+
+.uq-search-placeholder {
+  font-size: 13px;
+  color: #999;
+  user-select: none;
+}
+
+.uq-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #111;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.uq-icon-btn:hover {
+  background: #f5f5f5;
+}
+
+/* ── Page body ── */
+.uq-page-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Hero Banner ── */
+.uq-hero-v2 {
+  position: relative;
+  height: calc(100vh - 88px); /* full viewport minus header + utility bar */
+  min-height: 520px;
+  max-height: 780px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.uq-hero-bg,
+.uq-hero-gradient {
+  position: absolute;
+  inset: 0;
+}
+
+.uq-hero-gradient {
+  background:
+    linear-gradient(
+      105deg,
+      #0a0a0a 0%,
+      #1a0a00 20%,
+      #2d0d0d 40%,
+      #1a1a3e 70%,
+      #050520 100%
+    );
+}
+
+/* Subtle pac-man maze pattern overlay */
+.uq-hero-gradient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 30%, rgba(255,212,59,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(230,0,18,0.08) 0%, transparent 35%),
+    radial-gradient(circle at 50% 80%, rgba(0,59,255,0.05) 0%, transparent 40%);
+}
+
+.uq-hero-content {
+  position: relative;
+  z-index: 10;
+  padding: 0 80px 80px;
+  max-width: 700px;
+  color: #fff;
+}
+
+.uq-hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.uq-hero-title {
+  font-size: clamp(3.5rem, 7vw, 6.5rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -2px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.uq-hero-desc {
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 36px;
+  max-width: 480px;
+}
+
+.uq-hero-cta-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.uq-btn-primary {
+  background: #E60012;
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  font-family: inherit;
+}
+
+.uq-btn-primary:hover {
+  background: #c4000f;
+  transform: translateY(-1px);
+}
+
+.uq-btn-ghost {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.45);
+  padding: 14px 32px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: inherit;
+}
+
+.uq-btn-ghost:hover {
+  border-color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+
+.uq-hero-deco {
+  position: absolute;
+  top: 40px;
+  right: 60px;
+  z-index: 10;
+}
+
+.deco-pill {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border-radius: 2px;
+}
+
+.deco-pill.red {
+  background: #E60012;
+  color: #fff;
+}
+
+/* ── Categories Section ── */
+.uq-categories-section {
+  background: #fafafa;
+  padding: 60px 64px 48px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.uq-section-label {
+  font-size: 20px;
+  font-weight: 500;
+  color: #111;
+  margin-bottom: 40px;
+  letter-spacing: -0.3px;
+}
+
+.uq-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px 20px;
+  margin-bottom: 40px;
+}
+
+.uq-cat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.uq-cat-item:hover .uq-cat-img {
+  transform: translateY(-3px);
+}
+
+.uq-cat-item:hover span {
+  color: #E60012;
+}
+
+.uq-cat-img {
+  width: 90px;
+  height: 90px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.uq-cat-img svg {
+  width: 72px;
+  height: 72px;
+}
+
+.uq-cat-item span {
+  font-size: 11px;
+  color: #333;
+  line-height: 1.4;
+  transition: color 0.15s;
+  max-width: 100px;
+}
+
+.uq-btn-outline-full {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  background: transparent;
+  border: 1.5px solid #111;
+  color: #111;
+  padding: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 40px;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.uq-btn-outline-full:hover {
+  background: #111;
+  color: #fff;
+}
+
+/* ── Promo grid (2-col) ── */
+.uq-promo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-top: 0;
+}
+
+.uq-promo-tile {
+  position: relative;
+  height: 420px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.uq-promo-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.uq-promo-body {
+  position: relative;
+  z-index: 5;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uq-promo-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+
+.uq-promo-title {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.uq-promo-price {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+
+.uq-btn-white-sm {
+  margin-top: 8px;
+  background: #fff;
+  color: #111;
+  border: none;
+  padding: 10px 24px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  align-self: flex-start;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.uq-btn-white-sm:hover {
+  background: #f0f0f0;
+}
+
+.uq-btn-dark-sm {
+  margin-top: 8px;
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  align-self: flex-start;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.uq-btn-dark-sm:hover {
+  background: #333;
+}
+
+/* ── UT × Pac-Man editorial ── */
+.uq-ut-editorial {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 0;
+  padding: 100px 80px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+}
+
+.uq-ut-left {
+  max-width: 480px;
+}
+
+.uq-ut-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #E60012;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.uq-ut-title {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -1px;
+  color: #111;
+  margin-bottom: 24px;
+}
+
+.uq-ut-desc {
+  font-size: 15px;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.uq-ut-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+
+.uq-ut-price-item {
+  font-size: 13px;
+  color: #666;
+}
+
+.uq-ut-price-item strong {
+  color: #111;
+}
+
+/* Pixel art decorative right panel */
+.uq-ut-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 320px;
+}
+
+.uq-pixel-grid {
+  position: relative;
+  width: 300px;
+  height: 260px;
+  background: #0a0a0a;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+/* Mini pixel ghosts in the UT editorial */
+.px-ghost {
+  width: 32px;
+  height: 36px;
+  border-radius: 16px 16px 0 0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.px-ghost::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background-image: radial-gradient(circle at 25% 100%, transparent 5px, currentColor 5px);
+  background-size: 33.33% 100%;
+}
+
+.red-g   { background: #FF0000; color: #FF0000; }
+.pink-g  { background: #FFB8FF; color: #FFB8FF; }
+.cyan-g  { background: #00FFFF; color: #00FFFF; }
+.orange-g{ background: #FFB852; color: #FFB852; }
+
+.px-pacman {
+  width: 34px;
+  height: 34px;
+  background: #FFD43B;
+  border-radius: 50%;
+  clip-path: polygon(50% 50%, 100% 15%, 100% 85%);
+  flex-shrink: 0;
+}
+
+.px-pellets {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #fff;
+  flex-shrink: 0;
+  animation: pellet-blink 1s step-end infinite;
+}
+
+@keyframes pellet-blink {
+  50% { opacity: 0; }
+}
+
+/* ── Service strip ── */
+.uq-banner-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 28px 64px;
+  background: #fafafa;
+  border-top: 1px solid #ebebeb;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.uq-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #333;
+  padding: 0 32px;
+  flex: 1;
+  justify-content: center;
+}
+
+.uq-strip-divider {
+  width: 1px;
+  height: 24px;
+  background: #ddd;
+  flex-shrink: 0;
+}
+
+/* ── Footer ── */
+.uq-footer {
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  padding: 60px 64px 0;
+}
+
+.uq-footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.5fr;
+  gap: 40px;
+  margin-bottom: 48px;
+}
+
+.uq-footer-heading {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #111;
+  margin-bottom: 20px;
+}
+
+.uq-footer-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uq-footer-col a {
+  font-size: 13px;
+  color: #555;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.uq-footer-col a:hover {
+  color: #111;
+}
+
+.uq-newsletter-row {
+  display: flex;
+  gap: 0;
+}
+
+.uq-email-input {
+  flex: 1;
+  border: 1px solid #ccc;
+  border-right: none;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  border-radius: 0;
+}
+
+.uq-email-input:focus {
+  border-color: #111;
+}
+
+.uq-btn-red-sm {
+  background: #E60012;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.uq-footer-bottom {
+  border-top: 1px solid #ebebeb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  font-size: 11px;
+  color: #888;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.uq-footer-links a {
+  color: #888;
+  text-decoration: none;
+}
+
+.uq-footer-links a:hover {
+  color: #111;
+}
+
+.uq-country-btn {
+  cursor: pointer;
+  padding: 4px 12px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  font-size: 11px;
+  color: #555;
+  transition: border-color 0.15s;
+}
+
+.uq-country-btn:hover {
+  border-color: #111;
+}
+
+/* Legacy easter egg rule (kept for JS compatibility) */
+.pacman-egg-svg {
+  position: absolute;
+  top: 50%;
+  left: -8px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  z-index: 3;
+  opacity: 0.25;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s;
+}
+
+.pacman-egg-svg:hover {
+  opacity: 0.7;
+}
+
 
 /* =========================================
    SCREEN 2: TRANSITION
@@ -657,12 +1105,15 @@ body, html {
   text-align: center;
 }
 
-.arcade-start-menu h1 {
-  color: var(--pacman-yellow);
-  font-size: 5rem;
-  margin-bottom: 0;
-  text-shadow: 3px 3px 0 var(--maze-blue);
-  letter-spacing: 5px;
+.arcade-pacman-logo {
+  max-width: 380px;
+  width: 100%;
+  height: auto;
+  margin: 15px auto 25px;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 0 12px rgba(255, 212, 59, 0.25));
 }
 
 .arcade-start-menu .subtitle {
@@ -1093,9 +1544,22 @@ body, html {
 }
 
 .arcade-product-item .item-icon {
-  font-size: 1.5rem;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
   margin-right: 20px;
-  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arcade-product-item .item-icon .pixel-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
 }
 
 .arcade-product-item .item-details {
@@ -1956,4 +2420,16 @@ body, html {
 .drawer-backdrop.active {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* Style for the retro pixel art cart icon */
+.arcade-cart-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 0 5px rgba(255, 212, 59, 0.5));
+  transition: transform 0.2s;
+  display: block;
 }
