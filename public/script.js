@@ -5,10 +5,14 @@ let hasDiscount = false;
 let unlockedItems = [];
 const TOTAL_ITEMS = 4;
 
+let startGameTimeout = null;
+let startBlinkInterval = null;
+
 // DOM Elements
 const screens = {
   landing: document.getElementById('screen-landing'),
   transition: document.getElementById('screen-transition'),
+  bootup: document.getElementById('screen-bootup'),
   pressStart: document.getElementById('screen-press-start'),
   arcadeLoader: document.getElementById('screen-arcade-loader'),
   arcadeReveal: document.getElementById('screen-arcade-reveal'),
@@ -129,7 +133,7 @@ function startTransition() {
 
     // Update state
     pacX += speed * direction;
-    mouthOpen += 0.15 * mouthDir;
+    mouthOpen += 0.03 * mouthDir;
     if (mouthOpen >= 1 || mouthOpen <= 0) mouthDir *= -1;
 
     // Row completion logic
@@ -146,12 +150,297 @@ function startTransition() {
     if (currentRow < totalRows) {
       requestAnimationFrame(draw);
     } else {
-      // Transition complete — show red arcade button
+      // Transition complete — run the arcade boot self-test, then the red button.
       document.body.style.backgroundColor = '#000000';
-      showPressStartButton();
+      playBootSequence(showPressStartButton);
     }
   }
-  
+
+  draw();
+}
+
+// =========================================
+// SCREEN 2.3: CORRUPTED-MEMORY GLITCH BOOT
+// A "broken ROM" power-on: the screen floods with garbage characters, hex
+// codes and torn glitch bands — the corrupted-memory look of a glitching
+// cabinet — then hands off to the press-start button. Original recreation.
+// =========================================
+const _GLITCH_CHARS = '0123456789ABCDEF0123456789ABCDEFGHJKLMNPRSTVWXYZ#@$%&*<>/\\=+?█▓▒░'.split('');
+const _GLITCH_COLS = ['#00FFFF', '#FFD43B', '#FF0000', '#FFB8FF', '#33FF66', '#2121FF', '#FFFFFF', '#FFB852'];
+const _rc = arr => arr[(Math.random() * arr.length) | 0];
+
+function _bootCanvasSetup() {
+  const canvas = document.getElementById('bootup-canvas');
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const resize = () => { canvas.width = Math.floor(window.innerWidth * DPR); canvas.height = Math.floor(window.innerHeight * DPR); };
+  resize();
+  window.addEventListener('resize', resize);
+  return { canvas, ctx, DPR, dispose: () => window.removeEventListener('resize', resize) };
+}
+
+function playBootSequence(onDone) {
+  const s = _bootCanvasSetup();
+  if (!s) { onDone(); return; }
+  showScreen('bootup');
+  const { canvas, ctx, DPR, dispose } = s;
+  const FRAGMENTS = ['PAC-MAN', 'MEMORY ERR', 'RAM 0x7F3A', 'ROM FAULT', 'UNIQLO', '0xDEAD', 'SEGMENT', 'Z80 CPU', 'STACK OVF', 'BAD TILE'];
+  const END_AT = 3.6;
+  const start = performance.now();
+  let rafId = 0, lastBeep = 0;
+
+  function frame(now) {
+    const e = (now - start) / 1000;
+    const W = canvas.width, H = canvas.height;
+    const intensity = Math.min(1, e / 1.0); // garbage density ramps in
+    const cell = Math.max(16, Math.min(W, H) / 30);
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // garbage character grid (re-randomised every frame = flicker)
+    ctx.textBaseline = 'top';
+    ctx.font = `${cell}px "Courier New", monospace`;
+    for (let y = 0; y < H; y += cell * 1.15) {
+      for (let x = 0; x < W; x += cell * 0.95) {
+        if (Math.random() > 0.18 + intensity * 0.5) continue;
+        ctx.fillStyle = _rc(_GLITCH_COLS);
+        ctx.globalAlpha = 0.45 + Math.random() * 0.55;
+        ctx.fillText(_rc(_GLITCH_CHARS), x, y);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // torn horizontal glitch bands
+    const bands = 2 + ((e * 9) % 4 | 0);
+    for (let b = 0; b < bands; b++) {
+      if (Math.random() > 0.5) continue;
+      const by = Math.random() * H, bh = cell * (0.6 + Math.random() * 2.4);
+      ctx.fillStyle = _rc(_GLITCH_COLS);
+      ctx.globalAlpha = 0.12 + Math.random() * 0.28;
+      ctx.fillRect(0, by, W, bh);
+    }
+    ctx.globalAlpha = 1;
+
+    // coherent fragments flickering through the noise
+    if (Math.random() < 0.32) {
+      ctx.font = `bold ${cell * 1.6}px "Press Start 2P", "Courier New", monospace`;
+      ctx.fillStyle = _rc(_GLITCH_COLS);
+      ctx.globalAlpha = 0.7 + Math.random() * 0.3;
+      ctx.textAlign = 'center';
+      ctx.fillText(_rc(FRAGMENTS), W * (0.3 + Math.random() * 0.4), H * (0.2 + Math.random() * 0.6));
+      ctx.textAlign = 'left';
+      ctx.globalAlpha = 1;
+    }
+
+    // erratic glitch beeps
+    if (now - lastBeep > 90 + Math.random() * 130) {
+      lastBeep = now;
+      try { blip({ freq: 120 + Math.random() * 1400, dur: 0.03, type: 'square', vol: 0.04 }); } catch (_) {}
+    }
+
+    // scanlines
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    for (let y = 0; y < H; y += Math.max(2, Math.round(DPR * 2))) ctx.fillRect(0, y, W, 1);
+
+    if (e > END_AT - 0.35) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, (e - (END_AT - 0.35)) / 0.35)})`; ctx.fillRect(0, 0, W, H); }
+
+    if (e < END_AT) rafId = requestAnimationFrame(frame);
+    else { cancelAnimationFrame(rafId); dispose(); onDone(); }
+  }
+  rafId = requestAnimationFrame(frame);
+}
+
+// =========================================
+// CODE EXPLOSION (press-start → cabinet)
+// A burst of numbers/code explodes outward while the screen floods with
+// cascading garbage, white-flashes, then fades to black → cabinet reveal.
+// =========================================
+function playCodeExplosion(onDone) {
+  const s = _bootCanvasSetup();
+  if (!s) { onDone(); return; }
+  showScreen('bootup');
+  const { canvas, ctx, DPR, dispose } = s;
+  const W0 = canvas.width, H0 = canvas.height;
+  const cell = Math.max(15, Math.min(W0, H0) / 32);
+
+  // outward burst particles from centre
+  const parts = [];
+  for (let i = 0; i < 170; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = (0.4 + Math.random() * 1.7) * Math.min(W0, H0) / 60;
+    parts.push({ x: W0 / 2, y: H0 / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, ch: _rc(_GLITCH_CHARS), col: _rc(_GLITCH_COLS), life: 1 });
+  }
+  // matrix-style cascading columns
+  const colCount = Math.ceil(W0 / (cell * 0.9));
+  const drops = new Array(colCount).fill(0).map(() => Math.random() * -H0);
+
+  try { blip({ freq: 90, dur: 0.5, type: 'sawtooth', slide: 500, vol: 0.12 }); } catch (_) {}
+
+  const start = performance.now();
+  const DUR = 2.2;
+  let rafId = 0;
+
+  function frame(now) {
+    const e = (now - start) / 1000;
+    const W = canvas.width, H = canvas.height, t = e / DUR;
+
+    // motion-blur trail instead of a full clear
+    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.fillRect(0, 0, W, H);
+
+    const shake = (1 - t) * cell * 0.7;
+    ctx.save();
+    ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    ctx.textBaseline = 'top';
+
+    // cascading garbage columns (accelerate over time)
+    ctx.font = `${cell}px "Courier New", monospace`;
+    const flow = 1 + t * 6;
+    for (let c = 0; c < colCount; c++) {
+      drops[c] += cell * flow;
+      if (drops[c] > H) drops[c] = Math.random() * -H * 0.5;
+      for (let k = 0; k < 3; k++) {
+        ctx.fillStyle = _rc(_GLITCH_COLS);
+        ctx.globalAlpha = 0.4 + Math.random() * 0.5;
+        ctx.fillText(_rc(_GLITCH_CHARS), c * cell * 0.9, drops[c] - k * cell);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // exploding code particles
+    ctx.font = `bold ${cell * 1.2}px "Courier New", monospace`;
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy; p.vx *= 1.012; p.vy *= 1.012; p.life -= 0.011;
+      if (p.life <= 0) continue;
+      if (Math.random() < 0.15) p.ch = _rc(_GLITCH_CHARS);
+      ctx.fillStyle = p.col;
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillText(p.ch, p.x, p.y);
+    }
+    ctx.globalAlpha = 1;
+
+    // glitch bands
+    for (let b = 0; b < 3; b++) {
+      if (Math.random() > 0.55) continue;
+      const by = Math.random() * H, bh = cell * (0.5 + Math.random() * 2.5);
+      ctx.fillStyle = _rc(_GLITCH_COLS);
+      ctx.globalAlpha = 0.12 + Math.random() * 0.3;
+      ctx.fillRect(0, by, W, bh);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // white flash at the burst peak
+    if (t > 0.32 && t < 0.5) { ctx.fillStyle = `rgba(255,255,255,${(0.5 - t) * 2 * 0.55})`; ctx.fillRect(0, 0, W, H); }
+
+    // scanlines
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    for (let y = 0; y < H; y += Math.max(2, Math.round(DPR * 2))) ctx.fillRect(0, y, W, 1);
+
+    // fade to black at the end → cabinet appears
+    if (t > 0.7) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, (t - 0.7) / 0.3)})`; ctx.fillRect(0, 0, W, H); }
+
+    if (e < DUR) rafId = requestAnimationFrame(frame);
+    else { cancelAnimationFrame(rafId); dispose(); onDone(); }
+  }
+  rafId = requestAnimationFrame(frame);
+}
+
+// =========================================
+// GENERAL SCREEN TRANSITION (MEGA PAC-MAN)
+// =========================================
+function startMegaTransition(nextScreenKey, callback, isGoingBack) {
+  const transitionScreen = screens.transition;
+  const canvas = document.getElementById('transition-canvas');
+  if (!transitionScreen || !canvas) {
+    showScreen(nextScreenKey);
+    if (callback) callback();
+    return;
+  }
+
+  // Force active class, z-index and visibility on top of everything
+  transitionScreen.style.transition = 'none';
+  transitionScreen.style.opacity = '1';
+  transitionScreen.style.visibility = 'visible';
+  transitionScreen.style.zIndex = '99999';
+  transitionScreen.classList.add('active');
+
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const radius = canvas.height * 0.7; // Mega Pacman radius
+  const totalDistance = canvas.width + 2 * radius;
+  const frames = 70; // Slightly slower: 70 frames (approx 1.15s)
+  const speed = totalDistance / frames;
+
+  let pacX, dir;
+  if (isGoingBack) {
+    pacX = canvas.width + radius; // Start off screen right
+    dir = -1;
+  } else {
+    pacX = -radius; // Start off screen left
+    dir = 1;
+  }
+
+  let mouthOpen = 0;
+  let mouthDir = 1;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the black trail behind Pac-Man
+    ctx.fillStyle = '#050505';
+    if (dir === 1) {
+      ctx.fillRect(0, 0, Math.max(0, pacX), canvas.height);
+    } else {
+      ctx.fillRect(Math.max(0, pacX), 0, canvas.width - Math.max(0, pacX), canvas.height);
+    }
+
+    // Draw Mega Pac-Man
+    const pacY = canvas.height / 2;
+    ctx.fillStyle = '#FFD43B';
+    ctx.beginPath();
+
+    const mouthAngle = 0.22 * mouthOpen * Math.PI;
+    const angleOffset = dir === 1 ? 0 : Math.PI;
+
+    ctx.arc(pacX, pacY, radius, angleOffset + mouthAngle, angleOffset + 2 * Math.PI - mouthAngle);
+    ctx.lineTo(pacX, pacY);
+    ctx.fill();
+
+    // Update state
+    pacX += speed * dir;
+    mouthOpen += 0.06 * mouthDir; // Chomping speed matched to slightly slower timing
+    if (mouthOpen >= 1 || mouthOpen <= 0) mouthDir *= -1;
+
+    // Check completion
+    const isComplete = dir === 1 ? (pacX >= canvas.width + radius) : (pacX <= -radius);
+
+    if (!isComplete) {
+      requestAnimationFrame(draw);
+    } else {
+      // Screen is fully covered. Switch screen now!
+      showScreen(nextScreenKey);
+      if (callback) callback();
+
+      // Smoothly fade out the transition screen to reveal the new page
+      transitionScreen.style.transition = 'opacity 0.4s ease-out';
+      transitionScreen.style.opacity = '0';
+
+      setTimeout(() => {
+        transitionScreen.classList.remove('active');
+        transitionScreen.style.transition = '';
+        transitionScreen.style.opacity = '';
+        transitionScreen.style.visibility = '';
+        transitionScreen.style.zIndex = '';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }, 400);
+    }
+  }
+
   draw();
 }
 
@@ -252,21 +541,20 @@ function initThreeJSCabinet() {
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
     baseCameraZ = cameraZ * 1.6;
     
-    // Drop-from-above setup: full size, right side, camera at normal distance
-    cabinetDropStartY = maxDim * 4.5;
-    cabinetModel.position.y = cabinetDropStartY;
-    cabinetModel.position.x = maxDim * 0.35; // Position on the right side
-    cabinetModel.rotation.y = -0.25; // Face angled slightly, showing the right panel
+    // Center setup for scroll-zoom entrance
+    cabinetModel.position.set(0, 0, 0);
+    cabinetModel.rotation.y = Math.PI * 6; // Starts with several spins
     cabinetModel.scale.set(1, 1, 1);
-    cabinetCamera.position.set(0, 0, baseCameraZ);
+    cabinetCamera.position.set(0, 0, baseCameraZ * 4); // Camera starts far away
+    cabinetCamera.lookAt(0, 0, 0);
     
-    // Lights start dark, fade in during drop
+    // Lights start dim, fade in as user scrolls
     const amb = cabinetScene.getObjectByName('ambientLight');
     const dir1 = cabinetScene.getObjectByName('dirLight1');
     const dir2 = cabinetScene.getObjectByName('dirLight2');
-    if (amb)  amb.intensity  = 0;
-    if (dir1) dir1.intensity = 0;
-    if (dir2) dir2.intensity = 0;
+    if (amb)  amb.intensity  = 0.05;
+    if (dir1) dir1.intensity = 0.1;
+    if (dir2) dir2.intensity = 0.05;
   });
   
   window.addEventListener('resize', () => {
@@ -408,69 +696,10 @@ function animateCabinet() {
     cabinetCamera.position.z = currentCameraZ;
     cabinetCamera.lookAt(0, currentCameraY, 0);
 
-  // ─── NEW STATES ───────────────────────────────────────────
-  } else if (cabinetState === 'dropping') {
-    if (!cabinetModel) { cabinetRenderer.render(cabinetScene, cabinetCamera); return; }
-    
-    // Smooth time-delta based falling animation (runs beautifully regardless of refresh rate/FPS)
-    if (!window.droppingStartTime) window.droppingStartTime = performance.now();
-    const elapsed = (performance.now() - window.droppingStartTime) / 1000;
-    cabinetDropProgress = elapsed / 1.1; // 1.1s total drop duration
-    
-    if (cabinetDropProgress >= 1) {
-      cabinetDropProgress = 1;
-      // Transition to settling wobble phase
-      cabinetState = 'settling';
-      window.droppingStartTime = null; // Clear drop timer
-      window.settlingStartTime = performance.now(); // Start settling timer
-      createDustBurst(); // Trigger extremely subtle ground reaction
-    }
-    // Believable gravity fall (quadratic curve, no cartoony bounce)
-    const dropEase = Math.pow(Math.min(cabinetDropProgress, 1), 2);
-    cabinetModel.position.y = THREE.MathUtils.lerp(cabinetDropStartY, 0, dropEase);
-    cabinetModel.position.x = cabinetMaxDim * 0.35; // Stay on the right side
-    cabinetModel.rotation.y = -0.25; // Stay angled
-    
-    // Lights fade in during first half of drop
-    const lightT = Math.min(cabinetDropProgress * 2.5, 1);
-    const amb2  = cabinetScene.getObjectByName('ambientLight');
-    const dir1b = cabinetScene.getObjectByName('dirLight1');
-    const dir2b = cabinetScene.getObjectByName('dirLight2');
-    if (amb2)  amb2.intensity  = 0.6 * lightT;
-    if (dir1b) dir1b.intensity = 1.2 * lightT;
-    if (dir2b) dir2b.intensity = 0.4 * lightT;
-    cabinetCamera.lookAt(0, 0, 0);
-
-  } else if (cabinetState === 'settling') {
-    // Damped wobble: heavy cabinet stabilizing after impact (Shopify TV motion reference)
-    if (!window.settlingStartTime) window.settlingStartTime = performance.now();
-    const settlingTime = (performance.now() - window.settlingStartTime) / 1000;
-    
-    // Maintain X position and basic Y rotation
-    cabinetModel.position.x = cabinetMaxDim * 0.35;
-    cabinetModel.rotation.y = -0.25;
-    
-    // Z-axis rotation: slight left-right wobble, stabilizing quickly (stiff frequency, high damping)
-    const sway = 0.045 * Math.exp(-4.5 * settlingTime) * Math.sin(14 * settlingTime);
-    // X-axis rotation: very subtle forward-back rock
-    const rock = 0.015 * Math.exp(-5.0 * settlingTime) * Math.sin(12 * settlingTime);
-    
-    cabinetModel.rotation.z = sway;
-    cabinetModel.rotation.x = rock;
-    
-    // Animate and fade dust particles
-    updateDustParticles();
-    
-    cabinetCamera.lookAt(0, 0, 0);
-    // Switch to scroll mode once stabilized (≈ 1.0 second)
-    if (settlingTime > 1.0) {
-      cabinetModel.rotation.z = 0;
-      cabinetModel.rotation.x = 0;
-      cabinetState = 'scroll_idle';
-      window.settlingStartTime = null; // Clear settling timer
-      setupScrollListener();
-    }
-
+  // ─── NEW SCROLL-DRIVEN APPROACH ───────────────────────────────────
+  } else if (cabinetState === 'dropping' || cabinetState === 'settling') {
+    // These states are no longer used in the new scroll entrance
+    cabinetState = 'scroll_idle';
   } else if (cabinetState === 'scroll_idle') {
     // Smooth lerp scroll progress
     scrollCurrent += (scrollTarget - scrollCurrent) * 0.06;
@@ -479,36 +708,50 @@ function animateCabinet() {
     const bar = document.getElementById('scroll-progress-bar');
     if (bar) bar.style.width = (scrollCurrent * 100) + '%';
     
-    // Curved cinematic scroll arc: camera moves from X=0 to cabinet X, cabinet Y-rotation turns to frontal, camera approaches
     const t = scrollCurrent;
-    const easeX = Math.pow(t, 1.8); // curved arc
-    const easeY = Math.pow(t, 1.5);
-    const easeZ = t;
     
-    const cameraX = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.35, easeX);
-    const cameraY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, easeY);
-    const cameraZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.28, easeZ); // Zooms close to screen for frontal close-up
-    
-    cabinetCamera.position.set(cameraX, cameraY, cameraZ);
-    
-    // Slowly rotate cabinet to face frontal
-    const easeRot = Math.sin(t * Math.PI / 2);
-    cabinetModel.rotation.y = THREE.MathUtils.lerp(-0.25, 0, easeRot);
-    
-    // Ensure rotation X and Z stay at 0
+    // Update lighting based on scroll progress
+    const amb = cabinetScene.getObjectByName('ambientLight');
+    const dir1 = cabinetScene.getObjectByName('dirLight1');
+    const dir2 = cabinetScene.getObjectByName('dirLight2');
+    if (amb) amb.intensity = THREE.MathUtils.lerp(0.05, 0.6, Math.min(1, t / 0.5));
+    if (dir1) dir1.intensity = THREE.MathUtils.lerp(0.1, 1.2, Math.min(1, t / 0.5));
+    if (dir2) dir2.intensity = THREE.MathUtils.lerp(0.05, 0.4, Math.min(1, t / 0.5));
+
+    let cameraX = 0;
+    let cameraY = 0;
+    let cameraZ = baseCameraZ * 4;
+    let lookAtX = 0;
+    let lookAtY = 0;
+    let lookAtZ = 0;
+
+    if (t <= 0.5) {
+      // Phase 1: Approach and rotate on itself, resolving exactly to frontal facing at t = 0.5
+      const p = t / 0.5; // ranges 0 to 1
+      
+      cameraZ = THREE.MathUtils.lerp(baseCameraZ * 4, baseCameraZ * 0.72, p);
+      
+      // Rotates on itself (3 complete rotations, ending at 0)
+      cabinetModel.rotation.y = (1 - p) * Math.PI * 6;
+    } else {
+      // Phase 2: Zoom straight into the cabinet screen, no rotation
+      const p = (t - 0.5) / 0.5; // ranges 0 to 1
+      
+      cameraY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, p);
+      cameraZ = THREE.MathUtils.lerp(baseCameraZ * 0.72, baseCameraZ * 0.28, p);
+      
+      cabinetModel.rotation.y = 0;
+      
+      lookAtY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, p);
+    }
+
+    // Keep cabinet centered at the origin
+    cabinetModel.position.set(0, 0, 0);
     cabinetModel.rotation.x = 0;
     cabinetModel.rotation.z = 0;
-    cabinetModel.position.x = cabinetMaxDim * 0.35;
-    
-    // lookAt target shifts from center of scene to screen center
-    const lookAtX = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.35, Math.pow(t, 1.2));
-    const lookAtY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, Math.pow(t, 1.2));
-    const lookAtZ = 0;
-    
+
+    cabinetCamera.position.set(cameraX, cameraY, cameraZ);
     cabinetCamera.lookAt(lookAtX, lookAtY, lookAtZ);
-    
-    // Animate and fade any active dust particles
-    updateDustParticles();
     
     // Hide scroll hint once user starts scrolling
     if (scrollTarget > 0.05) {
@@ -548,27 +791,27 @@ function runStartSequence() {
     if (nick) nick.style.opacity = '0';
   });
 
-  // Phase 2: Attract & Character Screen after 1.2 seconds
+  // Phase 2: Attract & Character Screen after 0.8 seconds
   setTimeout(() => {
     if (selfTest) selfTest.classList.add('hidden');
     if (attract) attract.classList.remove('hidden');
     
     // Staggered reveal timeline:
-    // Row 1 (Blinky): Red Ghost -> 1.0s -> "Shadow" -> 0.5s -> "BLINKY"
+    // Row 1 (Blinky): Red Ghost -> 0.3s -> "Shadow" -> 0.2s -> "BLINKY"
     const r1 = document.querySelector('.ghost-row.blinky');
     if (r1) {
       r1.style.opacity = '1';
       setTimeout(() => {
         const name = r1.querySelector('.ghost-name');
         if (name) name.style.opacity = '1';
-      }, 1000);
+      }, 300);
       setTimeout(() => {
         const nick = r1.querySelector('.ghost-nick');
         if (nick) nick.style.opacity = '1';
-      }, 1500);
+      }, 500);
     }
     
-    // Row 2 (Pinky): Pink Ghost -> 1.0s -> "Speedy" -> 0.5s -> "PINKY"
+    // Row 2 (Pinky): Pink Ghost -> 0.3s -> "Speedy" -> 0.2s -> "PINKY"
     setTimeout(() => {
       const r2 = document.querySelector('.ghost-row.pinky');
       if (r2) {
@@ -576,15 +819,15 @@ function runStartSequence() {
         setTimeout(() => {
           const name = r2.querySelector('.ghost-name');
           if (name) name.style.opacity = '1';
-        }, 1000);
+        }, 300);
         setTimeout(() => {
           const nick = r2.querySelector('.ghost-nick');
           if (nick) nick.style.opacity = '1';
-        }, 1500);
+        }, 500);
       }
-    }, 2000);
+    }, 800);
     
-    // Row 3 (Inky): Cyan Ghost -> 1.0s -> "Bashful" -> 0.5s -> "INKY"
+    // Row 3 (Inky): Cyan Ghost -> 0.3s -> "Bashful" -> 0.2s -> "INKY"
     setTimeout(() => {
       const r3 = document.querySelector('.ghost-row.inky');
       if (r3) {
@@ -592,15 +835,15 @@ function runStartSequence() {
         setTimeout(() => {
           const name = r3.querySelector('.ghost-name');
           if (name) name.style.opacity = '1';
-        }, 1000);
+        }, 300);
         setTimeout(() => {
           const nick = r3.querySelector('.ghost-nick');
           if (nick) nick.style.opacity = '1';
-        }, 1500);
+        }, 500);
       }
-    }, 4000);
+    }, 1600);
     
-    // Row 4 (Clyde): Orange Ghost -> 1.0s -> "Pokey" -> 0.5s -> "CLYDE"
+    // Row 4 (Clyde): Orange Ghost -> 0.3s -> "Pokey" -> 0.2s -> "CLYDE"
     setTimeout(() => {
       const r4 = document.querySelector('.ghost-row.clyde');
       if (r4) {
@@ -608,17 +851,17 @@ function runStartSequence() {
         setTimeout(() => {
           const name = r4.querySelector('.ghost-name');
           if (name) name.style.opacity = '1';
-        }, 1000);
+        }, 300);
         setTimeout(() => {
           const nick = r4.querySelector('.ghost-nick');
           if (nick) nick.style.opacity = '1';
-        }, 1500);
+        }, 500);
       }
-    }, 6000);
+    }, 2400);
     
-  }, 1200);
+  }, 800);
   
-  // Phase 3: Display Actual Start Menu after 10.5 seconds
+  // Phase 3: Display Actual Start Menu after 4.2 seconds
   setTimeout(() => {
     if (attract) attract.classList.add('hidden');
     if (menuContent) {
@@ -629,7 +872,7 @@ function runStartSequence() {
       menuContent.offsetHeight;
       menuContent.style.opacity = '1';
     }
-  }, 10500);
+  }, 4200);
 }
 
 function onCabinetClick() {
@@ -697,25 +940,25 @@ function onPressStartClick() {
     btnImg.src = '/assets/arcade-button-down.png';
   }
 
-  // Satisfying physical press hold, then fade press start screen and drop cabinet
+  // Physical press hold → fade press-start → CODE EXPLOSION → cabinet reveal.
   setTimeout(() => {
     const ps = document.getElementById('screen-press-start');
     if (ps) { ps.style.transition = 'opacity 0.45s ease'; ps.style.opacity = '0'; }
     setTimeout(() => {
-      // Inject progress bar
-      if (!document.getElementById('scroll-progress-bar')) {
-        const bar = document.createElement('div');
-        bar.id = 'scroll-progress-bar';
-        document.body.appendChild(bar);
-      }
-      showScreen('arcadeReveal');
-      cabinetState = 'dropping';
-      cabinetDropProgress = 0;
-      enterTriggered = false;
-      window.droppingStartTime = null; // Reset time-delta drop timer
-      window.settlingStartTime = null; // Reset time-delta settling timer
-      initThreeJSCabinet();
-      animateCabinet();
+      playCodeExplosion(() => {
+        // Inject progress bar
+        if (!document.getElementById('scroll-progress-bar')) {
+          const bar = document.createElement('div');
+          bar.id = 'scroll-progress-bar';
+          document.body.appendChild(bar);
+        }
+        showScreen('arcadeReveal');
+        cabinetState = 'scroll_idle';
+        enterTriggered = false;
+        initThreeJSCabinet();
+        animateCabinet();
+        setupScrollListener();
+      });
     }, 450);
   }, 280);
 }
@@ -833,7 +1076,7 @@ function showScrollHint() {
   if (existing) return;
   const hint = document.createElement('div');
   hint.id = 'scroll-hint';
-  hint.textContent = '\u25BC  SCROLL TO ENTER  \u25BC';
+  hint.textContent = '\u25BC  SCROLLA IL MOUSE PER ENTRARE  \u25BC';
   document.body.appendChild(hint);
 }
 
@@ -851,20 +1094,22 @@ function enterCabinetScreen() {
   container.style.opacity = '0';
   setTimeout(() => {
     cancelAnimationFrame(cabinetAnimationId);
-    showScreen('gameStart');
-    runStartSequence();
-    const crt = document.getElementById('crt-overlay');
-    if (crt) crt.classList.add('active');
-    container.style.transition = 'none';
-    container.style.opacity = '1';
-  }, 2200); // Holds black for 1.5 - 3 seconds (2.2 seconds total delay)
+    startMegaTransition('gameStart', () => {
+      runStartSequence();
+      const crt = document.getElementById('crt-overlay');
+      if (crt) crt.classList.add('active');
+      container.style.transition = 'none';
+      container.style.opacity = '1';
+    });
+  }, 600); // Holds black for 0.6 seconds (matches fade transition duration)
 }
 // =========================================
 // SCREEN 5: GAME START
 // =========================================
 document.getElementById('btn-play-game')?.addEventListener('click', () => {
-  showScreen('gameplay');
-  startGame();
+  startMegaTransition('gameplay', () => {
+    startGame();
+  });
 });
 
 document.getElementById('btn-view-collection')?.addEventListener('click', () => {
@@ -1356,7 +1601,7 @@ function drawGame() {
   // Mouth animates only while moving (original arcade behaviour)
   const isMoving = pacman.dir.r !== 0 || pacman.dir.c !== 0;
   if (isMoving) {
-    pacman.open += 0.2 * pacman.openDir;
+    pacman.open += 0.05 * pacman.openDir;
     if (pacman.open >= 1) { pacman.open = 1; pacman.openDir = -1; }
     if (pacman.open <= 0) { pacman.open = 0; pacman.openDir =  1; }
   } else {
@@ -1504,16 +1749,20 @@ function startGame() {
     pauseBtn.dataset.wired = '1';
   }
 
+  ensureAudio();
   SFX.ready();
 
   // READY blinks while the start jingle plays, then game starts.
   let blink = 0;
-  const blinkId = setInterval(() => {
+  clearInterval(startBlinkInterval);
+  startBlinkInterval = setInterval(() => {
     if (readyOverlay) readyOverlay.style.opacity = (++blink % 2) ? '0.3' : '1';
   }, 300);
 
-  setTimeout(() => {
-    clearInterval(blinkId);
+  clearTimeout(startGameTimeout);
+  startGameTimeout = setTimeout(() => {
+    clearInterval(startBlinkInterval);
+    startBlinkInterval = null;
     if (readyOverlay) {
       readyOverlay.classList.add('hidden');
       readyOverlay.style.opacity = '';
@@ -1527,6 +1776,32 @@ function startGame() {
     renderId = requestAnimationFrame(renderLoop);
   }, 3000);
 }
+
+function stopGame() {
+  clearInterval(gameInterval);
+  gameInterval = null;
+  cancelAnimationFrame(renderId);
+  renderId = 0;
+
+  clearTimeout(startGameTimeout);
+  startGameTimeout = null;
+  clearInterval(startBlinkInterval);
+  startBlinkInterval = null;
+
+  document.removeEventListener('keydown', handleInput);
+  clearPauseState();
+
+  if (audioCtx && audioCtx.state === 'running') {
+    audioCtx.suspend();
+  }
+}
+
+// Automatically pause the game if the tab loses focus or is hidden
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && gameInterval && !isPaused) {
+    togglePause();
+  }
+});
 
 function handleInput(e) {
   if (e.key === 'p' || e.key === 'P') { togglePause(); e.preventDefault(); return; }
@@ -1634,7 +1909,7 @@ function getValidGhostMoves(ghost) {
     if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return false;
 
     const ch = collisionMap[nr][nc];
-    return ch === 'P' || ch === 'C' || ch === 'G';
+    return ch === 'P' || ch === 'C';
   });
 }
 
@@ -1652,7 +1927,7 @@ function moveGhost(ghost) {
     if (TUNNEL_ROWS.has(ghost.r)) nc = (nc + COLS) % COLS;
     if (nr < 0 || nr >= collisionMap.length || nc < 0 || nc >= COLS) return;
     const ch  = collisionMap[nr]?.[nc];
-    if (ch === 'P' || ch === 'C' || ch === 'G') { ghost.dir = rev; ghost.r = nr; ghost.c = nc; }
+    if (ch === 'P' || ch === 'C') { ghost.dir = rev; ghost.r = nr; ghost.c = nc; }
     return;
   }
 
@@ -1788,7 +2063,11 @@ function moveGhostExiting(ghost) {
 function checkGhostCollision() {
   for (const ghost of ghosts) {
     if (ghost.state === 'waiting' || ghost.state === 'exiting') continue;
-    if (ghost.r === pacman.r && ghost.c === pacman.c) {
+    
+    const sameTile = (ghost.r === pacman.r && ghost.c === pacman.c);
+    const swapped = (ghost.prevR === pacman.r && ghost.prevC === pacman.c && ghost.r === pacman.prevR && ghost.c === pacman.prevC);
+    
+    if (sameTile || swapped) {
       if (ghost.state === 'frightened') {
         // Pac-Man eats the frightened ghost → send it back to house
         score += 200;
@@ -1874,7 +2153,14 @@ function drawGhosts(ctx) {
       // Draw inside ghost house with bobbing animation
       x = startX + ghost.c * stepW + stepW / 2;
       // bobOffset moves the ghost up/down by up to half a cell
-      y = startY + ghost.r * stepH + stepH / 2 + (ghost.bobOffset || 0) * stepH - stepH * 0.2;
+      let bob = (ghost.bobOffset || 0);
+      if (ghost.r === 7) {
+        // Bob upwards for the bottom row (Inky/Clyde) to avoid touching the bottom wall
+        y = startY + ghost.r * stepH + stepH / 2 - bob * stepH;
+      } else {
+        // Standard bobbing for other rows (Pinky/Blinky at row 6)
+        y = startY + ghost.r * stepH + stepH / 2 + bob * stepH - stepH * 0.2;
+      }
       // Draw with slightly reduced opacity to indicate they're locked in
       ctx.globalAlpha = 0.85;
       drawGhostBody(ctx, x, y, r * 0.9, ghost.color);
@@ -1951,36 +2237,39 @@ document.getElementById('btn-back-to-menu')?.addEventListener('click', () => {
   cancelAnimationFrame(renderId);
   clearPauseState();
   document.removeEventListener('keydown', handleInput);
-  showScreen('gameStart');
-  // Ensure the menu content is visible and other startup phases are hidden
-  document.getElementById('startup-self-test')?.classList.add('hidden');
-  document.getElementById('startup-attract')?.classList.add('hidden');
-  const menuContent = document.getElementById('start-menu-content');
-  if (menuContent) {
-    menuContent.classList.remove('hidden');
-    menuContent.style.opacity = '1';
-  }
+  resetGame();
+  startMegaTransition('gameStart', () => {
+    // Ensure the menu content is visible and other startup phases are hidden
+    document.getElementById('startup-self-test')?.classList.add('hidden');
+    document.getElementById('startup-attract')?.classList.add('hidden');
+    const menuContent = document.getElementById('start-menu-content');
+    if (menuContent) {
+      menuContent.classList.remove('hidden');
+      menuContent.style.opacity = '1';
+    }
+  }, true);
 });
 
 // Skip game
 document.getElementById('btn-skip-game')?.addEventListener('click', () => {
-  clearInterval(gameInterval);
-  gameInterval = null;
-  cancelAnimationFrame(renderId);
-  clearPauseState();
-  document.removeEventListener('keydown', handleInput);
+  stopGame();
+  resetGame();
   hasDiscount = hasDiscount || false;
-  renderArcadeCollection();
-  showScreen('arcadeCollection');
-  initArcadeCollection();
+  startMegaTransition('arcadeCollection', () => {
+    renderArcadeCollection();
+    initArcadeCollection();
+  });
 });
 
 // Reward actions
 document.getElementById('btn-shop-unlocked')?.addEventListener('click', () => {
   document.getElementById('reward-overlay').classList.add('hidden');
-  renderArcadeCollection();
-  showScreen('arcadeCollection');
-  initArcadeCollection();
+  stopGame();
+  resetGame();
+  startMegaTransition('arcadeCollection', () => {
+    renderArcadeCollection();
+    initArcadeCollection();
+  });
 });
 
 document.getElementById('btn-replay')?.addEventListener('click', () => {
@@ -1993,8 +2282,9 @@ document.getElementById('btn-replay-from-shop')?.addEventListener('click', () =>
   arcadeCollectionActive = false;
   document.removeEventListener('keydown', handleArcadeKeyboard);
   resetGame();
-  showScreen('gameplay');
-  startGame();
+  startMegaTransition('gameplay', () => {
+    startGame();
+  });
 });
 
 document.getElementById('btn-retry-game')?.addEventListener('click', () => {
@@ -2005,10 +2295,13 @@ document.getElementById('btn-retry-game')?.addEventListener('click', () => {
 
 document.getElementById('btn-skip-from-over')?.addEventListener('click', () => {
   document.getElementById('game-over-overlay').classList.add('hidden');
+  stopGame();
+  resetGame();
   hasDiscount = hasDiscount || false;
-  renderArcadeCollection();
-  showScreen('arcadeCollection');
-  initArcadeCollection();
+  startMegaTransition('arcadeCollection', () => {
+    renderArcadeCollection();
+    initArcadeCollection();
+  });
 });
 
 function resetGame() {
@@ -2032,17 +2325,26 @@ document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
   arcadeCollectionActive = false;
   document.removeEventListener('keydown', handleArcadeKeyboard);
   resetGame();
-  showScreen('gameStart');
+  startMegaTransition('gameStart', () => {
+    // Ensure the menu content is visible and other startup phases are hidden
+    document.getElementById('startup-self-test')?.classList.add('hidden');
+    document.getElementById('startup-attract')?.classList.add('hidden');
+    const menuContent = document.getElementById('start-menu-content');
+    if (menuContent) {
+      menuContent.classList.remove('hidden');
+      menuContent.style.opacity = '1';
+    }
+  }, true);
 });
 
 // =========================================
 // SCREEN 7: COLLECTION
 // =========================================
 const productsData = [
-  { id: 'tshirt',     name: 'Pac-Man Graphic T-Shirt',    price: 24.90, pixelIcon: '/assets/icon-tshirt-pixel.png.png',     hasVariants: true, variants: { black: '/assets/item-tshirt-black.png',     white: '/assets/item-tshirt-white.png'     } },
-  { id: 'sweatshirt', name: 'Pac-Man Arcade Sweatshirt',  price: 49.90, pixelIcon: '/assets/icon-sweatshirt-pixel.png.png', hasVariants: true, variants: { black: '/assets/item-sweatshirt-black.png', white: '/assets/item-sweatshirt-white.png' } },
-  { id: 'cap',        name: 'Pac-Man Logo Cap',           price: 19.90, pixelIcon: '/assets/icon-cap-pixel.png.png',       hasVariants: true, variants: { black: '/assets/item-cap-black.png',       white: '/assets/item-cap-white.png'       } },
-  { id: 'tote',       name: 'UNIQLO x Pac-Man Bag',       price: 14.90, pixelIcon: '/assets/icon-bag-pixel.png.png',       hasVariants: true, variants: { black: '/assets/item-bag-black.png',       white: '/assets/item-bag-white.png'       } }
+  { id: 'tshirt',     name: 'Pac-Man Graphic T-Shirt',    price: 24.90, pixelIcon: '/assets/icon-tshirt-pixel.png.png',     hasVariants: true, variants: { black: '/assets/products/tshirt-black.png',     white: '/assets/products/tshirt-white.png'     } },
+  { id: 'sweatshirt', name: 'Pac-Man Arcade Hoodie',      price: 49.90, pixelIcon: '/assets/icon-sweatshirt-pixel.png.png', hasVariants: true, variants: { black: '/assets/products/hoodie-black.png', white: '/assets/products/hoodie-white.png' } },
+  { id: 'cap',        name: 'Pac-Man Logo Cap',           price: 19.90, pixelIcon: '/assets/icon-cap-pixel.png.png',       hasVariants: true, variants: { black: '/assets/products/cap-black.png',       white: '/assets/products/cap-white.png'       } },
+  { id: 'tote',       name: 'UNIQLO x Pac-Man Bag',       price: 14.90, pixelIcon: '/assets/icon-bag-pixel.png.png',       hasVariants: true, variants: { black: '/assets/products/bag-black.png',       white: '/assets/products/bag-white.png'       } }
 ];
 
 
