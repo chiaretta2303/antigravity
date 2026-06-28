@@ -68,7 +68,7 @@ let pacmanY = 200;
 const pacmanSpeed = 1.8;
 let pacmanVx = pacmanSpeed;
 let pacmanVy = 0;
-let pacmanSize = 32;
+let pacmanSize = 38;
 let pacmanScale = 1.0;
 let pacmanIsJumping = false;
 let pacmanJumpVal = 0;
@@ -212,13 +212,22 @@ function updatePacmanEasterEgg() {
   } else if (pacmanVy < 0) {
     transformStr = 'rotate(-90deg)';
   }
-  egg.style.transform = transformStr;
+  const svg = egg.querySelector('svg');
+  if (svg) {
+    svg.style.transform = transformStr;
+  }
 
   requestAnimationFrame(updatePacmanEasterEgg);
 }
 
 const easterEgg = document.getElementById('pacman-easter-egg');
 if (easterEgg) {
+  // Move it to screen-landing so it can wander over the entire page layout
+  const landingScreen = document.getElementById('screen-landing');
+  if (landingScreen) {
+    landingScreen.appendChild(easterEgg);
+  }
+  
   // Initialize dynamic fixed layout
   easterEgg.style.position = 'fixed';
   easterEgg.style.left = pacmanX + 'px';
@@ -226,6 +235,13 @@ if (easterEgg) {
   
   easterEgg.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent header/logo actions
+    
+    // Remove the CLICCAMI hint label on the first click
+    const hintLabel = easterEgg.querySelector('.pacman-click-label');
+    if (hintLabel) {
+      hintLabel.remove();
+    }
+
     easterEggClicks++;
     
     if (easterEggClicks >= 3) {
