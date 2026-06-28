@@ -65,7 +65,7 @@ function showScreen(screenKey) {
 // =========================================
 let pacmanX = 100;
 let pacmanY = 200;
-const pacmanSpeed = 1.8;
+const pacmanSpeed = 2.4;
 let pacmanVx = pacmanSpeed;
 let pacmanVy = 0;
 let pacmanSize = 38;
@@ -87,9 +87,9 @@ function changePacmanRandomDirection() {
     { vx: 0, vy: -pacmanSpeed }   // Up
   ];
   
-  const margin = 2;
+  const margin = 25;
   const currentWidth = pacmanSize * pacmanScale;
-  const topLimit = 2; // stay below header
+  const topLimit = 120; // keep visible below top edge
   
   const validDirs = directions.filter(d => {
     const nextX = pacmanX + d.vx * 6;
@@ -127,9 +127,9 @@ function updatePacmanEasterEgg() {
     return;
   }
 
-  // 1. Random direction changes
+  // 1. Random direction changes - run longer straight paths (280 frames) to traverse wide screens
   pacmanDirFrameCounter++;
-  if (pacmanDirFrameCounter > 100 && !pacmanIsJumping) {
+  if (pacmanDirFrameCounter > 280 && !pacmanIsJumping) {
     pacmanDirFrameCounter = 0;
     changePacmanRandomDirection();
   }
@@ -138,10 +138,10 @@ function updatePacmanEasterEgg() {
   pacmanX += pacmanVx;
   pacmanY += pacmanVy;
 
-  // Viewport boundaries collision
-  const margin = 2;
+  // Viewport boundaries collision - keep within visible bounds
+  const margin = 25;
   const currentWidth = pacmanSize * pacmanScale;
-  const topLimit = 2;
+  const topLimit = 120;
   let hitBoundary = false;
 
   if (pacmanX < margin) {
