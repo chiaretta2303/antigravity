@@ -154,7 +154,7 @@ body, html {
 /* Floating click hint above Pac-Man */
 .pacman-click-label {
   position: absolute;
-  bottom: 74%;
+  bottom: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
   font-family: 'Press Start 2P', monospace;

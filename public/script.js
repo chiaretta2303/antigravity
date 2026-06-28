@@ -202,6 +202,13 @@ function updatePacmanEasterEgg() {
   egg.style.width = hitBoxSize + 'px';
   egg.style.height = hitBoxSize + 'px';
 
+  // Keep the hint label always above the top of the hit-box (never overlapping the SVG)
+  const hintLbl = egg.querySelector('.pacman-click-label');
+  if (hintLbl) {
+    hintLbl.style.bottom = 'calc(100% + 4px)';
+    hintLbl.style.left = '50%';
+  }
+
   // Apply visual size and transform to the SVG inside the container
   const svg = egg.querySelector('svg');
   if (svg) {
@@ -251,7 +258,8 @@ if (easterEgg) {
     
     if (easterEggClicks >= 3) {
       pacmanWalkingLoopActive = false;
-      easterEgg.classList.add('clicked');
+      // Immediately hide the walking Pac-Man so it doesn't linger during the eating transition
+      easterEgg.style.display = 'none';
       startTransition();
     } else {
       // Jump and scale up
