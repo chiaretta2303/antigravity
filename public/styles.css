@@ -131,39 +131,21 @@ body, html {
   z-index: 2;
 }
 
-/* Pac-Man easter egg — tiny, hidden behind the logo but flashing and peeking out */
+/* Pac-Man easter egg — walks around the page */
 #pacman-easter-egg {
-  position: absolute;
-  top: 50%;
-  left: 40px; /* Peeks out from behind the right side of the 56px logo */
-  transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
+  position: fixed;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
-  z-index: 1; /* Positioned behind .uq-logo-block */
-  animation: pacman-flash-pulse 1.4s infinite alternate ease-in-out;
-  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s;
-}
-
-#pacman-easter-egg:hover {
-  animation: none; /* Stop flashing on hover */
-  opacity: 0.95;
-  transform: translateY(-50%) scale(1.2);
+  z-index: 9999;
+  filter: drop-shadow(0 0 6px rgba(255, 212, 59, 0.85));
+  pointer-events: auto;
+  transition: opacity 0.25s ease;
 }
 
 #pacman-easter-egg.clicked {
-  animation: none !important; /* Stop flashing when clicked */
-}
-
-@keyframes pacman-flash-pulse {
-  0% {
-    opacity: 0.2;
-    filter: drop-shadow(0 0 2px rgba(255, 212, 59, 0.4));
-  }
-  100% {
-    opacity: 0.85;
-    filter: drop-shadow(0 0 10px rgba(255, 212, 59, 0.9));
-  }
+  pointer-events: none;
+  opacity: 0;
 }
 
 .pacman-egg-svg svg {

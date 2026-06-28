@@ -61,22 +61,116 @@ function showScreen(screenKey) {
 }
 
 // =========================================
-// SCREEN 1: LANDING & EASTER EGG
+// SCREEN 1: LANDING & EASTER EGG (Walking)
 // =========================================
+let pacmanX = 50;
+let pacmanY = 160; // Walks horizontally just below the utility bar/header
+let pacmanVx = 1.8;
+let pacmanSize = 32;
+let pacmanScale = 1.0;
+let pacmanIsJumping = false;
+let pacmanJumpVal = 0;
+let pacmanJumpVelocity = 0;
+const pacmanGravity = 0.45;
+let pacmanMouthAngle = 20;
+let pacmanChompDir = 1;
+let pacmanWalkingLoopActive = true;
+
+function updatePacmanEasterEgg() {
+  if (!pacmanWalkingLoopActive) return;
+
+  const egg = document.getElementById('pacman-easter-egg');
+  if (!egg) {
+    requestAnimationFrame(updatePacmanEasterEgg);
+    return;
+  }
+
+  // 1. Update horizontal coordinate
+  pacmanX += pacmanVx;
+
+  // Viewport boundaries collision
+  const margin = 12;
+  const currentWidth = pacmanSize * pacmanScale;
+  if (pacmanX + currentWidth > window.innerWidth - margin && pacmanVx > 0) {
+    pacmanVx = -Math.abs(pacmanVx);
+  } else if (pacmanX < margin && pacmanVx < 0) {
+    pacmanVx = Math.abs(pacmanVx);
+  }
+
+  // 2. Hop jump physics update
+  if (pacmanIsJumping) {
+    pacmanJumpVal += pacmanJumpVelocity;
+    pacmanJumpVelocity += pacmanGravity;
+    if (pacmanJumpVal >= 0) {
+      pacmanJumpVal = 0;
+      pacmanIsJumping = false;
+    }
+  }
+
+  // 3. Chomping animation update
+  pacmanMouthAngle += 3 * pacmanChompDir;
+  if (pacmanMouthAngle >= 35) {
+    pacmanMouthAngle = 35;
+    pacmanChompDir = -1;
+  } else if (pacmanMouthAngle <= 5) {
+    pacmanMouthAngle = 5;
+    pacmanChompDir = 1;
+  }
+
+  // Generate transparent SVG mouth path dynamically
+  const path = egg.querySelector('path');
+  if (path) {
+    const angleRad = (pacmanMouthAngle * Math.PI) / 180;
+    const x1 = 16 + 14 * Math.cos(angleRad);
+    const y1 = 16 + 14 * Math.sin(angleRad);
+    const x2 = 16 + 14 * Math.cos(-angleRad);
+    const y2 = 16 + 14 * Math.sin(-angleRad);
+    path.setAttribute('d', `M 16 16 L ${x1.toFixed(2)} ${y1.toFixed(2)} A 14 14 0 1 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`);
+  }
+
+  // 4. Update element style layout
+  egg.style.left = pacmanX + 'px';
+  egg.style.top = (pacmanY + pacmanJumpVal) + 'px';
+  egg.style.width = currentWidth + 'px';
+  egg.style.height = currentWidth + 'px';
+
+  // Flip the Pac-Man sprite depending on velocity
+  const flip = pacmanVx < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+  egg.style.transform = flip;
+
+  requestAnimationFrame(updatePacmanEasterEgg);
+}
+
 const easterEgg = document.getElementById('pacman-easter-egg');
 if (easterEgg) {
-  easterEgg.addEventListener('click', () => {
-    easterEgg.classList.add('clicked');
+  // Initialize dynamic fixed layout
+  easterEgg.style.position = 'fixed';
+  easterEgg.style.left = pacmanX + 'px';
+  easterEgg.style.top = pacmanY + 'px';
+  
+  easterEgg.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent header/logo actions
     easterEggClicks++;
+    
     if (easterEggClicks >= 3) {
+      pacmanWalkingLoopActive = false;
+      easterEgg.classList.add('clicked');
       startTransition();
     } else {
-      // Grow the Pac-Man but preserve the translateY(-50%) centering
-      const scale = 1 + easterEggClicks * 0.5;
-      easterEgg.style.transform = `translateY(-50%) scale(${scale})`;
-      easterEgg.style.opacity = '0.9';
+      // Jump and scale up
+      pacmanIsJumping = true;
+      pacmanJumpVelocity = -7.5;
+      pacmanScale = 1.0 + easterEggClicks * 0.65; // click 1 -> 1.65, click 2 -> 2.3
+
+      // Retro hop sound
+      try {
+        blip({ freq: 360, dur: 0.12, type: 'triangle', slide: 180, vol: 0.08 });
+      } catch (_) {}
     }
   });
+
+  // Launch update loop
+  requestAnimationFrame(updatePacmanEasterEgg);
 }
 
 // =========================================
