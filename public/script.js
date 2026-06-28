@@ -87,9 +87,9 @@ function changePacmanRandomDirection() {
     { vx: 0, vy: -pacmanSpeed }   // Up
   ];
   
-  const margin = 20;
+  const margin = 2;
   const currentWidth = pacmanSize * pacmanScale;
-  const topLimit = 90; // stay below header
+  const topLimit = 2; // stay below header
   
   const validDirs = directions.filter(d => {
     const nextX = pacmanX + d.vx * 6;
@@ -139,9 +139,9 @@ function updatePacmanEasterEgg() {
   pacmanY += pacmanVy;
 
   // Viewport boundaries collision
-  const margin = 12;
+  const margin = 2;
   const currentWidth = pacmanSize * pacmanScale;
-  const topLimit = 80;
+  const topLimit = 2;
   let hitBoundary = false;
 
   if (pacmanX < margin) {
@@ -196,24 +196,29 @@ function updatePacmanEasterEgg() {
   }
 
   // 5. Update element style layout
-  egg.style.left = pacmanX + 'px';
-  egg.style.top = (pacmanY + pacmanJumpVal) + 'px';
-  egg.style.width = currentWidth + 'px';
-  egg.style.height = currentWidth + 'px';
+  const hitBoxSize = currentWidth + 40; // adds 20px transparent padding on all sides for very easy clicking
+  egg.style.left = (pacmanX - 20) + 'px';
+  egg.style.top = (pacmanY + pacmanJumpVal - 20) + 'px';
+  egg.style.width = hitBoxSize + 'px';
+  egg.style.height = hitBoxSize + 'px';
 
-  // Face the correct direction based on movement
-  let transformStr = '';
-  if (pacmanVx > 0) {
-    transformStr = 'rotate(0deg)';
-  } else if (pacmanVx < 0) {
-    transformStr = 'scaleX(-1)';
-  } else if (pacmanVy > 0) {
-    transformStr = 'rotate(90deg)';
-  } else if (pacmanVy < 0) {
-    transformStr = 'rotate(-90deg)';
-  }
+  // Apply visual size and transform to the SVG inside the container
   const svg = egg.querySelector('svg');
   if (svg) {
+    svg.style.width = currentWidth + 'px';
+    svg.style.height = currentWidth + 'px';
+
+    // Face the correct direction based on movement
+    let transformStr = '';
+    if (pacmanVx > 0) {
+      transformStr = 'rotate(0deg)';
+    } else if (pacmanVx < 0) {
+      transformStr = 'scaleX(-1)';
+    } else if (pacmanVy > 0) {
+      transformStr = 'rotate(90deg)';
+    } else if (pacmanVy < 0) {
+      transformStr = 'rotate(-90deg)';
+    }
     svg.style.transform = transformStr;
   }
 
@@ -236,13 +241,13 @@ if (easterEgg) {
   easterEgg.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent header/logo actions
     
-    // Remove the CLICCAMI hint label on the first click
+    easterEggClicks++;
+    
+    // Update CLICCAMI countdown label
     const hintLabel = easterEgg.querySelector('.pacman-click-label');
     if (hintLabel) {
-      hintLabel.remove();
+      hintLabel.textContent = `CLICCAMI (${3 - easterEggClicks})`;
     }
-
-    easterEggClicks++;
     
     if (easterEggClicks >= 3) {
       pacmanWalkingLoopActive = false;

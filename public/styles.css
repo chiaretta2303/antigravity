@@ -131,15 +131,17 @@ body, html {
   z-index: 2;
 }
 
-/* Pac-Man easter egg — walks around the page */
+/* Pac-Man easter egg — transparent 70px click hit-box containing Pac-Man SVG */
 #pacman-easter-egg {
   position: fixed;
-  width: 38px;
-  height: 38px;
+  width: 78px;
+  height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   z-index: 9999;
   opacity: 1 !important;
-  filter: drop-shadow(0 0 8px rgba(255, 212, 59, 0.95)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.85));
   pointer-events: auto;
   transition: opacity 0.25s ease;
 }
@@ -152,7 +154,7 @@ body, html {
 /* Floating click hint above Pac-Man */
 .pacman-click-label {
   position: absolute;
-  bottom: 100%;
+  bottom: 74%;
   left: 50%;
   transform: translateX(-50%);
   font-family: 'Press Start 2P', monospace;
@@ -162,20 +164,23 @@ body, html {
   letter-spacing: 1px;
   text-shadow: 0 0 4px #000, 0 0 4px #000, 0 0 4px #000, 0 0 6px var(--pacman-yellow);
   pointer-events: none;
-  margin-bottom: 6px;
-  animation: bounce-text 0.8s ease-in-out infinite alternate;
+  animation: bounce-text 0.8s ease-in-out infinite alternate, label-blink 0.5s step-end infinite;
 }
 
 @keyframes bounce-text {
   0% { transform: translateX(-50%) translateY(0); }
-  100% { transform: translateX(-50%) translateY(-5px); }
+  100% { transform: translateX(-50%) translateY(-4px); }
+}
+
+@keyframes label-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
 }
 
 .pacman-egg-svg svg {
-  width: 100%;
-  height: 100%;
   display: block;
   transform-origin: center;
+  filter: drop-shadow(0 0 8px rgba(255, 212, 59, 0.95)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.85));
 }
 
 /* Navigation tabs */
