@@ -63,9 +63,11 @@ function showScreen(screenKey) {
 // =========================================
 // SCREEN 1: LANDING & EASTER EGG (Walking)
 // =========================================
-let pacmanX = 50;
-let pacmanY = 160; // Walks horizontally just below the utility bar/header
-let pacmanVx = 1.8;
+let pacmanX = 100;
+let pacmanY = 200;
+const pacmanSpeed = 1.8;
+let pacmanVx = pacmanSpeed;
+let pacmanVy = 0;
 let pacmanSize = 32;
 let pacmanScale = 1.0;
 let pacmanIsJumping = false;
@@ -75,6 +77,46 @@ const pacmanGravity = 0.45;
 let pacmanMouthAngle = 20;
 let pacmanChompDir = 1;
 let pacmanWalkingLoopActive = true;
+let pacmanDirFrameCounter = 0;
+
+function changePacmanRandomDirection() {
+  const directions = [
+    { vx: pacmanSpeed, vy: 0 },   // Right
+    { vx: -pacmanSpeed, vy: 0 },  // Left
+    { vx: 0, vy: pacmanSpeed },   // Down
+    { vx: 0, vy: -pacmanSpeed }   // Up
+  ];
+  
+  const margin = 20;
+  const currentWidth = pacmanSize * pacmanScale;
+  const topLimit = 90; // stay below header
+  
+  const validDirs = directions.filter(d => {
+    const nextX = pacmanX + d.vx * 6;
+    const nextY = pacmanY + d.vy * 6;
+    return (
+      nextX >= margin &&
+      nextX + currentWidth <= window.innerWidth - margin &&
+      nextY >= topLimit &&
+      nextY + currentWidth <= window.innerHeight - margin
+    );
+  });
+  
+  if (validDirs.length > 0) {
+    // Try to pick one that is different from current velocity to prevent backtracking unless necessary
+    const diffDirs = validDirs.filter(d => d.vx !== pacmanVx || d.vy !== pacmanVy);
+    const chosen = diffDirs.length > 0 
+      ? diffDirs[Math.floor(Math.random() * diffDirs.length)]
+      : validDirs[Math.floor(Math.random() * validDirs.length)];
+      
+    pacmanVx = chosen.vx;
+    pacmanVy = chosen.vy;
+  } else {
+    // Fallback: reverse current direction
+    pacmanVx = -pacmanVx;
+    pacmanVy = -pacmanVy;
+  }
+}
 
 function updatePacmanEasterEgg() {
   if (!pacmanWalkingLoopActive) return;
@@ -85,19 +127,44 @@ function updatePacmanEasterEgg() {
     return;
   }
 
-  // 1. Update horizontal coordinate
+  // 1. Random direction changes
+  pacmanDirFrameCounter++;
+  if (pacmanDirFrameCounter > 100 && !pacmanIsJumping) {
+    pacmanDirFrameCounter = 0;
+    changePacmanRandomDirection();
+  }
+
+  // 2. Update coordinates
   pacmanX += pacmanVx;
+  pacmanY += pacmanVy;
 
   // Viewport boundaries collision
   const margin = 12;
   const currentWidth = pacmanSize * pacmanScale;
-  if (pacmanX + currentWidth > window.innerWidth - margin && pacmanVx > 0) {
-    pacmanVx = -Math.abs(pacmanVx);
-  } else if (pacmanX < margin && pacmanVx < 0) {
-    pacmanVx = Math.abs(pacmanVx);
+  const topLimit = 80;
+  let hitBoundary = false;
+
+  if (pacmanX < margin) {
+    pacmanX = margin;
+    hitBoundary = true;
+  } else if (pacmanX + currentWidth > window.innerWidth - margin) {
+    pacmanX = window.innerWidth - margin - currentWidth;
+    hitBoundary = true;
   }
 
-  // 2. Hop jump physics update
+  if (pacmanY < topLimit) {
+    pacmanY = topLimit;
+    hitBoundary = true;
+  } else if (pacmanY + currentWidth > window.innerHeight - margin) {
+    pacmanY = window.innerHeight - margin - currentWidth;
+    hitBoundary = true;
+  }
+
+  if (hitBoundary) {
+    changePacmanRandomDirection();
+  }
+
+  // 3. Hop jump physics update
   if (pacmanIsJumping) {
     pacmanJumpVal += pacmanJumpVelocity;
     pacmanJumpVelocity += pacmanGravity;
@@ -107,7 +174,7 @@ function updatePacmanEasterEgg() {
     }
   }
 
-  // 3. Chomping animation update
+  // 4. Chomping animation update
   pacmanMouthAngle += 3 * pacmanChompDir;
   if (pacmanMouthAngle >= 35) {
     pacmanMouthAngle = 35;
@@ -128,15 +195,24 @@ function updatePacmanEasterEgg() {
     path.setAttribute('d', `M 16 16 L ${x1.toFixed(2)} ${y1.toFixed(2)} A 14 14 0 1 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`);
   }
 
-  // 4. Update element style layout
+  // 5. Update element style layout
   egg.style.left = pacmanX + 'px';
   egg.style.top = (pacmanY + pacmanJumpVal) + 'px';
   egg.style.width = currentWidth + 'px';
   egg.style.height = currentWidth + 'px';
 
-  // Flip the Pac-Man sprite depending on velocity
-  const flip = pacmanVx < 0 ? 'scaleX(-1)' : 'scaleX(1)';
-  egg.style.transform = flip;
+  // Face the correct direction based on movement
+  let transformStr = '';
+  if (pacmanVx > 0) {
+    transformStr = 'rotate(0deg)';
+  } else if (pacmanVx < 0) {
+    transformStr = 'scaleX(-1)';
+  } else if (pacmanVy > 0) {
+    transformStr = 'rotate(90deg)';
+  } else if (pacmanVy < 0) {
+    transformStr = 'rotate(-90deg)';
+  }
+  egg.style.transform = transformStr;
 
   requestAnimationFrame(updatePacmanEasterEgg);
 }
