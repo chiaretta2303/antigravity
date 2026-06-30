@@ -8,6 +8,19 @@
   <link rel="stylesheet" href="styles.css?v=17">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- Import map to resolve bare module specifiers in arcade.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.185.0/build/three.module.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.185.0/examples/jsm/loaders/GLTFLoader.js",
+        "three/examples/jsm/loaders/EXRLoader.js": "https://unpkg.com/three@0.185.0/examples/jsm/loaders/EXRLoader.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.185.0/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/renderers/CSS2DRenderer.js": "https://unpkg.com/three@0.185.0/examples/jsm/renderers/CSS2DRenderer.js",
+        "gsap": "https://unpkg.com/gsap@3.15.0/index.js"
+      }
+    }
+  </script>
 </head>
 
 <body>
@@ -371,9 +384,45 @@
     </div>
 
     <!-- SCREEN 3 & 4: ARCADE CABINET REVEAL & COIN SEQUENCE -->
-    <div id="screen-arcade-reveal" class="screen" style="background-color: black;">
-      <div id="three-cabinet-container"
-        style="width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; cursor: pointer;"></div>
+    <div id="screen-arcade-reveal" class="screen">
+      <canvas id="three-canvas"></canvas>
+
+      <!-- Top hint bar -->
+      <div id="ui">
+        <div id="hint">Loading scene…</div>
+      </div>
+
+      <!-- Back-to-entrance button -->
+      <button id="entrance-btn" type="button" aria-label="Back to entrance" title="Back to entrance">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 11.5 12 4l9 7.5" />
+          <path d="M5 10.2V19h14v-8.8" />
+        </svg>
+      </button>
+
+      <!-- Info card (appears when a hotspot is selected) -->
+      <div id="info-card" class="hidden">
+        <button id="info-card-close" aria-label="Close">&times;</button>
+        <p id="info-card-number"></p>
+        <h2 id="info-card-title">Title</h2>
+        <p id="info-card-description">Description</p>
+      </div>
+
+      <!-- Bottom navigation bar -->
+      <div id="bottom-nav">
+        <button id="nav-prev" class="nav-arrow" aria-label="Previous">&#8592;</button>
+        <span id="nav-title">Explore the arcade</span>
+        <button id="nav-next" class="nav-arrow" aria-label="Next">&#8594;</button>
+      </div>
+
+      <!-- Minimal debug panel (top-left, hidden in prod) -->
+      <div id="debug-panel">
+        <div class="debug-title">Debug</div>
+        <div class="debug-row"><strong>Point:</strong> <span id="debug-name">-</span></div>
+        <div class="debug-row"><strong>Cam:</strong> <span id="debug-hierarchy">-</span></div>
+        <div class="debug-row"><strong>Target:</strong> <span id="debug-position">-</span></div>
+      </div>
     </div>
 
     <!-- SCREEN 5: GAME START SCREEN -->
@@ -684,6 +733,7 @@
   <!-- CRT TELEVISION OVERLAY (Hidden by default, activated after cabinet zoom) -->
   <div id="crt-overlay"></div>
 
+  <script type="module" src="arcade.js"></script>
   <script src="script.js?v=17"></script>
 </body>
 

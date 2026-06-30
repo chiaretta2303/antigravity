@@ -1,0 +1,10 @@
+{
+  "name": "antigravity",
+  "version": "1.0.0",
+  "description": "UNIQLO x PAC-MAN site with integrated arcade room",
+  "main": "public/script.js",
+  "dependencies": {
+    "three": "^0.185.0",
+    "gsap": "^3.15.0"
+  }
+}

@@ -644,125 +644,14 @@ function startMegaTransition(nextScreenKey, callback, isGoingBack) {
 }
 
 // =========================================
-// SCREEN 3 & 4: CABINET REVEAL & COIN
+// SCREEN 3 & 4: ARCADE ROOM EXPERIENCE
 // =========================================
-let cabinetScene, cabinetCamera, cabinetRenderer, cabinetModel, cabinetCoin;
-let cabinetAnimationId;
-let cabinetState = 'hidden'; // 'hidden','dropping','scroll_idle' (new) | legacy: 'approaching','idle','aligning_front','zooming_coin','inserting_coin','zooming_screen'
-let cabinetApproachProgress = 0;
-let cabinetZoomProgress = 0;
-let coinProgress = 0;
-let baseCameraZ = 5;
-let currentCameraY = 0;
-let currentCameraZ = 5;
-let startCameraY = 0;
-let startCameraZ = 5;
-let cabinetMaxDim = 1;
-let cabinetSizeZ = 1;
-
-// Drop + scroll state
-let cabinetDropProgress = 0;
-let cabinetDropStartY = 0;
-let settlingTime = 0;
-let scrollTarget = 0;
-let scrollCurrent = 0;
-let scrollListenerActive = false;
-let enterTriggered = false;
-let dustParticles = [];
-
-// Frontal alignment state variables
-let alignProgress = 0;
-let startCabinetRotY = 0;
-let startCameraX = 0;
-
-function initThreeJSCabinet() {
-  const container = document.getElementById('three-cabinet-container');
-  if (!container || cabinetScene) return;
-  
-  cabinetScene = new THREE.Scene();
-  cabinetScene.background = new THREE.Color(0x000000);
-  
-  cabinetCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-  
-  cabinetRenderer = new THREE.WebGLRenderer({ antialias: true });
-  cabinetRenderer.setSize(window.innerWidth, window.innerHeight);
-  cabinetRenderer.setPixelRatio(window.devicePixelRatio);
-  container.appendChild(cabinetRenderer.domElement);
-  
-  // Lighting setup with 0 initial intensity for cinematic fade-in
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0);
-  ambientLight.name = 'ambientLight';
-  cabinetScene.add(ambientLight);
-  
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0);
-  directionalLight.name = 'dirLight1';
-  directionalLight.position.set(5, 10, 7);
-  cabinetScene.add(directionalLight);
-
-  const fillLight = new THREE.DirectionalLight(0xffffff, 0);
-  fillLight.name = 'dirLight2';
-  fillLight.position.set(-5, 0, -5);
-  cabinetScene.add(fillLight);
-  
-  const loader = new THREE.GLTFLoader();
-  loader.load('/assets/pacman-cabinet.glb', (gltf) => {
-    const rawModel = gltf.scene;
-    
-    // Auto-center the model natively
-    const box = new THREE.Box3().setFromObject(rawModel);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    
-    rawModel.position.x = -center.x;
-    rawModel.position.y = -center.y;
-    rawModel.position.z = -center.z;
-    
-    const wrapper = new THREE.Group();
-    wrapper.add(rawModel);
-    cabinetScene.add(wrapper);
-    cabinetModel = wrapper;
-    
-    const maxDim = Math.max(size.x, size.y, size.z);
-    cabinetMaxDim = maxDim;
-    cabinetSizeZ = size.z;
-    
-    // Create the 3D coin
-    const coinRadius = maxDim * 0.02;
-    const coinThickness = maxDim * 0.005;
-    const coinGeometry = new THREE.CylinderGeometry(coinRadius, coinRadius, coinThickness, 32);
-    const coinMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
-    cabinetCoin = new THREE.Mesh(coinGeometry, coinMaterial);
-    cabinetCoin.rotation.x = Math.PI / 2;
-    cabinetCoin.visible = false;
-    cabinetModel.add(cabinetCoin); // Add to wrapper so it aligns with cabinet
-    
-    const fov = cabinetCamera.fov * (Math.PI / 180);
-    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    baseCameraZ = cameraZ * 1.6;
-    
-    // Center setup for scroll-zoom entrance
-    cabinetModel.position.set(0, 0, 0);
-    cabinetModel.rotation.y = Math.PI * 6; // Starts with several spins
-    cabinetModel.scale.set(1, 1, 1);
-    cabinetCamera.position.set(0, 0, baseCameraZ * 4); // Camera starts far away
-    cabinetCamera.lookAt(0, 0, 0);
-    
-    // Lights start dim, fade in as user scrolls
-    const amb = cabinetScene.getObjectByName('ambientLight');
-    const dir1 = cabinetScene.getObjectByName('dirLight1');
-    const dir2 = cabinetScene.getObjectByName('dirLight2');
-    if (amb)  amb.intensity  = 0.05;
-    if (dir1) dir1.intensity = 0.1;
-    if (dir2) dir2.intensity = 0.05;
-  });
-  
-  window.addEventListener('resize', () => {
-    if (!cabinetCamera || !cabinetRenderer) return;
-    cabinetCamera.aspect = window.innerWidth / window.innerHeight;
-    cabinetCamera.updateProjectionMatrix();
-    cabinetRenderer.setSize(window.innerWidth, window.innerHeight);
-  });
-}
+window.transitionFromArcadeToGameStart = function() {
+  showScreen('gameStart');
+  runStartSequence();
+  const crt = document.getElementById('crt-overlay');
+  if (crt) crt.classList.add('active');
+};
 
 function startArcadeLoader() {
   showScreen('arcadeLoader');
@@ -1110,10 +999,7 @@ function onCabinetClick() {
   // 5. Final transition to gameStart at 6800ms
   setTimeout(() => {
     cancelAnimationFrame(cabinetAnimationId);
-    showScreen('gameStart');
-    runStartSequence();
-    const crt = document.getElementById('crt-overlay');
-    if (crt) crt.classList.add('active');
+    window.transitionFromArcadeToGameStart();
     const container = document.getElementById('three-cabinet-container');
     container.style.transition = 'none';
     container.style.opacity = '1';
@@ -1139,169 +1025,23 @@ function onPressStartClick() {
     btnImg.src = '/assets/arcade-button-down.png';
   }
 
-  // Physical press hold → fade press-start → CODE EXPLOSION → cabinet reveal.
+  // Physical press hold → fade press-start → CODE EXPLOSION → arcade room reveal.
   setTimeout(() => {
     const ps = document.getElementById('screen-press-start');
     if (ps) { ps.style.transition = 'opacity 0.45s ease'; ps.style.opacity = '0'; }
     setTimeout(() => {
       playCodeExplosion(() => {
-        // Inject progress bar
-        if (!document.getElementById('scroll-progress-bar')) {
-          const bar = document.createElement('div');
-          bar.id = 'scroll-progress-bar';
-          document.body.appendChild(bar);
-        }
         showScreen('arcadeReveal');
-        cabinetState = 'scroll_idle';
-        enterTriggered = false;
-        initThreeJSCabinet();
-        animateCabinet();
-        setupScrollListener();
+        if (typeof window.initArcadeExperience === 'function') {
+          window.initArcadeExperience();
+        }
       });
     }, 450);
   }, 280);
 }
 
-// Subtle cinematic dust burst particle system
-function createDustBurst() {
-  if (!cabinetScene || !cabinetModel) return;
-  
-  // Clear any existing stale particles
-  dustParticles.forEach(p => {
-    cabinetScene.remove(p.mesh);
-    p.mesh.geometry.dispose();
-    p.mesh.material.dispose();
-  });
-  dustParticles = [];
-  
-  // Extremely subtle ground reaction (few and small particles)
-  const particleCount = 6;
-  const geom = new THREE.SphereGeometry(cabinetMaxDim * 0.006, 5, 5);
-  
-  const baseX = cabinetModel.position.x;
-  const baseY = -cabinetMaxDim * 0.45; // Bottom base footprint level
-  const baseZ = 0;
-  
-  for (let i = 0; i < particleCount; i++) {
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xcccccc,
-      transparent: true,
-      opacity: 0.1 + Math.random() * 0.05,
-      depthWrite: false
-    });
-    
-    const mesh = new THREE.Mesh(geom, mat);
-    
-    // Spread in a circular base ring
-    const angle = Math.random() * Math.PI * 2;
-    const distance = cabinetMaxDim * (0.05 + Math.random() * 0.15);
-    
-    mesh.position.set(
-      baseX + Math.cos(angle) * distance,
-      baseY + (Math.random() * 0.02 - 0.01),
-      baseZ + Math.sin(angle) * distance
-    );
-    
-    cabinetScene.add(mesh);
-    
-    // Radial outwards movement + gentle upward lift
-    const speed = (0.1 + Math.random() * 0.2) * 0.015;
-    dustParticles.push({
-      mesh: mesh,
-      vx: Math.cos(angle) * speed,
-      vy: (0.05 + Math.random() * 0.1) * 0.015, // rises very slightly
-      vz: Math.sin(angle) * speed,
-      alpha: mat.opacity,
-      decay: 0.035 + Math.random() * 0.02, // fades quickly
-      growth: 1.005 + Math.random() * 0.005
-    });
-  }
-}
 
-function updateDustParticles() {
-  for (let i = dustParticles.length - 1; i >= 0; i--) {
-    const p = dustParticles[i];
-    
-    p.mesh.position.x += p.vx;
-    p.mesh.position.y += p.vy;
-    p.mesh.position.z += p.vz;
-    
-    // Friction deceleration
-    p.vx *= 0.94;
-    p.vy *= 0.94;
-    p.vz *= 0.94;
-    
-    // Dissipate & expand
-    p.mesh.scale.multiplyScalar(p.growth);
-    
-    p.alpha -= p.decay;
-    if (p.alpha <= 0) {
-      cabinetScene.remove(p.mesh);
-      p.mesh.geometry.dispose();
-      p.mesh.material.dispose();
-      dustParticles.splice(i, 1);
-    } else {
-      p.mesh.material.opacity = p.alpha;
-    }
-  }
-}
 
-// Bounce-out easing (standard Penner)
-function bounceOut(t) {
-  const n = 7.5625, d = 2.75;
-  if (t < 1/d)       return n * t * t;
-  if (t < 2/d)       return n * (t -= 1.5/d) * t + 0.75;
-  if (t < 2.5/d)     return n * (t -= 2.25/d) * t + 0.9375;
-  return               n * (t -= 2.625/d) * t + 0.984375;
-}
-
-function setupScrollListener() {
-  scrollTarget  = 0;
-  scrollCurrent = 0;
-  scrollListenerActive = true;
-  window.addEventListener('wheel', onScrollCabinet, { passive: true });
-  // Scroll hint appears after a short beat
-  setTimeout(showScrollHint, 400);
-}
-
-function onScrollCabinet(e) {
-  if (!scrollListenerActive) return;
-  // deltaY > 0 = scroll down = move closer. Slow, deliberate sensitivity.
-  scrollTarget = Math.min(1, Math.max(0, scrollTarget + e.deltaY * 0.0007));
-}
-
-function showScrollHint() {
-  const existing = document.getElementById('scroll-hint');
-  if (existing) return;
-  const hint = document.createElement('div');
-  hint.id = 'scroll-hint';
-  hint.textContent = '\u25BC  SCROLLA IL MOUSE PER ENTRARE  \u25BC';
-  document.body.appendChild(hint);
-}
-
-function enterCabinetScreen() {
-  window.removeEventListener('wheel', onScrollCabinet);
-  scrollListenerActive = false;
-  // Remove UI helpers
-  const hint = document.getElementById('scroll-hint');
-  if (hint) hint.remove();
-  const bar = document.getElementById('scroll-progress-bar');
-  if (bar) { bar.style.transition = 'opacity 0.3s'; bar.style.opacity = '0'; setTimeout(() => bar.remove(), 300); }
-  // Fade cabinet out
-  const container = document.getElementById('three-cabinet-container');
-  container.style.transition = 'opacity 0.6s cubic-bezier(0.25,1,0.5,1)';
-  container.style.opacity = '0';
-  setTimeout(() => {
-    cancelAnimationFrame(cabinetAnimationId);
-    startMegaTransition('gameStart', () => {
-      runStartSequence();
-      const crt = document.getElementById('crt-overlay');
-      if (crt) crt.classList.add('active');
-      container.style.transition = 'none';
-      container.style.opacity = '1';
-    });
-  }, 600); // Holds black for 0.6 seconds (matches fade transition duration)
-}
 // =========================================
 // SCREEN 5: GAME START
 // =========================================
