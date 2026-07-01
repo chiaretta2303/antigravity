@@ -4,7 +4,7 @@
 :root {
   /* Color Tokens */
   --bg-store: #ffffff;
-  --bg-arcade: #050505;
+  --bg-arcade: #02040d;
   --maze-blue: #003BFF;
   --pacman-yellow: #FFD43B;
   --uniqlo-red: #E60012;
@@ -14,7 +14,16 @@
   --locked-gray: #333333;
   --discount-green: #2ecc71; /* Not in spec but good for reward, sticking to Uniqlo Red is safer though */
 
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  /* Typography System */
+  --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-mono: 'Share Tech Mono', monospace;
+
+  /* Font Size Scale */
+  --size-hero: 42px;
+  --size-title: 22px;
+  --size-body: 15px;
+  --size-small: 11px;
 }
 
 * {
@@ -33,6 +42,9 @@ body, html {
   overflow-x: hidden;
   background-color: var(--bg-store);
   color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: 1.6;
   transition: background-color 1s ease;
 }
 
@@ -56,6 +68,7 @@ body, html {
   pointer-events: none;
   visibility: hidden;
   transition: opacity 0.5s ease;
+  font-family: var(--font-body);
 }
 
 .screen.active {
@@ -67,7 +80,7 @@ body, html {
 .arcade-mode {
   background-color: var(--bg-arcade);
   color: var(--text-white);
-  font-family: 'Courier New', Courier, monospace; /* Pixel-like fallback */
+  font-family: var(--font-mono);
 }
 
 /* =========================================
@@ -1047,6 +1060,21 @@ body, html {
   animation: crt-flicker 0.15s infinite;
 }
 
+/* Reduced CRT effect for selection screen - no bezel overlap, full bleed visibility */
+#crt-overlay.reduced-crt {
+  opacity: 0.14;
+  box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.4);
+  border-radius: 0;
+}
+
+#crt-overlay.reduced-crt::before {
+  background: radial-gradient(circle, transparent 75%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+#crt-overlay.reduced-crt::after {
+  opacity: 0.015;
+}
+
 /* CRT Screen bulge / curved vignette */
 #crt-overlay::before {
   content: " ";
@@ -1214,6 +1242,50 @@ body, html {
 .modal-content.success {
   border-color: var(--pacman-yellow);
 }
+
+/* Skip Experience Confirmation Modal */
+#skip-confirm-modal {
+  background: rgba(1, 2, 8, 0.85);
+  z-index: 1000;
+}
+
+.skip-modal-box {
+  background: #02040d;
+  border: 4px solid var(--uniqlo-red);
+  box-shadow: 0 0 30px rgba(230, 0, 18, 0.4);
+  padding: 40px;
+  max-width: 520px;
+  width: 90%;
+  box-sizing: border-box;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.skip-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: var(--pacman-yellow);
+  text-shadow: 0 0 8px rgba(255, 212, 59, 0.5);
+  margin-bottom: 25px;
+  letter-spacing: 1.5px;
+  line-height: 1.6;
+}
+
+.skip-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  color: #ddd;
+  line-height: 1.6;
+  margin-bottom: 35px;
+  letter-spacing: 0.8px;
+}
+
+.skip-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
 
 .modal-content h2 {
   margin-bottom: 30px;
@@ -1524,102 +1596,453 @@ body, html {
   font-size: 1rem;
 }
 
-/* =========================================
-   ARCADE COLLECTION (TABULAR MENU)
+    ARCADE COLLECTION (MAME-STYLE SELECTOR)
 ========================================= */
+/* CRT Top Bar */
+.crt-top-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 70px;
+  padding: 0 40px;
+  background: #02040d;
+  border-bottom: 4px solid var(--maze-blue);
+  box-shadow: 0 4px 20px rgba(0, 59, 255, 0.2);
+  box-sizing: border-box;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  z-index: 10;
+}
+
+.crt-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.crt-logo {
+  color: var(--uniqlo-red);
+  text-shadow: 0 0 10px rgba(230, 0, 18, 0.8);
+  letter-spacing: 1px;
+  font-size: 12px;
+}
+
+.crt-sep {
+  color: #334;
+  font-weight: bold;
+}
+
+.crt-status {
+  color: var(--pacman-yellow);
+  text-shadow: 0 0 8px rgba(255, 212, 59, 0.6);
+  letter-spacing: 1.5px;
+}
+
+.crt-bar-right {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.crt-counter {
+  color: #6688ff;
+  text-shadow: 0 0 8px rgba(102, 136, 255, 0.5);
+  letter-spacing: 1.5px;
+}
+
+#arcade-cart-btn {
+  position: absolute !important;
+  right: 40px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 100 !important;
+}
+
+#item-view-cart-btn {
+  position: absolute !important;
+  right: 30px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 100 !important;
+}
+
+/* Retro Blocky Cart Icon Container */
+.arcade-cart-btn-container {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border: 3px solid #ff0055; /* Arcade pink-red border */
+  padding: 6px 14px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.arcade-cart-btn-container:hover {
+  border-color: var(--pacman-yellow);
+  box-shadow: 0 0 15px rgba(255, 212, 59, 0.6);
+  background: rgba(255, 212, 59, 0.08);
+}
+
+.arcade-cart-icon {
+  width: 22px;
+  height: 22px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: brightness(0) invert(1); /* Pure white cart icon */
+  transition: transform 0.15s ease;
+}
+
+.arcade-cart-btn-container:hover .arcade-cart-icon {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.cart-count-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--uniqlo-red);
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  font-weight: bold;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(230, 0, 18, 0.8);
+}
+
+/* Two-Panel Layout */
+.arc-sel-body {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 120px);
+  padding: 30px 40px;
+  box-sizing: border-box;
+  gap: 40px;
+  background: radial-gradient(circle at center, #050816 0%, #010207 100%);
+  z-index: 5;
+  align-items: center;
+}
+
+/* Left panel: List */
+.arc-sel-left {
+  width: 46%;
+  height: 100%;
+  max-height: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 3px solid #223;
+  background: rgba(1, 2, 8, 0.9);
+  padding: 30px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.95);
+}
+
+.arc-sel-list-header {
+  border-bottom: 2px dashed #223;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.arc-list-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #445;
+  letter-spacing: 2px;
+}
+
 .arcade-product-list {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 800px;
+  gap: 16px;
+  flex-grow: 1;
 }
 
 .arcade-product-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  border-bottom: 1px solid #1a1a1a;
+  padding: 20px 24px;
+  background: rgba(8, 12, 28, 0.6);
+  border: 2px solid #223;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
   position: relative;
-  background: transparent;
-}
-
-.arcade-product-item:hover {
-  background: rgba(255,255,255,0.02);
 }
 
 .arcade-product-item .cursor-indicator {
-  opacity: 0;
+  position: absolute;
+  left: 10px;
   color: var(--pacman-yellow);
-  font-size: 1.5rem;
-  width: 30px;
-  transition: transform 0.2s;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: all 0.15s ease;
+}
+
+.arcade-product-item .item-number {
+  color: #556;
+  margin-right: 15px;
+  margin-left: 12px;
+  transition: color 0.15s ease;
+}
+
+.arcade-product-item .item-name {
+  color: #ddd;
+  transition: color 0.15s ease;
+}
+
+.arcade-product-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #445;
 }
 
 .arcade-product-item.selected {
-  background: rgba(255, 212, 59, 0.05);
-  border-left: 2px solid var(--pacman-yellow);
+  background: rgba(255, 212, 59, 0.15);
+  border-color: var(--pacman-yellow);
+  box-shadow: 0 0 20px rgba(255, 212, 59, 0.35), inset 0 0 10px rgba(255, 212, 59, 0.15);
 }
 
 .arcade-product-item.selected .cursor-indicator {
   opacity: 1;
-  transform: translateX(10px);
+  transform: translateX(0);
 }
 
-.arcade-product-item .item-icon {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  margin-right: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.arcade-product-item .item-icon .pixel-icon-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  display: block;
-}
-
-.arcade-product-item .item-details {
-  flex-grow: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-right: 40px;
-}
-
-.arcade-product-item .item-name {
-  color: #ccc;
-  font-size: 1.1rem;
-  letter-spacing: 1px;
+.arcade-product-item.selected .item-number {
+  color: #fff;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .arcade-product-item.selected .item-name {
   color: var(--pacman-yellow);
+  text-shadow: 0 0 8px rgba(255, 212, 59, 0.5);
 }
 
-.arcade-product-item .item-price-row {
-  text-align: right;
+/* Skip & Replay Prompts */
+.arc-skip-prompt {
+  margin-top: 20px;
+  border-top: 2px dashed #333;
+  padding-top: 20px;
+  text-align: center;
 }
 
-.arcade-product-item .item-price {
-  color: var(--text-white);
-  font-weight: bold;
+.arc-skip-prompt p {
+  color: #666;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
 }
 
-.arcade-product-item .item-original-price {
-  color: #555;
+.arc-action-btn {
+  width: 100%;
+  padding: 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  border: 2px solid var(--text-white);
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.arc-action-btn:hover {
+  background: var(--uniqlo-red);
+  border-color: var(--uniqlo-red);
+  box-shadow: 0 0 15px rgba(230, 0, 18, 0.45);
+}
+
+.arc-action-btn.secondary {
+  background: transparent;
+  border-color: #444;
+  color: #888;
+  margin-top: 15px;
+}
+
+.arc-action-btn.secondary:hover {
+  border-color: #fff;
+  color: #fff;
+  background: transparent;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+/* Right panel: Monitor preview */
+.arc-sel-right {
+  width: 46%;
+  height: 100%;
+  max-height: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.arc-monitor-frame {
+  position: relative;
+  width: 100%;
+  background: #090d1e;
+  border: 5px solid var(--maze-blue);
+  box-shadow: 0 0 25px rgba(0, 59, 255, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.95);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Grow to match left panel height */
+}
+
+.arc-monitor-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+#arc-preview-container {
+  width: 100%;
+  flex-grow: 1;
+  position: relative;
+}
+
+/* 3D Canvas fit within container */
+#arc-preview-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.arc-monitor-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(2, 4, 13, 0.95);
+  border-top: 3px double var(--maze-blue);
+  padding: 18px 24px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  box-sizing: border-box;
+}
+
+.arc-mon-num {
+  color: #666;
+}
+
+.arc-mon-name {
+  color: #fff;
+  text-align: center;
+  flex-grow: 1;
+  padding: 0 15px;
+  letter-spacing: 0.5px;
+}
+
+.arc-mon-price {
+  color: var(--pacman-yellow);
+}
+
+.orig-price-strike {
   text-decoration: line-through;
-  margin-right: 15px;
-  font-size: 0.9rem;
+  color: #555;
+  font-size: 8px;
+  margin-right: 5px;
 }
+
+.arc-monitor-glare {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.02) 51%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.arc-action-btn.primary {
+  width: 100%;
+  max-width: 480px;
+  background: var(--pacman-yellow);
+  color: #000;
+  border: 2px solid var(--pacman-yellow);
+  font-family: 'Press Start 2P', monospace;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 212, 59, 0.4);
+}
+
+.arc-action-btn.primary:hover {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+}
+
+/* Bottom controls legend bar */
+.arc-controls-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  height: 50px;
+  background: rgba(2, 4, 13, 0.98);
+  border-top: 3px double var(--maze-blue);
+  box-sizing: border-box;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #666;
+  z-index: 10;
+}
+
+.arc-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arc-ctrl kbd {
+  background: #fff;
+  color: #000;
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: bold;
+  font-size: 11px;
+  box-shadow: 0 2px 0 #888;
+}
+
+.arc-ctrl-sep {
+  color: #333;
+}
+
 
 /* =========================================
    WAHBA BUTTONS
@@ -2505,125 +2928,119 @@ body, html {
   white-space: nowrap;
 }
 
-/* ── Back-to-entrance button ── */
-#screen-arcade-reveal #entrance-btn {
+/* ── Back-to-UNIQLO button (arcade style: sharp border, red hover fill) ── */
+#screen-arcade-reveal #back-uniqlo-btn {
   position: absolute;
   top: 20px;
   left: 20px;
   z-index: 20;
-  width: 34px;
-  height: 34px;
+  height: 38px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: rgba(14, 14, 22, 0.82);
-  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 4px;
+  background: #000;
+  border: 2.5px solid var(--text-white);
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
-  transition: background 0.25s, border-color 0.25s, transform 0.2s, box-shadow 0.25s, color 0.25s;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.8);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
-#screen-arcade-reveal #entrance-btn:hover {
-  background: rgba(30, 30, 50, 0.92);
-  border-color: #00f0ff;
-  color: #00f0ff;
-  transform: scale(1.12);
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.4);
+#screen-arcade-reveal #back-uniqlo-btn:hover {
+  background: var(--uniqlo-red);
+  border-color: var(--uniqlo-red);
+  color: #fff;
+  transform: scale(1.05);
 }
 
-#screen-arcade-reveal #entrance-btn svg {
-  display: block;
-}
-
-/* ── Hotspot Marker (CSS2D) ── */
+/* ── Hotspot Marker (CSS2D) — bigger, high-contrast, arcade pixel-font style ── */
 #screen-arcade-reveal .hotspot-marker {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgba(14, 14, 22, 0.82);
-  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #000;
+  border: 3px solid var(--text-white);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6), 0 0 0 0 rgba(255,255,255,0.1);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 15px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.9), 0 3px 0 rgba(0, 0, 0, 0.9);
   cursor: pointer;
   pointer-events: auto;
-  transition: background 0.25s, border-color 0.25s, transform 0.2s, box-shadow 0.25s;
-  animation: marker-idle-arcade 2.5s infinite alternate ease-in-out;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  animation: marker-idle-arcade 1.1s steps(1) infinite;
 }
 
 #screen-arcade-reveal .hotspot-marker:hover {
-  background: rgba(30, 30, 50, 0.92);
-  border-color: #fff;
-  transform: scale(1.18);
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.35);
+  background: #000;
+  border-color: var(--pacman-yellow);
+  color: var(--pacman-yellow);
+  transform: scale(1.15);
   animation: none;
 }
 
 #screen-arcade-reveal .hotspot-marker.active {
-  background: rgba(0, 240, 255, 0.18);
-  border-color: #00f0ff;
-  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.25), 0 0 12px rgba(0, 240, 255, 0.5);
+  background: var(--maze-blue);
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 59, 255, 0.4), 0 3px 0 rgba(0, 0, 0, 0.9);
   animation: none;
 }
 
 @keyframes marker-idle-arcade {
-  0%   { box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-  100% { box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.08); }
+  0%, 55%   { box-shadow: 0 0 0 2px rgba(0,0,0,0.9), 0 3px 0 rgba(0,0,0,0.9); }
+  56%, 100% { box-shadow: 0 0 0 2px rgba(0,0,0,0.9), 0 3px 0 rgba(0,0,0,0.9), 0 0 10px 2px rgba(255,255,255,0.5); }
 }
 
 #screen-arcade-reveal .hotspot-marker.locked {
-  background: rgba(18, 18, 22, 0.72);
-  border-color: rgba(255, 255, 255, 0.22);
-  color: rgba(230, 230, 235, 0.45);
+  background: #000;
+  border-color: var(--crt-gray);
+  color: rgba(255, 255, 255, 0.4);
   animation: none;
 }
 
 #screen-arcade-reveal .hotspot-marker.locked:hover {
-  background: rgba(30, 30, 38, 0.88);
-  border-color: rgba(255, 255, 255, 0.5);
-  color: rgba(255, 255, 255, 0.72);
-  transform: scale(1.1);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.75);
+  transform: scale(1.08);
 }
 
 #screen-arcade-reveal .lock-badge {
   position: absolute;
-  right: -5px;
-  bottom: -5px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #111118;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  right: -6px;
+  bottom: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: #000;
+  border: 2px solid var(--uniqlo-red);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #d0d0d8;
+  color: #fff;
 }
 
 #screen-arcade-reveal .hotspot-marker.available {
-  background: rgba(255, 220, 60, 0.2);
-  border-color: #ffdc3c;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(255, 210, 50, 0.55);
-  animation: marker-available-arcade 1.6s infinite ease-in-out;
+  background: #000;
+  border-color: var(--pacman-yellow);
+  color: var(--pacman-yellow);
+  animation: marker-available-arcade 0.9s steps(1) infinite;
 }
 
 #screen-arcade-reveal .hotspot-marker.available:hover {
   border-color: #fff;
-  box-shadow: 0 0 22px rgba(255, 210, 50, 0.95);
+  color: #fff;
 }
 
 @keyframes marker-available-arcade {
-  0%, 100% { box-shadow: 0 0 10px rgba(255, 210, 50, 0.45); }
-  50%      { box-shadow: 0 0 22px rgba(255, 210, 50, 0.9); }
+  0%, 55%   { box-shadow: 0 0 0 2px rgba(0,0,0,0.9), 0 3px 0 rgba(0,0,0,0.9), 0 0 12px 2px rgba(255, 212, 59, 0.6); }
+  56%, 100% { box-shadow: 0 0 0 2px rgba(0,0,0,0.9), 0 3px 0 rgba(0,0,0,0.9), 0 0 20px 4px rgba(255, 212, 59, 0.95); }
 }
 
 #screen-arcade-reveal .screen-prompt {
@@ -2654,20 +3071,19 @@ body, html {
   56%, 100% { opacity: 0.22; }
 }
 
-/* ── Info Card ── */
+/* ── Info Card (arcade terminal style: sharp border, no blur) ── */
 #screen-arcade-reveal #info-card {
   position: absolute;
   bottom: 80px;
   right: 28px;
   width: 300px;
-  padding: 22px 22px 20px;
-  border-radius: 14px;
-  background: rgba(8, 8, 14, 0.88);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);
+  padding: 20px 20px 18px;
+  border-radius: 0;
+  background: var(--bg-arcade);
+  border: 3px solid var(--maze-blue);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.8);
   z-index: 20;
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 #screen-arcade-reveal #info-card.hidden {
@@ -2677,50 +3093,58 @@ body, html {
 }
 
 #screen-arcade-reveal #info-card-number {
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Press Start 2P', monospace;
   font-size: 11px;
-  color: #00f0ff;
+  color: var(--pacman-yellow);
   text-transform: uppercase;
   letter-spacing: 2px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 #screen-arcade-reveal #info-card-title {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  font-size: 18px;
+  font-family: 'Press Start 2P', monospace;
+  font-weight: normal;
+  font-size: 13px;
   color: #ffffff;
-  margin-bottom: 10px;
-  line-height: 1.2;
+  margin-bottom: 14px;
+  line-height: 1.6;
 }
 
 #screen-arcade-reveal #info-card-description {
+  font-family: 'Courier New', Courier, monospace;
   font-size: 13px;
-  color: #b0b0be;
+  color: #dcdce6;
   line-height: 1.6;
-  font-weight: 300;
+  font-weight: 400;
 }
 
 #screen-arcade-reveal #info-card-close {
   position: absolute;
-  top: 10px;
-  right: 12px;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
-  border: none;
-  color: #666;
-  font-size: 20px;
+  border: 2px solid var(--text-white);
+  border-radius: 3px;
+  color: #fff;
+  font-size: 16px;
   cursor: pointer;
   line-height: 1;
-  padding: 4px;
-  transition: color 0.2s ease;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
   font-family: inherit;
 }
 
 #screen-arcade-reveal #info-card-close:hover {
-  color: #fff;
+  background: var(--uniqlo-red);
+  border-color: var(--uniqlo-red);
 }
 
-/* ── Bottom Navigation Bar ── */
+/* ── Bottom Navigation Bar (arcade style: sharp border, no blur) ── */
 #screen-arcade-reveal #bottom-nav {
   position: absolute;
   bottom: 24px;
@@ -2729,45 +3153,59 @@ body, html {
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 10px 18px;
-  border-radius: 100px;
-  background: rgba(8, 8, 14, 0.85);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  background: var(--bg-arcade);
+  border: 2.5px solid var(--text-white);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.8);
   min-width: 280px;
 }
 
 #screen-arcade-reveal .nav-arrow {
   background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  font-size: 16px;
   cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 50%;
-  transition: color 0.2s ease, background 0.2s ease;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
   line-height: 1;
   flex-shrink: 0;
 }
 
 #screen-arcade-reveal .nav-arrow:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--uniqlo-red);
+  border-color: var(--uniqlo-red);
 }
 
-#screen-arcade-reveal #nav-title {
+#screen-arcade-reveal .uq-btn-entrance,
+#screen-arcade-reveal #btn-return-entrance {
   flex: 1;
   text-align: center;
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--pacman-yellow);
+  background: transparent;
+  border: none;
+  cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.5px;
+  transition: color 0.15s, transform 0.15s;
+}
+
+#screen-arcade-reveal .uq-btn-entrance:hover,
+#screen-arcade-reveal #btn-return-entrance:hover {
+  color: #fff;
+  transform: scale(1.05);
 }
 
 /* ── Debug Panel ── */
@@ -2787,4 +3225,250 @@ body, html {
   font-size: 11px;
   pointer-events: none;
 }
+
+/* =========================================
+   ARCADE DESIGN SYSTEM - COHESIVE STYLE FOR ALL POST-ARCADE SCREENS
+========================================= */
+
+/* Typography & Base Variables */
+.arcade-mode, .wahba-shell, .shopping-bag-drawer {
+  font-family: var(--font-body);
+}
+
+/* Headings and labels using Press Start 2P */
+.wahba-title, 
+.terminal-header .logo, 
+.terminal-header .status, 
+.drawer-title, 
+.hud-item .label, 
+.hud-col span, 
+.attract-title, 
+.ghost-name, 
+.ghost-nick,
+.wahba-label,
+.modal-content h2,
+#locked-collection-popup h2,
+#game-over-overlay h2,
+#reward-overlay h2,
+.discount-text {
+  font-family: var(--font-pixel) !important;
+  text-shadow: 0 0 8px rgba(255, 212, 59, 0.25);
+}
+
+/* Font size tweaks for clean pixel rendering */
+.wahba-title {
+  font-size: 20px !important;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
+}
+.wahba-subtitle {
+  font-family: var(--font-mono) !important;
+  font-size: 13px !important;
+  color: #8898a6 !important;
+}
+.discount-text {
+  font-size: 24px !important;
+  color: var(--pacman-yellow) !important;
+}
+
+/* Prices */
+.item-price, 
+.item-original-price, 
+.wahba-price, 
+#cart-subtotal-val, 
+#cart-discount-val, 
+#cart-total-val,
+.cart-item-price,
+.arcade-product-item .item-price {
+  font-family: var(--font-mono) !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  letter-spacing: 1px !important;
+  color: var(--pacman-yellow) !important;
+}
+
+/* Product names in detail and list */
+#item-view-name {
+  font-family: var(--font-body) !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  color: #fff !important;
+  text-shadow: none !important;
+}
+
+/* Cart item details */
+.cart-item-name {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+}
+.cart-item-variant {
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  color: #7f8c8d !important;
+}
+
+/* Cohesive Retro Arcade Button Styling (Applying to ALL Buttons Across the Site) */
+.uq-btn-primary,
+.uq-btn-ghost,
+.wahba-cta-btn,
+.wahba-btn,
+.arcade-btn,
+.arc-action-btn {
+  font-family: var(--font-pixel) !important;
+  font-size: 10px !important;
+  font-weight: normal !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  padding: 14px 24px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  display: inline-flex;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+}
+
+/* Primary Arcade Buttons (Red & Yellow themed key actions) */
+.uq-btn-primary,
+.wahba-cta-btn,
+.arc-action-btn.primary,
+.arcade-btn.primary {
+  background: var(--uniqlo-red) !important;
+  color: #fff !important;
+  border: 2.5px solid #fff !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.85) !important;
+}
+
+.uq-btn-primary:hover,
+.wahba-cta-btn:hover,
+.arc-action-btn.primary:hover,
+.arcade-btn.primary:hover {
+  background: #fff !important;
+  color: var(--uniqlo-red) !important;
+  border-color: var(--uniqlo-red) !important;
+  box-shadow: 0 4px 0 rgba(230, 0, 18, 0.4) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* Pac-man yellow primary variant (e.g. landing cta, skip modal confirms) */
+#btn-discover-collection,
+#btn-skip-confirm,
+#btn-play-from-skip,
+#btn-play-game {
+  background: var(--pacman-yellow) !important;
+  border-color: var(--pacman-yellow) !important;
+  color: #000 !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.85) !important;
+}
+
+#btn-discover-collection:hover,
+#btn-skip-confirm:hover,
+#btn-play-from-skip:hover,
+#btn-play-game:hover {
+  background: #fff !important;
+  border-color: #fff !important;
+  color: #000 !important;
+  box-shadow: 0 4px 0 rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* Secondary / Ghost / Back Arcade Buttons */
+.uq-btn-ghost,
+.wahba-btn,
+.arcade-btn.secondary,
+.arc-action-btn.secondary,
+.arcade-btn,
+.arc-action-btn {
+  background: transparent !important;
+  color: #aaa !important;
+  border: 2.5px solid #555 !important;
+  box-shadow: none !important;
+}
+
+.uq-btn-ghost:hover,
+.wahba-btn:hover,
+.arcade-btn.secondary:hover,
+.arc-action-btn.secondary:hover,
+.arcade-btn:hover,
+.arc-action-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: #fff !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* Color and size selectors (smaller, blocky selection widgets) */
+.color-btn, .size-btn {
+  padding: 8px 16px !important;
+  font-size: 11px !important;
+  font-family: var(--font-body) !important;
+  min-width: 60px !important;
+  border-radius: 4px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1.5px solid #2e3e58 !important;
+  color: #aaa !important;
+}
+
+.color-btn.active, .size-btn.active {
+  background: rgba(255, 212, 59, 0.15) !important;
+  color: var(--pacman-yellow) !important;
+  border-color: var(--pacman-yellow) !important;
+}
+
+.color-btn:hover, .size-btn:hover {
+  border-color: #fff !important;
+  color: #fff !important;
+}
+
+/* Modals and panels retro styles */
+.modal-content.retro-border {
+  border: 4px solid var(--maze-blue) !important;
+  border-radius: 10px !important;
+  background: #02040d !important;
+  box-shadow: 0 0 30px rgba(0, 59, 255, 0.25) !important;
+}
+
+.modal-content.retro-border.success {
+  border-color: var(--pacman-yellow) !important;
+  box-shadow: 0 0 30px rgba(255, 212, 59, 0.25) !important;
+}
+
+.wahba-panel {
+  border: 4px solid var(--maze-blue) !important;
+  border-radius: 10px !important;
+  background: #02040d !important;
+  box-shadow: 0 0 30px rgba(0, 59, 255, 0.25) !important;
+}
+
+/* Selection list item names font selection */
+.arcade-product-item .item-name {
+  font-family: var(--font-pixel) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.5px !important;
+}
+
+.arcade-product-item.selected .item-name {
+  color: var(--pacman-yellow) !important;
+  text-shadow: 0 0 8px rgba(255, 212, 59, 0.4) !important;
+}
+
+/* Logo Uniqlo in Start Menu */
+.arcade-uniqlo-logo {
+  max-width: 80px;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 20px;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 0 8px rgba(230, 0, 18, 0.3));
+}
+
 

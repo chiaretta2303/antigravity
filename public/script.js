@@ -2,6 +2,7 @@
 let currentState = 'LANDING';
 let easterEggClicks = 0;
 let hasDiscount = false;
+let skippedExperience = false;
 let unlockedItems = [];
 const TOTAL_ITEMS = 4;
 
@@ -51,11 +52,20 @@ function showScreen(screenKey) {
     screens.landing.classList.add('active');
   }
   
-  // Robust CRT overlay activation logic
+  // Robust CRT overlay activation and reduction logic
   const crt = document.getElementById('crt-overlay');
   if (crt) {
-    if (screenKey === 'landing' || screenKey === 'transition' || screenKey === 'arcadeLoader' || screenKey === 'arcadeReveal') {
+    const disabledScreens = ['landing', 'transition', 'arcadeLoader', 'arcadeReveal'];
+    if (disabledScreens.includes(screenKey)) {
       crt.classList.remove('active');
+      crt.classList.remove('reduced-crt');
+    } else {
+      crt.classList.add('active');
+      if (screenKey === 'arcadeCollection') {
+        crt.classList.add('reduced-crt');
+      } else {
+        crt.classList.remove('reduced-crt');
+      }
     }
   }
 }
@@ -349,14 +359,144 @@ function startTransition() {
     if (currentRow < totalRows) {
       requestAnimationFrame(draw);
     } else {
-      // Transition complete — run the arcade boot self-test, then the red button.
+      // Boot animation done → go straight to the arcade room (Three.js scene).
+      // The code explosion + ghost intro are now triggered only when the user
+      // enters the Pac-Man cabinet inside the arcade room.
       document.body.style.backgroundColor = '#000000';
-      playBootSequence(showPressStartButton);
+      playBootSequence(() => {
+        showScreen('arcadeReveal');
+        if (typeof window.initArcadeExperience === 'function') {
+          window.initArcadeExperience();
+        }
+      });
     }
   }
 
   draw();
 }
+
+// =========================================
+// SCREEN 2.1: REVERSE EATING TRANSITION (REGENERATION)
+// =========================================
+function startReverseTransition() {
+  showScreen('transition');
+
+  // Set up the canvas and paint it solid black SYNCHRONOUSLY
+  // before activating the landing page — this prevents the 1-frame flash
+  // where the transparent canvas lets the landing show through.
+  const canvas = document.getElementById('transition-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.style.backgroundColor = '#050505';
+  ctx.fillStyle = '#050505';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // NOW it's safe to make the landing page active underneath
+  if (screens.landing) {
+    screens.landing.classList.add('active');
+  }
+
+  const rowHeight = 150;           // taller rows = fewer rows = faster sweep
+  const radius = rowHeight / 2;
+  const totalRows = Math.ceil(canvas.height / rowHeight);
+  const pxPerSecond = canvas.width * 2.0; // speed: covers full width in ~500ms
+
+  let currentRow = totalRows - 1;
+  let direction = (currentRow % 2 === 0) ? -1 : 1;
+  let pacX = (direction === -1) ? (canvas.width + radius) : -radius;
+
+  let mouthAngle = 0;      // 0..1 normalized
+  let mouthDir = 1;
+  let lastTime = null;
+
+
+  function draw(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // seconds, capped to avoid jumps
+    lastTime = timestamp;
+
+    const delta = pxPerSecond * dt;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw base black canvas
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Progressive clear/reveal using destination-out
+    ctx.globalCompositeOperation = 'destination-out';
+    
+    // Clear fully completed rows (below current row)
+    if (currentRow < totalRows - 1) {
+      ctx.fillRect(0, (currentRow + 1) * rowHeight, canvas.width, canvas.height - (currentRow + 1) * rowHeight);
+    }
+    
+    // Clear the trail Pac-Man has already swept in the current row
+    if (direction === -1) {
+      ctx.fillRect(pacX, currentRow * rowHeight, canvas.width - pacX, rowHeight);
+    } else {
+      ctx.fillRect(0, currentRow * rowHeight, pacX, rowHeight);
+    }
+    
+    // Back to normal compositing for Pac-Man sprite
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Draw Pac-Man
+    const pacY = currentRow * rowHeight + radius;
+    ctx.fillStyle = '#FFD43B';
+    ctx.beginPath();
+    const angleOffset = direction === 1 ? 0 : Math.PI;
+    const mouth = 0.22 * mouthAngle * Math.PI;   // max opening: 0.22π
+    ctx.arc(pacX, pacY, radius - 1, angleOffset + mouth, angleOffset + 2 * Math.PI - mouth);
+    ctx.lineTo(pacX, pacY);
+    ctx.fill();
+
+    // Update position
+    pacX += delta * direction;
+
+    // Smooth mouth animation tied to distance, not frame count
+    mouthAngle += mouthDir * dt * 6;   // full open/close in ~170ms
+    if (mouthAngle >= 1) { mouthAngle = 1; mouthDir = -1; }
+    if (mouthAngle <= 0) { mouthAngle = 0; mouthDir = 1; }
+
+    // Row completion
+    if (direction === -1 && pacX <= -radius) {
+      currentRow--;
+      direction = 1;
+      pacX = -radius;
+    } else if (direction === 1 && pacX >= canvas.width + radius) {
+      currentRow--;
+      direction = -1;
+      pacX = canvas.width + radius;
+    }
+
+    if (currentRow >= 0) {
+      requestAnimationFrame(draw);
+    } else {
+      // Transition complete — return to landing
+      showScreen('landing');
+      document.body.style.backgroundColor = '';
+      
+      // Reset Easter Egg state for replay
+      easterEggClicks = 0;
+      pacmanWalkingLoopActive = true;
+      pacmanX = 100;
+      pacmanY = 300;
+      const egg = document.getElementById('pacman-easter-egg');
+      if (egg) {
+        egg.style.display = '';
+        const hintLbl = egg.querySelector('.pacman-click-label');
+        if (hintLbl) hintLbl.textContent = 'CLICCAMI (3)';
+      }
+      requestAnimationFrame(updatePacmanEasterEgg);
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+
+window.startReverseTransition = startReverseTransition;
 
 // =========================================
 // SCREEN 2.3: CORRUPTED-MEMORY GLITCH BOOT
@@ -550,6 +690,8 @@ function playCodeExplosion(onDone) {
 // =========================================
 // GENERAL SCREEN TRANSITION (MEGA PAC-MAN)
 // =========================================
+window.playCodeExplosion = playCodeExplosion;
+
 function startMegaTransition(nextScreenKey, callback, isGoingBack) {
   const transitionScreen = screens.transition;
   const canvas = document.getElementById('transition-canvas');
@@ -1019,28 +1161,45 @@ function onPressStartClick() {
   const btn = document.getElementById('arcade-start-btn');
   if (btn) btn.classList.add('pressed');
   
-  // Swap the image to the down state
   const btnImg = document.getElementById('arcade-btn-img');
   if (btnImg) {
     btnImg.src = '/assets/arcade-button-down.png';
   }
 
-  // Physical press hold → fade press-start → CODE EXPLOSION → arcade room reveal.
+  // Physical press hold → fade press-start → CODE EXPLOSION → ghost intro + gameplay.
   setTimeout(() => {
     const ps = document.getElementById('screen-press-start');
     if (ps) { ps.style.transition = 'opacity 0.45s ease'; ps.style.opacity = '0'; }
     setTimeout(() => {
       playCodeExplosion(() => {
-        showScreen('arcadeReveal');
-        if (typeof window.initArcadeExperience === 'function') {
-          window.initArcadeExperience();
+        if (typeof window.transitionFromArcadeToGameStart === 'function') {
+          window.transitionFromArcadeToGameStart();
         }
       });
     }, 450);
   }, 280);
 }
+// Expose for arcade.js (ES module) to call after cabinet entry
+window.showPressStartButton = showPressStartButton;
 
+// Skip Experience Confirmation Modal Handlers
+document.getElementById('btn-discover-collection')?.addEventListener('click', () => {
+  document.getElementById('skip-confirm-modal')?.classList.remove('hidden');
+});
 
+document.getElementById('btn-skip-cancel')?.addEventListener('click', () => {
+  document.getElementById('skip-confirm-modal')?.classList.add('hidden');
+});
+
+document.getElementById('btn-skip-confirm')?.addEventListener('click', () => {
+  document.getElementById('skip-confirm-modal')?.classList.add('hidden');
+  hasDiscount = false;
+  skippedExperience = true;
+  startMegaTransition('arcadeCollection', () => {
+    renderArcadeCollection();
+    initArcadeCollection();
+  });
+});
 
 // =========================================
 // SCREEN 5: GAME START
@@ -1051,8 +1210,8 @@ document.getElementById('btn-play-game')?.addEventListener('click', () => {
   });
 });
 
-document.getElementById('btn-view-collection')?.addEventListener('click', () => {
-  document.getElementById('locked-collection-popup').classList.remove('hidden');
+document.getElementById('btn-back-to-uniqlo')?.addEventListener('click', () => {
+  document.getElementById('back-uniqlo-btn')?.click();
 });
 
 document.getElementById('btn-close-popup')?.addEventListener('click', () => {
@@ -2220,6 +2379,7 @@ document.getElementById('btn-replay')?.addEventListener('click', () => {
 document.getElementById('btn-replay-from-shop')?.addEventListener('click', () => {
   arcadeCollectionActive = false;
   document.removeEventListener('keydown', handleArcadeKeyboard);
+  closeProductViewer();
   resetGame();
   startMegaTransition('gameplay', () => {
     startGame();
@@ -2263,6 +2423,7 @@ function resetGame() {
 document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
   arcadeCollectionActive = false;
   document.removeEventListener('keydown', handleArcadeKeyboard);
+  closeProductViewer();
   resetGame();
   startMegaTransition('gameStart', () => {
     // Ensure the menu content is visible and other startup phases are hidden
@@ -2289,66 +2450,48 @@ const productsData = [
 
 
 // =========================================
-// SCREEN 8: ARCADE COLLECTION (REWARD)
+// SCREEN 8: ARCADE COLLECTION (MAME-STYLE SELECTOR)
 // =========================================
 let arcadeActiveIndex = 0;
 let arcadeCollectionActive = false;
 
 function renderArcadeCollection() {
   const list = document.getElementById('arcade-product-list');
+  if (!list) return;
   list.innerHTML = '';
 
   const statusEl = document.getElementById('arcade-header-status');
-  const titleEl = document.getElementById('arcade-main-title');
-  const subtitleEl = document.getElementById('arcade-main-subtitle');
+  if (statusEl) {
+    if (hasDiscount) {
+      statusEl.innerText = '[ REWARD: 20% OFF ACTIVE ]';
+      statusEl.classList.add('blink-fast');
+      statusEl.style.color = 'var(--pacman-yellow)';
+    } else {
+      statusEl.innerText = '[ STANDARD STORE ]';
+      statusEl.classList.remove('blink-fast');
+      statusEl.style.color = '#888';
+    }
+  }
 
+  // Toggle skip game prompt & replay button depending on reward status
   if (hasDiscount) {
-    statusEl.innerText = '[ REWARD: 20% OFF ACTIVE ]';
-    statusEl.classList.add('blink-fast');
-    statusEl.style.color = 'var(--pacman-yellow)';
-    titleEl.innerText = 'UNLOCKED COLLECTION';
-    subtitleEl.innerText = '// SELECT YOUR ITEM';
     document.getElementById('skip-game-prompt')?.classList.add('hidden');
     document.getElementById('btn-replay-from-shop')?.classList.remove('hidden');
   } else {
-    statusEl.innerText = '[ STANDARD STORE ]';
-    statusEl.classList.remove('blink-fast');
-    statusEl.style.color = '#888';
-    titleEl.innerText = 'UNIQLO x PAC-MAN';
-    subtitleEl.innerText = '// BROWSE COLLECTION';
     document.getElementById('skip-game-prompt')?.classList.remove('hidden');
     document.getElementById('btn-replay-from-shop')?.classList.add('hidden');
   }
 
   productsData.forEach((p, index) => {
-    let priceRowHtml = '';
-    
-    if (hasDiscount) {
-      const discounted = (p.price * 0.8).toFixed(2);
-      priceRowHtml = `
-        <span class="item-original-price">$${p.price.toFixed(2)}</span>
-        <span class="item-price">$${discounted}</span>
-      `;
-    } else {
-      priceRowHtml = `<span class="item-price">$${p.price.toFixed(2)}</span>`;
-    }
-    
+    const numStr = String(index + 1).padStart(4, '0');
     const item = document.createElement('div');
-    item.className = `arcade-product-item ${index === 0 ? 'selected' : ''}`;
+    item.className = `arcade-product-item ${index === arcadeActiveIndex ? 'selected' : ''}`;
     item.dataset.index = index;
     
     item.innerHTML = `
-      <div class="cursor-indicator">›</div>
-      <div class="item-icon">
-        <img src="${p.pixelIcon}" alt="${p.name}" class="pixel-icon-img">
-      </div>
-      <div class="item-details">
-        <div class="item-name">${p.name}</div>
-        <div class="item-price-row">
-          ${priceRowHtml}
-        </div>
-      </div>
-      <button class="wahba-btn" onclick="openItemView('${p.id}'); event.stopPropagation();">VIEW ITEM</button>
+      <span class="cursor-indicator">›</span>
+      <span class="item-number">${numStr}</span>
+      <span class="item-name">${p.name.toUpperCase()}</span>
     `;
     
     list.appendChild(item);
@@ -2358,22 +2501,48 @@ function renderArcadeCollection() {
 function initArcadeCollection() {
   arcadeActiveIndex = 0;
   arcadeCollectionActive = true;
+  
+  // First render the items list
+  renderArcadeCollection();
+  
+  // Highlight the default item and run the Three.js preview
   updateArcadeSelection();
 
-  // Mouse hover
+  // Mouse hover & click
   const items = document.querySelectorAll('.arcade-product-item');
   items.forEach(item => {
     item.addEventListener('mouseenter', (e) => {
-      arcadeActiveIndex = parseInt(e.currentTarget.dataset.index);
-      updateArcadeSelection();
+      const idx = parseInt(e.currentTarget.dataset.index);
+      if (arcadeActiveIndex !== idx) {
+        arcadeActiveIndex = idx;
+        updateArcadeSelection();
+      }
     });
     
-    item.addEventListener('click', () => {
-      openItemView(productsData[arcadeActiveIndex].id);
+    item.addEventListener('click', (e) => {
+      const idx = parseInt(e.currentTarget.dataset.index);
+      if (arcadeActiveIndex === idx) {
+        // Double-click or click active to view detailed item color/size modal
+        openItemView(productsData[arcadeActiveIndex].id);
+      } else {
+        arcadeActiveIndex = idx;
+        updateArcadeSelection();
+      }
     });
   });
 
+  // Bind "► VIEW ITEM" button on screen
+  const viewBtn = document.getElementById('arc-view-item-btn');
+  if (viewBtn) {
+    viewBtn.onclick = () => {
+      if (arcadeActiveIndex >= 0 && arcadeActiveIndex < productsData.length) {
+        openItemView(productsData[arcadeActiveIndex].id);
+      }
+    };
+  }
+
   // Keyboard navigation
+  document.removeEventListener('keydown', handleArcadeKeyboard);
   document.addEventListener('keydown', handleArcadeKeyboard);
 }
 
@@ -2386,6 +2555,43 @@ function updateArcadeSelection() {
       item.classList.remove('selected');
     }
   });
+
+  const selectedProduct = productsData[arcadeActiveIndex];
+  if (!selectedProduct) return;
+
+  // Update top right cabinet counter (MAME style)
+  const counterEl = document.getElementById('crt-item-counter');
+  if (counterEl) {
+    counterEl.innerText = `ITEM ${String(arcadeActiveIndex + 1).padStart(2, '0')}/${String(productsData.length).padStart(2, '0')}`;
+  }
+
+  // Update preview text details below monitor
+  const previewNumEl = document.getElementById('arc-preview-number');
+  const previewNameEl = document.getElementById('arc-preview-name');
+  const previewPriceEl = document.getElementById('arc-preview-price');
+
+  if (previewNumEl) previewNumEl.innerText = String(arcadeActiveIndex + 1).padStart(4, '0');
+  if (previewNameEl) previewNameEl.innerText = selectedProduct.name.toUpperCase();
+  
+  if (previewPriceEl) {
+    if (hasDiscount) {
+      const discounted = (selectedProduct.price * 0.8).toFixed(2);
+      previewPriceEl.innerHTML = `<span class="orig-price-strike">$${selectedProduct.price.toFixed(2)}</span>$${discounted}`;
+    } else {
+      previewPriceEl.innerText = `$${selectedProduct.price.toFixed(2)}`;
+    }
+  }
+
+  // Handle the WebGL product preview update (using existing sandwich layer code)
+  const container = document.getElementById('arc-preview-container');
+  if (container) {
+    const isFirstTime = !productScene;
+    if (isFirstTime) {
+      initProductViewer(container, selectedProduct.variants['black']);
+    } else {
+      updateProductViewerTexture(selectedProduct.variants['black']);
+    }
+  }
 }
 
 function handleArcadeKeyboard(e) {
@@ -2402,7 +2608,17 @@ function handleArcadeKeyboard(e) {
   } else if (e.key === 'Enter') {
     e.preventDefault();
     openItemView(productsData[arcadeActiveIndex].id);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    exitArcadeCollection();
   }
+}
+
+function exitArcadeCollection() {
+  arcadeCollectionActive = false;
+  document.removeEventListener('keydown', handleArcadeKeyboard);
+  closeProductViewer();
+  startMegaTransition('gameStart');
 }
 
 // =========================================
@@ -2700,6 +2916,15 @@ function openItemView(productId) {
     return;
   }
 
+  // Cleanup active WebGL shop selection preview before opening the modal detailed view
+  closeProductViewer();
+
+  // Make the CRT overlay stronger for the focused item detail view
+  const crt = document.getElementById('crt-overlay');
+  if (crt) {
+    crt.classList.remove('reduced-crt');
+  }
+
   currentViewItem = item;
   
   // Set UI Text
@@ -2804,6 +3029,21 @@ document.getElementById('btn-close-item-view').addEventListener('click', () => {
   
   // Cleanup Three.js product viewer
   closeProductViewer();
+
+  // Re-initialize shop preview if arcade collection is active
+  if (arcadeCollectionActive) {
+    // Restore the lighter CRT effect for the selection screen overview
+    const crt = document.getElementById('crt-overlay');
+    if (crt) {
+      crt.classList.add('reduced-crt');
+    }
+
+    const container = document.getElementById('arc-preview-container');
+    if (container) {
+      const selectedProduct = productsData[arcadeActiveIndex];
+      initProductViewer(container, selectedProduct.variants['black']);
+    }
+  }
 });
 
 // =========================================
@@ -3105,30 +3345,7 @@ window.removeFromCart = removeFromCart;
 // INIT
 initCartSystemBinds();
 
-if (EDIT_COLLISION_MAP) {
-  document.getElementById('btn-copy-map')?.classList.remove('hidden');
-} else {
-  document.getElementById('btn-copy-map')?.classList.add('hidden');
-}
-
-document.getElementById('btn-copy-map')?.addEventListener('click', () => {
-  const mapStr = collisionMap.map(row => `  "${row}"`).join(",\n");
-  const formatted = `const collisionMap = [\n${mapStr}\n];`;
-  
-  navigator.clipboard.writeText(formatted).then(() => {
-    alert("Collision Map copied to clipboard!");
-  }).catch(err => {
-    console.error("Failed to copy map: ", err);
-    // fallback
-    const textarea = document.createElement("textarea");
-    textarea.value = formatted;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-    alert("Collision Map copied to clipboard!");
-  });
-});
+// Window resize playfield listener
 
 window.addEventListener('resize', resizePlayfield);
 showScreen('landing');

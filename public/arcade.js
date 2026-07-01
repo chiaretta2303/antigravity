@@ -3,6 +3,7 @@ import { GLTFLoader }                        from 'three/examples/jsm/loaders/GL
 import { EXRLoader }                         from 'three/examples/jsm/loaders/EXRLoader.js';
 import { OrbitControls }                     from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject }        from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { MeshoptDecoder }                    from 'https://unpkg.com/three@0.185.0/examples/jsm/libs/meshopt_decoder.module.js';
 import gsap                                  from 'gsap';
 
 /* ==========================================================
@@ -35,8 +36,12 @@ const TOUR_POINTS = [
     number: '1',
     title: 'Mortal Kombat 2',
     description: 'The second game in the Mortal Kombat series from 1997, improving the gameplay and expanding the mythos of the original Mortal Kombat, introducing more varied moves and several icon characters.',
-    markerPosition: new THREE.Vector3( 2.1,  1.95, -0.2),
-    cameraPosition: new THREE.Vector3(-0.2,  1.55, -0.2),
+    // Marker Y raised above the marquee (was 1.95) so the number floats
+    // clear of the cabinet art instead of covering it. Heights alternate
+    // (low/high) between consecutive tour points so two markers that are
+    // close together in depth never land on the same screen-space band.
+    markerPosition: new THREE.Vector3( 2.1,  2.15, -0.2),
+    cameraPosition: new THREE.Vector3(-0.5,  1.55, -0.2),
     cameraTarget:   new THREE.Vector3( 2.2,  1.25, -0.2),
   },
   {
@@ -44,8 +49,8 @@ const TOUR_POINTS = [
     number: '2',
     title: 'Pac-Man',
     description: 'First introduced in Shibuya, Tokyo in an arcade in 1980. The game was originally called PuckMan.',
-    markerPosition: new THREE.Vector3( 2.1,  1.95, -1.2),
-    cameraPosition: new THREE.Vector3( 0.1,  1.55, -1.2),
+    markerPosition: new THREE.Vector3( 2.1,  2.40, -1.2),
+    cameraPosition: new THREE.Vector3(-0.5,  1.55, -1.2),
     cameraTarget:   new THREE.Vector3( 2.1,  1.45, -1.2),
   },
   {
@@ -53,8 +58,8 @@ const TOUR_POINTS = [
     number: '3',
     title: 'Double Dragon',
     description: "Double Dragon is a 1987 beat 'em up video game series. It features twins martial artists Billy and Jimmy Lee, as they fight against various adversaries and rivals.",
-    markerPosition: new THREE.Vector3( 2.1,  1.95, -2.2),
-    cameraPosition: new THREE.Vector3(-0.2,  1.55, -2.2),
+    markerPosition: new THREE.Vector3( 2.1,  2.15, -2.2),
+    cameraPosition: new THREE.Vector3(-0.5,  1.55, -2.2),
     cameraTarget:   new THREE.Vector3( 2.2,  1.25, -2.2),
   },
   {
@@ -62,8 +67,8 @@ const TOUR_POINTS = [
     number: '4',
     title: 'Mortal Kombat 3 Ultimate',
     description: "Released in 1995, personally I think it's one of the best Mortal Kombat games made. With some favourite character returns such as Scorpion and Kitana, who were missing from Mortal Kombat 3.",
-    markerPosition: new THREE.Vector3(-2.3,  2.1,  -0.5),
-    cameraPosition: new THREE.Vector3( 0.2,  1.55, -0.5),
+    markerPosition: new THREE.Vector3(-2.3,  2.75,  -0.5),
+    cameraPosition: new THREE.Vector3( 1.2,  1.55, -0.5),
     cameraTarget:   new THREE.Vector3(-2.4,  1.25, -0.5),
   },
   {
@@ -71,7 +76,7 @@ const TOUR_POINTS = [
     number: '5',
     title: 'Back to the Future Pinball',
     description: 'Released 1990 a month after the third movie it features some great soundtracks from the trilogy.',
-    markerPosition: new THREE.Vector3(-1.3,  1.95, -1.0),
+    markerPosition: new THREE.Vector3(-1.3,  2.15, -1.0),
     cameraPosition: new THREE.Vector3( 1.2,  1.55, -1.0),
     cameraTarget:   new THREE.Vector3(-1.5,  1.20, -1.0),
   },
@@ -80,7 +85,7 @@ const TOUR_POINTS = [
     number: '6',
     title: 'The Addams Family Pinball',
     description: "Released in 1992 it was based on the film of the same name. It has some great game modes and custom speeches from the characters.",
-    markerPosition: new THREE.Vector3(-1.3,  1.95, -1.8),
+    markerPosition: new THREE.Vector3(-1.3,  2.40, -1.8),
     cameraPosition: new THREE.Vector3( 1.2,  1.55, -1.8),
     cameraTarget:   new THREE.Vector3(-1.5,  1.20, -1.8),
   },
@@ -90,6 +95,10 @@ const ENTRANCE_VIEW = {
   cameraPosition: new THREE.Vector3(0, 1.65, 4),
   cameraTarget:   new THREE.Vector3(0, 1.6, -0.5),
 };
+
+// Extra yaw (degrees, world Y axis) applied to the Pac-Man cabinet on load
+// so it faces the camera more frontally. Code-only fix, GLB untouched.
+const PACMAN_CABINET_YAW_DEG = 30;
 
 const CLICKABLE_KEYWORDS = {
   pacman: ['pac'],
@@ -135,8 +144,8 @@ function initScene() {
   infoCardDesc   = document.querySelector('#info-card-description');
   navPrev        = document.querySelector('#nav-prev');
   navNext        = document.querySelector('#nav-next');
-  navTitle       = document.querySelector('#nav-title');
-  entranceBtn    = document.querySelector('#entrance-btn');
+  navTitle       = document.querySelector('#btn-return-entrance');
+  entranceBtn    = document.querySelector('#btn-return-entrance');
   debugPanel     = document.querySelector('#debug-panel');
   debugName      = document.querySelector('#debug-name');
   debugCam       = document.querySelector('#debug-hierarchy');
@@ -233,8 +242,8 @@ function initScene() {
   scene.add(leftWallCombined);
   secondaryLights.push(leftWallCombined);
 
-  // Pac-Man cabinet lights consolidated to one bright focus light
-  const pacmanGlowCombined = new THREE.PointLight(0xffee33, 8.5, 4.0);
+  // Pac-Man cabinet lights consolidated to one soft focus light
+  const pacmanGlowCombined = new THREE.PointLight(0xffee33, 1.2, 4.0);
   pacmanGlowCombined.position.set(1.85, 1.35, -1.2);
   scene.add(pacmanGlowCombined);
 
@@ -254,7 +263,11 @@ function initScene() {
   }
 
   // Model Loading
+  // The optimized GLB uses EXT_meshopt_compression (required extension) for
+  // its geometry buffers, so the loader needs the Meshopt decoder wired up
+  // or it will refuse to parse the file.
   const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
   loader.load(
     MODEL_URL,
     (gltf) => {
@@ -296,6 +309,18 @@ function initScene() {
         gltf.animations.forEach(clip => mixer.clipAction(clip).play());
       }
 
+      // Re-aim the Pac-Man cabinet so its screen/marquee faces the camera
+      // more frontally. It's a standalone top-level node in the GLB ("pac
+      // man machine_automat_0") whose baked quaternion only encodes an
+      // up-axis correction (X) + base facing (Z) — no yaw. Rotating around
+      // the WORLD Y axis turns it in place without disturbing that
+      // up-axis correction, and without touching any other cabinet.
+      const pacmanCabinet = model.getObjectByName('pac man machine_automat_0');
+      if (pacmanCabinet) {
+        pacmanCabinet.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(PACMAN_CABINET_YAW_DEG));
+      }
+      window.__pacmanCabinet = pacmanCabinet; // temp debug hook, remove after tuning
+
       createHotspots();
 
       const promptEl = document.createElement('div');
@@ -309,7 +334,7 @@ function initScene() {
       pacmanPrompt.visible = false;
       scene.add(pacmanPrompt);
 
-      hint.textContent = 'Click the numbered markers or use the arrows to explore.';
+      hint.style.display = 'none';
     },
     (progress) => {
       hint.textContent = progress.total
@@ -331,7 +356,19 @@ function initScene() {
   infoCardClose.addEventListener('click', () => infoCard.classList.add('hidden'));
   navPrev.addEventListener('click', onNavPrevClick);
   navNext.addEventListener('click', onNavNextClick);
-  entranceBtn.addEventListener('click', goToEntrance);
+  if (entranceBtn) {
+    entranceBtn.addEventListener('click', goToEntrance);
+  }
+
+  const backUniqloBtn = document.querySelector('#back-uniqlo-btn');
+  if (backUniqloBtn) {
+    backUniqloBtn.addEventListener('click', () => {
+      goToEntrance();
+      if (typeof window.startReverseTransition === 'function') {
+        window.startReverseTransition();
+      }
+    });
+  }
 }
 
 /* ==========================================================
@@ -425,7 +462,7 @@ function updateInfoCard(point) {
 }
 
 function updateBottomBar(point) {
-  navTitle.textContent = point.title;
+  // navTitle.textContent = point.title;
 }
 
 function onNavPrevClick() {
@@ -441,9 +478,10 @@ function goToEntrance() {
   infoCard.classList.add('hidden');
   updateActiveMarker(-1);
   if (pacmanPrompt) pacmanPrompt.visible = false;
-  navTitle.textContent = 'Explore the arcade';
+  // navTitle.textContent = 'Explore the arcade';
   currentPointIndex    = -1;
 }
+window.goToEntrance3D = goToEntrance;
 
 function updateActiveMarker(activeIndex) {
   document.querySelectorAll('.hotspot-marker').forEach((el, i) => {
@@ -543,8 +581,10 @@ function enterScreen() {
     delay:      WALK + 0.7,
     ease:       'power2.inOut',
     onComplete: () => {
-      // Trigger global script.js sequence transition to Pac-Man game attract/start screen
-      if (typeof window.transitionFromArcadeToGameStart === 'function') {
+      // Show red press-start button → user clicks → code explosion → ghost intro → gameplay
+      if (typeof window.showPressStartButton === 'function') {
+        window.showPressStartButton();
+      } else if (typeof window.transitionFromArcadeToGameStart === 'function') {
         window.transitionFromArcadeToGameStart();
       }
       

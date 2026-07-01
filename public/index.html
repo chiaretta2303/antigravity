@@ -106,7 +106,7 @@
             <h1 class="uq-hero-title">UNIQLO<br>× PAC&#8209;MAN</h1>
             <p class="uq-hero-desc">Il patrimonio del gaming retrò incontra il design minimalista giapponese.<br>Una collezione unica con i personaggi 8-bit più amati di sempre.</p>
             <div class="uq-hero-cta-row">
-              <button class="uq-btn-primary">SCOPRI LA COLLEZIONE</button>
+              <button id="btn-discover-collection" class="uq-btn-primary">SCOPRI LA COLLEZIONE</button>
               <button class="uq-btn-ghost">A PARTIRE DA 14,90 €</button>
             </div>
           </div>
@@ -389,17 +389,13 @@
 
       <!-- Top hint bar -->
       <div id="ui">
-        <div id="hint">Loading scene…</div>
+        <div id="hint" style="display:none"></div>
       </div>
 
-      <!-- Back-to-entrance button -->
-      <button id="entrance-btn" type="button" aria-label="Back to entrance" title="Back to entrance">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 11.5 12 4l9 7.5" />
-          <path d="M5 10.2V19h14v-8.8" />
-        </svg>
-      </button>
+      <!-- Back to UNIQLO button (top-left) -->
+      <button id="back-uniqlo-btn" type="button">BACK TO UNIQLO</button>
+
+
 
       <!-- Info card (appears when a hotspot is selected) -->
       <div id="info-card" class="hidden">
@@ -412,7 +408,7 @@
       <!-- Bottom navigation bar -->
       <div id="bottom-nav">
         <button id="nav-prev" class="nav-arrow" aria-label="Previous">&#8592;</button>
-        <span id="nav-title">Explore the arcade</span>
+        <button id="btn-return-entrance" type="button">TORNA ALL'INGRESSO</button>
         <button id="nav-next" class="nav-arrow" aria-label="Next">&#8594;</button>
       </div>
 
@@ -427,12 +423,6 @@
 
     <!-- SCREEN 5: GAME START SCREEN -->
     <div id="screen-game-start" class="screen arcade-mode">
-      <!-- Retrò Arcade Top HUD -->
-      <div class="arcade-hud-header">
-        <div class="hud-item"><div class="label">1UP</div><div class="value">00</div></div>
-        <div class="hud-item"><div class="label">HIGH SCORE</div><div class="value">10000</div></div>
-        <div class="hud-item"><div class="label">2UP</div><div class="value">00</div></div>
-      </div>
 
       <!-- Centered screen layout wrapper -->
       <div class="arcade-screen-content">
@@ -488,12 +478,12 @@
 
         <!-- 3. ACTUAL START MENU -->
         <div id="start-menu-content" class="arcade-start-menu hidden">
-          <div class="uq-arcade-header">UNIQLO x PAC-MAN</div>
+          <img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="arcade-uniqlo-logo">
           <img src="/assets/pac-man-logo.png" alt="PAC-MAN" class="arcade-pacman-logo">
           <p class="subtitle">UNIQLO CAPSULE COLLECTION</p>
           <div class="start-actions">
             <button id="btn-play-game" class="arcade-btn">PLAY PLAYER 1</button>
-            <button id="btn-view-collection" class="arcade-btn secondary">VIEW THE COLLECTION</button>
+            <button id="btn-back-to-uniqlo" class="arcade-btn secondary">BACK TO UNIQLO</button>
           </div>
         </div>
       </div>
@@ -562,7 +552,6 @@
         <div class="game-controls">
           <button id="btn-pause" class="arcade-btn small" aria-label="Pause game">PAUSE</button>
           <button id="btn-skip-game" class="arcade-btn small secondary">SKIP THE GAME</button>
-          <button id="btn-copy-map" class="arcade-btn small hidden" style="background-color: var(--pacman-yellow); color: #000; border-color: var(--pacman-yellow);">COPY COLLISION MAP</button>
         </div>
       </div>
 
@@ -588,57 +577,101 @@
     </div>
 
     <!-- SCREEN 7: ARCADE REWARD COLLECTION SCREEN -->
-    <div id="screen-arcade-collection" class="screen arcade-mode wahba-shell">
+    <div id="screen-arcade-collection" class="screen arcade-mode">
       <div class="scanlines"></div>
 
-      <div class="terminal-header">
-        <div class="terminal-header-left">
-          <span class="logo">/UNIQLO_X_PACMAN</span>
+      <!-- CRT top bar -->
+      <div class="crt-top-bar">
+        <div class="crt-bar-left">
+          <span class="crt-logo">/UNIQLO_X_PACMAN</span>
+          <span class="crt-sep">|</span>
+          <span id="arcade-header-status" class="crt-status blink-fast">[ REWARD: 20% OFF ACTIVE ]</span>
         </div>
-        <div class="terminal-header-right" style="display: flex; align-items: center; gap: 20px;">
-          <span id="arcade-header-status" class="status blink-fast">[ REWARD: 20% OFF ACTIVE ]</span>
-          <div id="arcade-cart-btn" class="arcade-cart-btn-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
-            <img src="/assets/cart-pixel.png" alt="Cart" class="arcade-cart-icon">
-            <span id="cart-count-badge" class="cart-count-badge" style="background: var(--uniqlo-red); color: white; font-family: monospace; font-size: 0.8rem; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(230,0,18,0.6);">0</span>
-          </div>
+        <div class="crt-bar-right" style="margin-right: 90px;">
+          <span id="crt-item-counter" class="crt-counter">GAME 01/04</span>
+        </div>
+        <div id="arcade-cart-btn" class="arcade-cart-btn-container">
+          <img src="/assets/cart-pixel.png" alt="Cart" class="arcade-cart-icon">
+          <span id="cart-count-badge" class="cart-count-badge">0</span>
         </div>
       </div>
 
-      <div class="wahba-main-container">
-        <div class="wahba-title-area">
-          <h1 id="arcade-main-title" class="wahba-title">UNLOCKED COLLECTION</h1>
-          <p id="arcade-main-subtitle" class="wahba-subtitle">// SELECT YOUR ITEM</p>
-          <div style="margin-top: 20px;">
-            <button id="btn-replay-from-shop" class="wahba-btn secondary small hidden">// REPLAY PAC-MAN</button>
+      <!-- Main two-panel layout -->
+      <div class="arc-sel-body">
+
+        <!-- LEFT: game list -->
+        <div class="arc-sel-left">
+          <div class="arc-sel-list-header">
+            <span class="arc-list-label">— SELECT ITEM —</span>
           </div>
-          <div id="skip-game-prompt" class="hidden" style="margin-top: 30px;">
-            <p style="color: #ccc; margin-bottom: 15px; letter-spacing: 1px;">You skipped the game. Play Pac-Man to
-              unlock 20% off.</p>
-            <button id="btn-play-from-skip" class="wahba-cta-btn">PLAY TO UNLOCK 20%</button>
+          <div class="arcade-product-list" id="arcade-product-list">
+            <!-- Populated by JS -->
           </div>
+
+          <!-- Skip / replay prompts -->
+          <div id="skip-game-prompt" class="arc-skip-prompt hidden">
+            <p>Play Pac-Man to unlock 20% off.</p>
+            <button id="btn-play-from-skip" class="arc-action-btn">PLAY TO UNLOCK 20%</button>
+          </div>
+          <button id="btn-replay-from-shop" class="arc-action-btn secondary hidden">// REPLAY PAC-MAN</button>
         </div>
 
-        <div class="arcade-product-list" id="arcade-product-list">
-          <!-- Populated by JS -->
+        <!-- RIGHT: product preview monitor -->
+        <div class="arc-sel-right">
+          <div class="arc-monitor-frame">
+            <div class="arc-monitor-inner">
+              <!-- 3D preview lives here, populated by JS -->
+              <div id="arc-preview-container"></div>
+              <!-- Name overlay at bottom of monitor -->
+              <div class="arc-monitor-label">
+                <span id="arc-preview-number" class="arc-mon-num">0001</span>
+                <span id="arc-preview-name" class="arc-mon-name">PAC-MAN GRAPHIC T-SHIRT</span>
+                <span id="arc-preview-price" class="arc-mon-price">$24.90</span>
+              </div>
+            </div>
+            <div class="arc-monitor-glare"></div>
+          </div>
+          <!-- VIEW ITEM button under monitor -->
+          <button id="arc-view-item-btn" class="arc-action-btn primary">► VIEW ITEM</button>
         </div>
+
+      </div>
+
+      <!-- Bottom controls legend -->
+      <div class="arc-controls-bar">
+        <span class="arc-ctrl"><kbd>↑↓</kbd> SELECT</span>
+        <span class="arc-ctrl-sep">·</span>
+        <span class="arc-ctrl"><kbd>ENTER</kbd> VIEW ITEM</span>
+        <span class="arc-ctrl-sep">·</span>
+        <span class="arc-ctrl"><kbd>ESC</kbd> BACK</span>
       </div>
     </div>
 
 
 
+    <!-- SKIP EXPERIENCE CONFIRMATION MODAL -->
+    <div id="skip-confirm-modal" class="modal hidden arcade-mode">
+      <div class="skip-modal-box">
+        <h2 class="skip-title">VUOI SALTARE L’ESPERIENZA?</h2>
+        <p class="skip-text">Se vai direttamente alla collezione, salterai l’esperienza interattiva PAC-MAN e non sbloccherai il reward speciale.</p>
+        <div class="skip-actions">
+          <button id="btn-skip-confirm" class="arc-action-btn primary">CONTINUA ALLA COLLEZIONE</button>
+          <button id="btn-skip-cancel" class="arc-action-btn secondary">TORNA INDIETRO</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ITEM VIEW MODAL -->
     <div id="item-view-overlay" class="modal hidden arcade-mode wahba-shell">
       <div class="scanlines"></div>
 
-      <div class="terminal-header" style="position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; padding: 15px 30px;">
+      <div class="terminal-header" style="position: absolute; top: 40px; left: 40px; width: calc(100% - 80px); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; padding: 15px 30px; z-index: 10;">
         <div class="terminal-header-left">
           <span class="logo">/PRODUCT_VIEWER</span>
         </div>
-        <div class="terminal-header-right">
-          <div id="item-view-cart-btn" class="arcade-cart-btn-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
-            <img src="/assets/cart-pixel.png" alt="Cart" class="arcade-cart-icon">
-            <span id="item-view-cart-count-badge" class="cart-count-badge" style="background: var(--uniqlo-red); color: white; font-family: monospace; font-size: 0.8rem; font-weight: bold; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(230,0,18,0.6);">0</span>
-          </div>
+        <div id="item-view-cart-btn" class="arcade-cart-btn-container">
+          <img src="/assets/cart-pixel.png" alt="Cart" class="arcade-cart-icon">
+          <span id="item-view-cart-count-badge" class="cart-count-badge">0</span>
         </div>
       </div>
 
@@ -733,7 +766,7 @@
   <!-- CRT TELEVISION OVERLAY (Hidden by default, activated after cabinet zoom) -->
   <div id="crt-overlay"></div>
 
-  <script type="module" src="arcade.js"></script>
+  <script type="module" src="arcade.js?v=1"></script>
   <script src="script.js?v=17"></script>
 </body>
 
