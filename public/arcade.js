@@ -319,7 +319,6 @@ function initScene() {
       if (pacmanCabinet) {
         pacmanCabinet.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(PACMAN_CABINET_YAW_DEG));
       }
-      window.__pacmanCabinet = pacmanCabinet; // temp debug hook, remove after tuning
 
       createHotspots();
 
