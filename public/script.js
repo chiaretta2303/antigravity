@@ -1,3 +1,9 @@
+// Preload arcade button images to avoid delay/flicker on click
+const preloadBtnUp = new Image();
+preloadBtnUp.src = '/assets/arcade-button-up.png';
+const preloadBtnDown = new Image();
+preloadBtnDown.src = '/assets/arcade-button-down.png';
+
 // STATE
 let currentState = 'LANDING';
 let easterEggClicks = 0;
@@ -596,7 +602,7 @@ function playBootSequence(onDone) {
 // A burst of numbers/code explodes outward while the screen floods with
 // cascading garbage, white-flashes, then fades to black → cabinet reveal.
 // =========================================
-function playCodeExplosion(onDone) {
+function playCodeExplosion(onDone, skipSound = false) {
   const s = _bootCanvasSetup();
   if (!s) { onDone(); return; }
   showScreen('bootup');
@@ -615,7 +621,9 @@ function playCodeExplosion(onDone) {
   const colCount = Math.ceil(W0 / (cell * 0.9));
   const drops = new Array(colCount).fill(0).map(() => Math.random() * -H0);
 
-  try { blip({ freq: 90, dur: 0.5, type: 'sawtooth', slide: 500, vol: 0.12 }); } catch (_) {}
+  if (!skipSound) {
+    try { blip({ freq: 90, dur: 0.5, type: 'sawtooth', slide: 500, vol: 0.12 }); } catch (_) {}
+  }
 
   const start = performance.now();
   const DUR = 2.2;
@@ -1166,18 +1174,24 @@ function onPressStartClick() {
     btnImg.src = '/assets/arcade-button-down.png';
   }
 
-  // Physical press hold → fade press-start → CODE EXPLOSION → ghost intro + gameplay.
+  // Play the retro explosion sound immediately upon click
+  try {
+    blip({ freq: 90, dur: 0.5, type: 'sawtooth', slide: 500, vol: 0.12 });
+  } catch (_) {}
+
+  // Keep button visible in pressed state for a short moment, then fade and launch code explosion
   setTimeout(() => {
     const ps = document.getElementById('screen-press-start');
     if (ps) { ps.style.transition = 'opacity 0.45s ease'; ps.style.opacity = '0'; }
     setTimeout(() => {
+      // Pass skipSound = true so it does not play the sound again
       playCodeExplosion(() => {
         if (typeof window.transitionFromArcadeToGameStart === 'function') {
           window.transitionFromArcadeToGameStart();
         }
-      });
+      }, true);
     }, 450);
-  }, 280);
+  }, 400);
 }
 // Expose for arcade.js (ES module) to call after cabinet entry
 window.showPressStartButton = showPressStartButton;
