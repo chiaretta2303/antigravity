@@ -98,7 +98,8 @@ const ENTRANCE_VIEW = {
 
 // Extra yaw (degrees, world Y axis) applied to the Pac-Man cabinet on load
 // so it faces the camera more frontally. Code-only fix, GLB untouched.
-const PACMAN_CABINET_YAW_DEG = 30;
+// Tuned empirically via live screenshots at the 'pacman' tour point.
+const PACMAN_CABINET_YAW_DEG = 5;
 
 const CLICKABLE_KEYWORDS = {
   pacman: ['pac'],
@@ -315,7 +316,16 @@ function initScene() {
       // up-axis correction (X) + base facing (Z) — no yaw. Rotating around
       // the WORLD Y axis turns it in place without disturbing that
       // up-axis correction, and without touching any other cabinet.
-      const pacmanCabinet = model.getObjectByName('pac man machine_automat_0');
+      // Re-aim the Pac-Man cabinet so its screen/marquee faces the camera
+      // more frontally. It's a standalone top-level node in the GLB. Note:
+      // GLTFLoader sanitizes node names (spaces -> underscores) when
+      // building the runtime object graph, so the loaded object's name is
+      // "pac_man_machine_automat_0" even though the raw GLB JSON stores it
+      // as "pac man machine_automat_0". Its baked quaternion only encodes
+      // an up-axis correction (X) + base facing (Z) — no yaw. Rotating
+      // around the WORLD Y axis turns it in place without disturbing that
+      // up-axis correction, and without touching any other cabinet.
+      const pacmanCabinet = model.getObjectByName('pac_man_machine_automat_0');
       if (pacmanCabinet) {
         pacmanCabinet.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(PACMAN_CABINET_YAW_DEG));
       }
@@ -566,8 +576,13 @@ function onCanvasMouseMove(event) {
    ========================================================== */
 function enterScreen() {
   if (pacmanPrompt) pacmanPrompt.visible = false;
-  const pos    = new THREE.Vector3(1.40, 1.45, -1.2);
-  const target = new THREE.Vector3(2.20, 1.45, -1.2);
+  // Camera lowered (was y=1.45) and aimed only slightly upward (target
+  // y=1.25, was 1.45 then over-corrected to 1.60) so the full cabinet
+  // screen is framed — the previous target was too high and showed the
+  // room ceiling instead of the game screen. Tuned empirically via
+  // frozen-timeline screenshots at the 'pacman' enterScreen() moment.
+  const pos    = new THREE.Vector3(1.40, 1.15, -1.2);
+  const target = new THREE.Vector3(2.20, 1.25, -1.2);
   const WALK   = 3.2;
 
   moveCamera(pos, target, WALK);
@@ -577,7 +592,7 @@ function enterScreen() {
   gsap.to(blackFade, {
     opacity:    1,
     duration:   1.2,
-    delay:      WALK + 0.7,
+    delay:      WALK + 0.3, // was +0.7 — shorter hold once the camera stops
     ease:       'power2.inOut',
     onComplete: () => {
       // Show red press-start button → user clicks → code explosion → ghost intro → gameplay
