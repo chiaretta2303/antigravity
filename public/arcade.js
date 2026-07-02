@@ -99,7 +99,7 @@ const ENTRANCE_VIEW = {
 // Extra yaw (degrees, world Y axis) applied to the Pac-Man cabinet on load
 // so it faces the camera more frontally. Code-only fix, GLB untouched.
 // Tuned empirically via live screenshots at the 'pacman' tour point.
-const PACMAN_CABINET_YAW_DEG = 5;
+const PACMAN_CABINET_YAW_DEG = 6;
 
 const CLICKABLE_KEYWORDS = {
   pacman: ['pac'],
@@ -581,10 +581,10 @@ function enterScreen() {
   // screen is framed — the previous target was too high and showed the
   // room ceiling instead of the game screen. Tuned empirically via
   // frozen-timeline screenshots at the 'pacman' enterScreen() moment.
-  const pos    = new THREE.Vector3(1.40, 1.15, -1.2);
-  const target = new THREE.Vector3(2.20, 1.25, -1.2);
+  const pos    = new THREE.Vector3(1.35, 1.55, -1.2);
+  const target = new THREE.Vector3(2.20, 1.00, -1.2);
   const WALK   = 3.2;
-
+  
   moveCamera(pos, target, WALK);
 
   gsap.killTweensOf(blackFade);
@@ -592,7 +592,7 @@ function enterScreen() {
   gsap.to(blackFade, {
     opacity:    1,
     duration:   1.2,
-    delay:      WALK + 0.3, // was +0.7 — shorter hold once the camera stops
+    delay:      WALK + 0.2, // was +0.7 — shorter hold once the camera stops
     ease:       'power2.inOut',
     onComplete: () => {
       // Show red press-start button → user clicks → code explosion → ghost intro → gameplay
