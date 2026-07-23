@@ -763,6 +763,234 @@
     <!-- SHOPPING BAG BACKDROP -->
     <div id="drawer-backdrop" class="drawer-backdrop"></div>
 
+    <!-- ===================================================
+         CHECKOUT SCREEN (demo/prototype — no real payments)
+         =================================================== -->
+    <div id="screen-checkout" class="checkout-overlay arcade-mode">
+      <div class="checkout-scanlines"></div>
+
+      <!-- TOP BAR -->
+      <div class="checkout-topbar">
+        <button id="btn-checkout-back" class="checkout-back-btn">&larr; BACK TO BAG</button>
+        <div class="checkout-topbar-center">
+          <span class="checkout-brand">UNIQLO &times; PAC-MAN</span>
+          <span class="checkout-title">CHECKOUT</span>
+        </div>
+        <div class="checkout-topbar-cart">
+          <span class="checkout-cart-icon">&#128717;</span>
+          <span id="checkout-item-count-badge" class="checkout-cart-count">0</span>
+        </div>
+      </div>
+
+      <!-- FORM + SUMMARY STEP -->
+      <div id="checkout-step-form" class="checkout-step">
+
+        <!-- Empty cart state -->
+        <div id="checkout-empty-state" class="checkout-empty hidden">
+          <div class="empty-icon">&#128123;</div>
+          <div class="empty-title">YOUR BAG IS EMPTY</div>
+          <button id="btn-checkout-empty-back" class="wahba-cta-btn primary">BACK TO COLLECTION</button>
+        </div>
+
+        <div id="checkout-main-grid" class="checkout-grid">
+
+          <!-- LEFT COLUMN: FORM -->
+          <div class="checkout-form-col">
+            <form id="checkout-form" novalidate>
+
+              <!-- A. CONTACT -->
+              <fieldset class="checkout-section">
+                <legend class="checkout-section-title">// CONTACT</legend>
+                <div class="form-row">
+                  <label class="form-label" for="cf-email">EMAIL *</label>
+                  <input type="email" id="cf-email" class="form-input" placeholder="you@example.com" autocomplete="email">
+                  <span class="form-error" id="err-cf-email"></span>
+                </div>
+                <div class="form-row">
+                  <label class="form-label" for="cf-phone">PHONE NUMBER (OPTIONAL)</label>
+                  <input type="tel" id="cf-phone" class="form-input" placeholder="+39 000 000 0000" autocomplete="tel">
+                </div>
+              </fieldset>
+
+              <!-- B. SHIPPING ADDRESS -->
+              <fieldset class="checkout-section">
+                <legend class="checkout-section-title">// SHIPPING ADDRESS</legend>
+                <div class="form-row-group">
+                  <div class="form-row">
+                    <label class="form-label" for="cf-firstname">FIRST NAME *</label>
+                    <input type="text" id="cf-firstname" class="form-input" autocomplete="given-name">
+                    <span class="form-error" id="err-cf-firstname"></span>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label" for="cf-lastname">LAST NAME *</label>
+                    <input type="text" id="cf-lastname" class="form-input" autocomplete="family-name">
+                    <span class="form-error" id="err-cf-lastname"></span>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label class="form-label" for="cf-address">ADDRESS *</label>
+                  <input type="text" id="cf-address" class="form-input" autocomplete="street-address">
+                  <span class="form-error" id="err-cf-address"></span>
+                </div>
+                <div class="form-row-group">
+                  <div class="form-row">
+                    <label class="form-label" for="cf-city">CITY *</label>
+                    <input type="text" id="cf-city" class="form-input" autocomplete="address-level2">
+                    <span class="form-error" id="err-cf-city"></span>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label" for="cf-zip">ZIP / POSTAL CODE *</label>
+                    <input type="text" id="cf-zip" class="form-input" autocomplete="postal-code">
+                    <span class="form-error" id="err-cf-zip"></span>
+                  </div>
+                </div>
+                <div class="form-row-group">
+                  <div class="form-row">
+                    <label class="form-label" for="cf-country">COUNTRY *</label>
+                    <select id="cf-country" class="form-input">
+                      <option value="">Select country</option>
+                      <option value="IT" selected>Italy</option>
+                      <option value="FR">France</option>
+                      <option value="DE">Germany</option>
+                      <option value="ES">Spain</option>
+                      <option value="US">United States</option>
+                      <option value="UK">United Kingdom</option>
+                    </select>
+                    <span class="form-error" id="err-cf-country"></span>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label" for="cf-region">PROVINCE / REGION</label>
+                    <input type="text" id="cf-region" class="form-input" autocomplete="address-level1">
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- C. DELIVERY METHOD -->
+              <fieldset class="checkout-section">
+                <legend class="checkout-section-title">// DELIVERY METHOD</legend>
+                <div class="option-card-group" id="delivery-options">
+                  <label class="option-card">
+                    <input type="radio" name="delivery" value="standard" data-cost="4.95">
+                    <span class="option-card-radio"></span>
+                    <span class="option-card-main">
+                      <span class="option-card-name">Standard Delivery</span>
+                      <span class="option-card-sub">3-5 business days</span>
+                    </span>
+                    <span class="option-card-price">&euro;4.95</span>
+                  </label>
+                  <label class="option-card">
+                    <input type="radio" name="delivery" value="express" data-cost="9.95">
+                    <span class="option-card-radio"></span>
+                    <span class="option-card-main">
+                      <span class="option-card-name">Express Delivery</span>
+                      <span class="option-card-sub">1-2 business days</span>
+                    </span>
+                    <span class="option-card-price">&euro;9.95</span>
+                  </label>
+                  <label class="option-card">
+                    <input type="radio" name="delivery" value="pickup" data-cost="0">
+                    <span class="option-card-radio"></span>
+                    <span class="option-card-main">
+                      <span class="option-card-name">Store Pickup</span>
+                      <span class="option-card-sub">Ready in 2 hours</span>
+                    </span>
+                    <span class="option-card-price">Free</span>
+                  </label>
+                </div>
+                <span class="form-error" id="err-delivery"></span>
+              </fieldset>
+
+              <!-- D. PAYMENT METHOD -->
+              <fieldset class="checkout-section">
+                <legend class="checkout-section-title">// PAYMENT METHOD</legend>
+                <div class="option-card-group" id="payment-options">
+                  <label class="option-card">
+                    <input type="radio" name="payment" value="card">
+                    <span class="option-card-radio"></span>
+                    <span class="option-card-main">
+                      <span class="option-card-name">&#128179; Credit / Debit Card</span>
+                    </span>
+                  </label>
+                  <label class="option-card">
+                    <input type="radio" name="payment" value="paypal">
+                    <span class="option-card-radio"></span>
+                    <span class="option-card-main">
+                      <span class="option-card-name">PayPal</span>
+                    </span>
+                  </label>
+                  <label class="option-card">
+                    <input type="radio" name="payment" value="applegoogle">
+                    <span class="option-card-radio"></span>
+                    <span class="option-card-main">
+                      <span class="option-card-name">&#63743; Apple Pay / Google Pay</span>
+                    </span>
+                  </label>
+                </div>
+                <span class="form-error" id="err-payment"></span>
+
+                <!-- Card fields (shown only when Card is selected) -->
+                <div id="card-fields" class="card-fields hidden">
+                  <div class="form-row">
+                    <label class="form-label" for="cf-card-number">CARD NUMBER *</label>
+                    <input type="text" id="cf-card-number" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric">
+                    <span class="form-error" id="err-cf-card-number"></span>
+                  </div>
+                  <div class="form-row-group">
+                    <div class="form-row">
+                      <label class="form-label" for="cf-card-expiry">EXPIRY DATE *</label>
+                      <input type="text" id="cf-card-expiry" class="form-input" placeholder="MM/YY" maxlength="5">
+                      <span class="form-error" id="err-cf-card-expiry"></span>
+                    </div>
+                    <div class="form-row">
+                      <label class="form-label" for="cf-card-cvc">CVC *</label>
+                      <input type="text" id="cf-card-cvc" class="form-input" placeholder="123" maxlength="4" inputmode="numeric">
+                      <span class="form-error" id="err-cf-card-cvc"></span>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label" for="cf-card-name">CARDHOLDER NAME *</label>
+                    <input type="text" id="cf-card-name" class="form-input">
+                    <span class="form-error" id="err-cf-card-name"></span>
+                  </div>
+                  <div class="card-demo-notice">&#9888; DEMO ONLY &mdash; no real payment will be processed</div>
+                </div>
+              </fieldset>
+            </form>
+          </div>
+
+          <!-- RIGHT COLUMN: ORDER SUMMARY -->
+          <div class="checkout-summary-col">
+            <div class="checkout-summary-card">
+              <div class="summary-title">// ORDER SUMMARY</div>
+              <div id="checkout-summary-items" class="summary-items"></div>
+              <div class="summary-divider"></div>
+              <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">$0.00</span></div>
+              <div class="summary-row"><span id="summary-shipping-label">Shipping</span><span id="summary-shipping">$0.00</span></div>
+              <div class="summary-row reward-row hidden" id="summary-discount-row"><span>PAC-MAN REWARD -20%</span><span id="summary-discount">-$0.00</span></div>
+              <div class="summary-divider"></div>
+              <div class="summary-row summary-total"><span>TOTAL</span><span id="summary-total">$0.00</span></div>
+              <button id="btn-place-order" type="button" class="checkout-primary-btn" disabled>PLACE ORDER</button>
+              <div class="checkout-secure-note">&#128274; Demo checkout &mdash; no real payment is processed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER COMPLETE STEP -->
+      <div id="checkout-step-complete" class="checkout-complete hidden">
+        <div class="complete-card">
+          <div class="complete-icon">&#127881;</div>
+          <div class="complete-title">ORDER COMPLETE</div>
+          <div class="complete-desc">Grazie per aver acquistato la collezione UNIQLO x PAC-MAN.</div>
+          <div class="complete-order-number">ORDER #<span id="complete-order-id">PM-0000</span></div>
+          <div class="complete-actions">
+            <button id="btn-complete-back-collection" class="wahba-cta-btn primary">BACK TO COLLECTION</button>
+            <button id="btn-complete-back-uniqlo" class="wahba-btn secondary">BACK TO UNIQLO</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- CRT TELEVISION OVERLAY (Hidden by default, activated after cabinet zoom) -->

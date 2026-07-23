@@ -3296,6 +3296,246 @@ function showAddedToast(itemName) {
   }, 2200);
 }
 
+// =========================================
+// CHECKOUT SYSTEM (demo/prototype — no real payments)
+// =========================================
+const DELIVERY_COSTS = { standard: 4.95, express: 9.95, pickup: 0 };
+let checkoutDeliveryMethod = null;
+let checkoutPaymentMethod = null;
+
+function checkoutItemCount() {
+  return cartList.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function openCheckout() {
+  toggleShoppingBag(false);
+  const overlay = document.getElementById('screen-checkout');
+  if (!overlay) return;
+
+  // Always start on the form step
+  document.getElementById('checkout-step-form')?.classList.remove('hidden');
+  document.getElementById('checkout-step-complete')?.classList.add('hidden');
+
+  const emptyState = document.getElementById('checkout-empty-state');
+  const mainGrid   = document.getElementById('checkout-main-grid');
+
+  if (cartList.length === 0) {
+    emptyState?.classList.remove('hidden');
+    if (mainGrid) mainGrid.style.display = 'none';
+  } else {
+    emptyState?.classList.add('hidden');
+    if (mainGrid) mainGrid.style.display = '';
+    renderCheckoutSummary();
+  }
+
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCheckoutOverlay() {
+  document.getElementById('screen-checkout')?.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Back to bag: close checkout, reopen the cart drawer
+function backToBagFromCheckout() {
+  closeCheckoutOverlay();
+  toggleShoppingBag(true);
+}
+
+function renderCheckoutSummary() {
+  const badge = document.getElementById('checkout-item-count-badge');
+  if (badge) badge.innerText = checkoutItemCount();
+
+  const itemsEl = document.getElementById('checkout-summary-items');
+  if (!itemsEl) return;
+  itemsEl.innerHTML = '';
+
+  let subtotal = 0;
+  cartList.forEach(item => {
+    const lineTotal = item.price * item.quantity;
+    subtotal += lineTotal;
+    const variantText = [item.color, item.size].filter(Boolean).join(' / ');
+    const row = document.createElement('div');
+    row.className = 'summary-item';
+    row.innerHTML = `
+      <img src="${item.img}" alt="${item.name}" class="summary-item-img">
+      <div class="summary-item-info">
+        <span class="summary-item-name">${item.name}</span>
+        <span class="summary-item-variant">${variantText} &times; ${item.quantity}</span>
+      </div>
+      <span class="summary-item-price">$${lineTotal.toFixed(2)}</span>
+    `;
+    itemsEl.appendChild(row);
+  });
+
+  const shippingCost   = checkoutDeliveryMethod ? DELIVERY_COSTS[checkoutDeliveryMethod] : 0;
+  // Reward only applies if the user actually unlocked it by playing — not if they skipped
+  const discountApplies = hasDiscount && !skippedExperience;
+  const discountVal    = discountApplies ? subtotal * 0.20 : 0;
+  const total          = Math.max(0, subtotal - discountVal) + shippingCost;
+
+  document.getElementById('summary-subtotal').innerText = `$${subtotal.toFixed(2)}`;
+
+  const shipValEl = document.getElementById('summary-shipping');
+  if (shipValEl) {
+    shipValEl.innerText = checkoutDeliveryMethod
+      ? (shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`)
+      : '—';
+  }
+
+  const discountRow = document.getElementById('summary-discount-row');
+  if (discountRow) {
+    if (discountApplies) {
+      discountRow.classList.remove('hidden');
+      document.getElementById('summary-discount').innerText = `-$${discountVal.toFixed(2)}`;
+    } else {
+      discountRow.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('summary-total').innerText = `$${total.toFixed(2)}`;
+
+  const placeOrderBtn = document.getElementById('btn-place-order');
+  if (placeOrderBtn) placeOrderBtn.disabled = cartList.length === 0;
+}
+
+// ── Field-level error helper ──
+function setCheckoutFieldError(fieldId, message) {
+  const input = document.getElementById(fieldId);
+  const errEl = document.getElementById('err-' + fieldId);
+  if (input) input.classList.toggle('input-error', !!message);
+  if (errEl) errEl.textContent = message || '';
+}
+
+function validateCheckoutForm() {
+  let valid = true;
+
+  // Email (required, format check)
+  const email = (document.getElementById('cf-email')?.value || '').trim();
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email) { setCheckoutFieldError('cf-email', 'Campo obbligatorio'); valid = false; }
+  else if (!emailRe.test(email)) { setCheckoutFieldError('cf-email', "Inserisci un'email valida"); valid = false; }
+  else setCheckoutFieldError('cf-email', '');
+
+  // Required shipping text fields
+  ['cf-firstname', 'cf-lastname', 'cf-address', 'cf-city', 'cf-zip'].forEach(id => {
+    const val = (document.getElementById(id)?.value || '').trim();
+    if (!val) { setCheckoutFieldError(id, 'Campo obbligatorio'); valid = false; }
+    else setCheckoutFieldError(id, '');
+  });
+
+  // Country select
+  const country = document.getElementById('cf-country')?.value || '';
+  if (!country) { setCheckoutFieldError('cf-country', 'Campo obbligatorio'); valid = false; }
+  else setCheckoutFieldError('cf-country', '');
+
+  // Delivery method
+  const deliveryChecked = document.querySelector('input[name="delivery"]:checked');
+  const deliveryErr = document.getElementById('err-delivery');
+  if (!deliveryChecked) {
+    if (deliveryErr) deliveryErr.textContent = 'Seleziona un metodo di consegna';
+    valid = false;
+  } else if (deliveryErr) deliveryErr.textContent = '';
+
+  // Payment method
+  const paymentChecked = document.querySelector('input[name="payment"]:checked');
+  const paymentErr = document.getElementById('err-payment');
+  if (!paymentChecked) {
+    if (paymentErr) paymentErr.textContent = 'Seleziona un metodo di pagamento';
+    valid = false;
+  } else if (paymentErr) paymentErr.textContent = '';
+
+  // Card fields, only required if Card was selected
+  if (paymentChecked && paymentChecked.value === 'card') {
+    const cardNum = (document.getElementById('cf-card-number')?.value || '').replace(/\s/g, '');
+    if (!cardNum) { setCheckoutFieldError('cf-card-number', 'Campo obbligatorio'); valid = false; }
+    else if (!/^\d{12,19}$/.test(cardNum)) { setCheckoutFieldError('cf-card-number', 'Numero carta non valido'); valid = false; }
+    else setCheckoutFieldError('cf-card-number', '');
+
+    const expiry = (document.getElementById('cf-card-expiry')?.value || '').trim();
+    if (!expiry) { setCheckoutFieldError('cf-card-expiry', 'Campo obbligatorio'); valid = false; }
+    else if (!/^\d{2}\/\d{2}$/.test(expiry)) { setCheckoutFieldError('cf-card-expiry', 'Formato MM/YY'); valid = false; }
+    else setCheckoutFieldError('cf-card-expiry', '');
+
+    const cvc = (document.getElementById('cf-card-cvc')?.value || '').trim();
+    if (!cvc) { setCheckoutFieldError('cf-card-cvc', 'Campo obbligatorio'); valid = false; }
+    else if (!/^\d{3,4}$/.test(cvc)) { setCheckoutFieldError('cf-card-cvc', 'CVC non valido'); valid = false; }
+    else setCheckoutFieldError('cf-card-cvc', '');
+
+    const cardName = (document.getElementById('cf-card-name')?.value || '').trim();
+    if (!cardName) { setCheckoutFieldError('cf-card-name', 'Campo obbligatorio'); valid = false; }
+    else setCheckoutFieldError('cf-card-name', '');
+  }
+
+  return valid;
+}
+
+function completeOrder() {
+  if (cartList.length === 0) return;
+  if (!validateCheckoutForm()) {
+    const firstError = document.querySelector('.input-error, .form-error:not(:empty)');
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const orderId = 'PM-' + Math.floor(1000 + Math.random() * 9000);
+  const orderIdEl = document.getElementById('complete-order-id');
+  if (orderIdEl) orderIdEl.innerText = orderId;
+
+  document.getElementById('checkout-step-form')?.classList.add('hidden');
+  document.getElementById('checkout-step-complete')?.classList.remove('hidden');
+
+  // Demo order "placed" — clear the cart, same as the previous checkout flow did
+  cartList = [];
+  updateCartUI();
+  checkoutDeliveryMethod = null;
+  checkoutPaymentMethod = null;
+}
+
+function initCheckoutBinds() {
+  document.getElementById('btn-checkout-back')?.addEventListener('click', backToBagFromCheckout);
+
+  document.getElementById('btn-checkout-empty-back')?.addEventListener('click', () => {
+    closeCheckoutOverlay();
+    startMegaTransition('arcadeCollection', () => {});
+  });
+
+  document.querySelectorAll('input[name="delivery"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      checkoutDeliveryMethod = radio.value;
+      document.getElementById('err-delivery').textContent = '';
+      renderCheckoutSummary();
+    });
+  });
+
+  document.querySelectorAll('input[name="payment"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      checkoutPaymentMethod = radio.value;
+      document.getElementById('err-payment').textContent = '';
+      const cardFields = document.getElementById('card-fields');
+      if (cardFields) cardFields.classList.toggle('hidden', radio.value !== 'card');
+    });
+  });
+
+  document.getElementById('btn-place-order')?.addEventListener('click', completeOrder);
+
+  document.getElementById('btn-complete-back-collection')?.addEventListener('click', () => {
+    closeCheckoutOverlay();
+    startMegaTransition('arcadeCollection', () => {});
+  });
+
+  document.getElementById('btn-complete-back-uniqlo')?.addEventListener('click', () => {
+    closeCheckoutOverlay();
+    showScreen('landing');
+  });
+
+  // Clear a field's error state as soon as the user edits it
+  document.querySelectorAll('#checkout-form .form-input').forEach(input => {
+    input.addEventListener('input', () => setCheckoutFieldError(input.id, ''));
+  });
+}
+
 // Bind Cart System Events
 function initCartSystemBinds() {
   // Open cart buttons
@@ -3329,26 +3569,10 @@ function initCartSystemBinds() {
     addToBag(currentViewItem.id, color, size);
   });
   
-  // Checkout sequence click
+  // Checkout sequence click -> opens the dedicated checkout screen
   document.getElementById('btn-checkout')?.addEventListener('click', () => {
     if (cartList.length === 0) return;
-    
-    const checkoutBtn = document.getElementById('btn-checkout');
-    checkoutBtn.innerText = 'INITIALIZING CHECKOUT...';
-    checkoutBtn.style.pointerEvents = 'none';
-    
-    setTimeout(() => {
-      checkoutBtn.innerText = 'PROCEED TO CHECKOUT';
-      checkoutBtn.style.pointerEvents = 'auto';
-      toggleShoppingBag(false);
-      
-      // Beautiful terminal alert success modal
-      alert(`THANK YOU FOR YOUR PURCHASE!\nUNIQLO x PAC-MAN cabinet order sent successfully!\nTotal paid: ${document.getElementById('cart-total-val').innerText}`);
-      
-      // Empty the cart list
-      cartList = [];
-      updateCartUI();
-    }, 1800);
+    openCheckout();
   });
 }
 
@@ -3358,6 +3582,7 @@ window.removeFromCart = removeFromCart;
 
 // INIT
 initCartSystemBinds();
+initCheckoutBinds();
 
 // Window resize playfield listener
 
