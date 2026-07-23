@@ -2647,36 +2647,58 @@ function initProductViewer(container, imageUrl) {
   // Clear container
   container.innerHTML = '';
   
+  const isModal = container.classList.contains('floating-item-scene');
+  
   // Create Scene
   productScene = new THREE.Scene();
   productScene.background = null; // transparent background for overlay blend
   
-  // Create Camera (narrow FOV for a high-end collectible appearance)
-  productCamera = new THREE.PerspectiveCamera(30, container.clientWidth / container.clientHeight, 0.1, 100);
-  productCamera.position.set(0, 0, 8);
+  const width = container.clientWidth || (isModal ? 780 : 400);
+  const height = container.clientHeight || (isModal ? 580 : 320);
+  
+  // Camera FOV and Z-distance: closer for the modal scene so items are much larger, clear, and perfectly framed
+  const cameraZ = isModal ? 5.2 : 7.2;
+  productCamera = new THREE.PerspectiveCamera(30, width / height, 0.1, 100);
+  productCamera.position.set(0, 0, cameraZ);
   
   // Create Renderer
-  productRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  productRenderer.setSize(container.clientWidth, container.clientHeight);
-  productRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  productRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  productRenderer.setSize(width, height);
+  productRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
   container.appendChild(productRenderer.domElement);
   
+  // Helper to ensure crisp textures with anisotropic filtering and true sRGB color space
+  const prepareTexture = (texture) => {
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
+    if (productRenderer && productRenderer.capabilities) {
+      texture.anisotropy = productRenderer.capabilities.getMaxAnisotropy() || 16;
+    }
+    if (typeof THREE.SRGBColorSpace !== 'undefined') {
+      texture.colorSpace = THREE.SRGBColorSpace;
+    } else if (typeof THREE.sRGBEncoding !== 'undefined') {
+      texture.encoding = THREE.sRGBEncoding;
+    }
+    texture.needsUpdate = true;
+  };
+  
   // Specular Dynamic Lighting Setup
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
   ambientLight.name = 'productAmbientLight';
   productScene.add(ambientLight);
   
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
   dirLight.name = 'productDirLight';
-  dirLight.position.set(5, 5, 4);
+  dirLight.position.set(2, 4, 5);
   productScene.add(dirLight);
   
-  const rimLight = new THREE.DirectionalLight(0x00ffff, 0.45); // Arcade Cyan rim highlight
+  const rimLight = new THREE.DirectionalLight(0x00ffff, 0.35); // Arcade Cyan rim highlight
   rimLight.name = 'productRimLight';
   rimLight.position.set(-5, -3, -2);
   productScene.add(rimLight);
   
-  const yellowLight = new THREE.DirectionalLight(0xffd43b, 0.4); // Pac-Man yellow ambient highlight
+  const yellowLight = new THREE.DirectionalLight(0xffd43b, 0.3); // Pac-Man yellow ambient highlight
   yellowLight.name = 'productYellowLight';
   yellowLight.position.set(2, -2, 3);
   productScene.add(yellowLight);
@@ -2688,11 +2710,12 @@ function initProductViewer(container, imageUrl) {
   // Render Sandwich layers
   const buildLayers = (texture) => {
     productGroup.clear(); // Clear any old layers first
+    prepareTexture(texture);
     
     const layerCount = 24;
-    const thickness = 0.22;
-    const width = 2.4;
-    const height = 2.4;
+    const thickness = isModal ? 0.26 : 0.22;
+    const width = isModal ? 2.8 : 2.4;
+    const height = isModal ? 2.8 : 2.4;
     const geom = new THREE.PlaneGeometry(width, height);
     
     const isWhite = imageUrl.includes('white');
@@ -2704,14 +2727,14 @@ function initProductViewer(container, imageUrl) {
       let tint, roughness, metalness;
       if (isWhite) {
         // Soft off-white cap to prevent clipping/burnout, plus ambient occlusion depth
-        tint = 0.93 - centerFactor * 0.38;
+        tint = 0.96 - centerFactor * 0.32;
         roughness = 0.95; // Fabric matte look, diffuses lighting beautifully
         metalness = 0.0;  // Fully non-metallic to prevent hot shiny spots
       } else {
-        // Standard original premium shading for dark/black items
-        tint = 1.0 - centerFactor * 0.42; 
-        roughness = 0.35;
-        metalness = 0.15;
+        // High quality matte fabric finish so printed graphic artwork stays rich, sharp & glare-free
+        tint = 1.0 - centerFactor * 0.35; 
+        roughness = 0.85; // Realistic matte cotton fabric
+        metalness = 0.0;  // Non-metallic fabric
       }
       
       const mat = new THREE.MeshStandardMaterial({
@@ -2736,7 +2759,6 @@ function initProductViewer(container, imageUrl) {
   } else {
     const loader = new THREE.TextureLoader();
     loader.load(imageUrl, (texture) => {
-      texture.minFilter = THREE.LinearFilter;
       productTextureCache[imageUrl] = texture;
       buildLayers(texture);
     });
@@ -2763,9 +2785,10 @@ function initProductViewer(container, imageUrl) {
     depthWrite: false
   });
   
-  const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), shadowMat);
+  const shadowMeshSize = isModal ? 2.8 : 2.4;
+  const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(shadowMeshSize, shadowMeshSize), shadowMat);
   shadowMesh.rotation.x = -Math.PI / 2;
-  shadowMesh.position.y = -1.65;
+  shadowMesh.position.y = isModal ? -1.85 : -1.65;
   productScene.add(shadowMesh);
   
   // Animation loop
@@ -2776,7 +2799,7 @@ function initProductViewer(container, imageUrl) {
     
     if (productGroup) {
       // Gentle Bobbing
-      productGroup.position.y = Math.sin(elapsed * 1.8) * 0.15;
+      productGroup.position.y = Math.sin(elapsed * 1.8) * (isModal ? 0.12 : 0.15);
       
       // Slow rotation
       productGroup.rotation.y = elapsed * 0.65;
@@ -2818,22 +2841,22 @@ function adjustViewerShading(isWhite) {
   const yellowLight = productScene.getObjectByName('productYellowLight');
   
   if (isWhite) {
-    if (ambientLight) ambientLight.intensity = 0.75; // Soft ambient fill
+    if (ambientLight) ambientLight.intensity = 0.8; // Soft ambient fill
     if (dirLight) {
-      dirLight.intensity = 0.35; // Soft, low specular key
+      dirLight.intensity = 0.4; // Soft, low specular key
       dirLight.position.set(3, 4, 5); // Softer angle to avoid front blowout
     }
-    if (rimLight) rimLight.intensity = 0.15; // Softened arcade highlights
-    if (yellowLight) yellowLight.intensity = 0.12;
+    if (rimLight) rimLight.intensity = 0.2; // Softened arcade highlights
+    if (yellowLight) yellowLight.intensity = 0.15;
   } else {
     // Restore premium high-contrast arcade shading for dark items
-    if (ambientLight) ambientLight.intensity = 0.65;
+    if (ambientLight) ambientLight.intensity = 0.75;
     if (dirLight) {
-      dirLight.intensity = 1.3;
-      dirLight.position.set(5, 5, 4);
+      dirLight.intensity = 1.1;
+      dirLight.position.set(2, 4, 5);
     }
-    if (rimLight) rimLight.intensity = 0.45;
-    if (yellowLight) yellowLight.intensity = 0.4;
+    if (rimLight) rimLight.intensity = 0.35;
+    if (yellowLight) yellowLight.intensity = 0.3;
   }
 
   // Update material properties of existing sandwich layers if they exist
@@ -2844,15 +2867,15 @@ function adjustViewerShading(isWhite) {
         const centerFactor = 1.0 - Math.abs(i - (layerCount - 1) / 2) / ((layerCount - 1) / 2);
         
         if (isWhite) {
-          const tint = 0.93 - centerFactor * 0.38;
+          const tint = 0.96 - centerFactor * 0.32;
           mesh.material.color.setRGB(tint, tint, tint);
           mesh.material.roughness = 0.95;
           mesh.material.metalness = 0.0;
         } else {
-          const tint = 1.0 - centerFactor * 0.42;
+          const tint = 1.0 - centerFactor * 0.35;
           mesh.material.color.setRGB(tint, tint, tint);
-          mesh.material.roughness = 0.35;
-          mesh.material.metalness = 0.15;
+          mesh.material.roughness = 0.85;
+          mesh.material.metalness = 0.0;
         }
         mesh.material.needsUpdate = true;
       }
@@ -2866,6 +2889,18 @@ function updateProductViewerTexture(imageUrl) {
   const isWhite = imageUrl.includes('white');
   
   const applyTexture = (texture) => {
+    if (productRenderer && productRenderer.capabilities) {
+      texture.anisotropy = productRenderer.capabilities.getMaxAnisotropy() || 16;
+    }
+    if (typeof THREE.SRGBColorSpace !== 'undefined') {
+      texture.colorSpace = THREE.SRGBColorSpace;
+    } else if (typeof THREE.sRGBEncoding !== 'undefined') {
+      texture.encoding = THREE.sRGBEncoding;
+    }
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.needsUpdate = true;
+
     productGroup.children.forEach(mesh => {
       if (mesh.material) {
         mesh.material.map = texture;
@@ -2881,7 +2916,6 @@ function updateProductViewerTexture(imageUrl) {
   } else {
     const loader = new THREE.TextureLoader();
     loader.load(imageUrl, (texture) => {
-      texture.minFilter = THREE.LinearFilter;
       productTextureCache[imageUrl] = texture;
       applyTexture(texture);
     });
@@ -2959,11 +2993,13 @@ function openItemView(productId) {
   // Show Modal
   document.getElementById('item-view-overlay').classList.remove('hidden');
 
-  // Initialize Three.js WebGL product view inside .floating-item-scene
-  const container = document.querySelector('.floating-item-scene');
-  if (container) {
-    initProductViewer(container, item.variants['black']);
-  }
+  // Initialize Three.js WebGL product view inside .floating-item-scene after layout reflow
+  requestAnimationFrame(() => {
+    const container = document.querySelector('.floating-item-scene');
+    if (container) {
+      initProductViewer(container, item.variants['black']);
+    }
+  });
 
   // Reset color selector active buttons to Black
   document.querySelectorAll('.color-btn').forEach(btn => {
@@ -3302,6 +3338,7 @@ function showAddedToast(itemName) {
 const DELIVERY_COSTS = { standard: 4.95, express: 9.95, pickup: 0 };
 let checkoutDeliveryMethod = null;
 let checkoutPaymentMethod = null;
+let wasCrtActiveBeforeCheckout = false;
 
 function checkoutItemCount() {
   return cartList.reduce((sum, item) => sum + item.quantity, 0);
@@ -3311,6 +3348,14 @@ function openCheckout() {
   toggleShoppingBag(false);
   const overlay = document.getElementById('screen-checkout');
   if (!overlay) return;
+
+  // CRT flicker/grain keep animating (and repainting) even while fully hidden
+  // behind the checkout overlay, which is what caused the scroll/typing lag.
+  const crt = document.getElementById('crt-overlay');
+  if (crt) {
+    wasCrtActiveBeforeCheckout = crt.classList.contains('active');
+    crt.classList.remove('active');
+  }
 
   // Always start on the form step
   document.getElementById('checkout-step-form')?.classList.remove('hidden');
@@ -3335,6 +3380,9 @@ function openCheckout() {
 function closeCheckoutOverlay() {
   document.getElementById('screen-checkout')?.classList.remove('active');
   document.body.style.overflow = '';
+
+  const crt = document.getElementById('crt-overlay');
+  if (crt && wasCrtActiveBeforeCheckout) crt.classList.add('active');
 }
 
 // Back to bag: close checkout, reopen the cart drawer
