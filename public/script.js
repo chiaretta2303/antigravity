@@ -2656,8 +2656,8 @@ function initProductViewer(container, imageUrl) {
   const width = container.clientWidth || (isModal ? 780 : 400);
   const height = container.clientHeight || (isModal ? 580 : 320);
   
-  // Camera FOV and Z-distance: slightly further back than before (5.8) so items fit comfortably without overflowing
-  const cameraZ = isModal ? 5.8 : 7.2;
+  // Camera FOV and Z-distance: slightly further back (6.4) so items are scaled down nicely and leave ample space
+  const cameraZ = isModal ? 6.4 : 7.2;
   productCamera = new THREE.PerspectiveCamera(30, width / height, 0.1, 100);
   productCamera.position.set(0, 0, cameraZ);
   
@@ -2703,10 +2703,12 @@ function initProductViewer(container, imageUrl) {
   yellowLight.position.set(2, -2, 3);
   productScene.add(yellowLight);
 
-  // Group for floating and rotation animation
-  const modalOffsetX = isModal ? -0.22 : 0;
+  // Group for floating and rotation animation with slight left and downward offsets
+  const modalOffsetX = isModal ? -0.25 : 0;
+  const modalOffsetY = isModal ? -0.15 : 0;
   productGroup = new THREE.Group();
   productGroup.position.x = modalOffsetX;
+  productGroup.position.y = modalOffsetY;
   productScene.add(productGroup);
   
   // Render Sandwich layers
@@ -2715,9 +2717,9 @@ function initProductViewer(container, imageUrl) {
     prepareTexture(texture);
     
     const layerCount = 24;
-    const thickness = isModal ? 0.24 : 0.22;
-    const width = isModal ? 2.5 : 2.4;
-    const height = isModal ? 2.5 : 2.4;
+    const thickness = isModal ? 0.22 : 0.22;
+    const width = isModal ? 2.35 : 2.4;
+    const height = isModal ? 2.35 : 2.4;
     const geom = new THREE.PlaneGeometry(width, height);
     
     const isWhite = imageUrl.includes('white');
@@ -2787,11 +2789,11 @@ function initProductViewer(container, imageUrl) {
     depthWrite: false
   });
   
-  const shadowMeshSize = isModal ? 2.5 : 2.4;
+  const shadowMeshSize = isModal ? 2.35 : 2.4;
   const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(shadowMeshSize, shadowMeshSize), shadowMat);
   shadowMesh.rotation.x = -Math.PI / 2;
   shadowMesh.position.x = modalOffsetX;
-  shadowMesh.position.y = isModal ? -1.68 : -1.65;
+  shadowMesh.position.y = isModal ? -1.78 : -1.65;
   productScene.add(shadowMesh);
   
   // Animation loop
@@ -2801,8 +2803,8 @@ function initProductViewer(container, imageUrl) {
     const elapsed = clock.getElapsedTime();
     
     if (productGroup) {
-      // Gentle Bobbing
-      productGroup.position.y = Math.sin(elapsed * 1.8) * (isModal ? 0.12 : 0.15);
+      // Gentle Bobbing relative to modalOffsetY
+      productGroup.position.y = modalOffsetY + Math.sin(elapsed * 1.8) * (isModal ? 0.10 : 0.15);
       
       // Slow rotation
       productGroup.rotation.y = elapsed * 0.65;
@@ -2813,7 +2815,7 @@ function initProductViewer(container, imageUrl) {
       
       // Shadow responds in size and opacity
       if (shadowMesh) {
-        const h = productGroup.position.y;
+        const h = productGroup.position.y - modalOffsetY;
         const s = 1.0 - h * 0.32;
         shadowMesh.scale.set(s, s, 1);
         shadowMesh.material.opacity = 0.75 - h * 0.45;
