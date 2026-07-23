@@ -2656,8 +2656,8 @@ function initProductViewer(container, imageUrl) {
   const width = container.clientWidth || (isModal ? 780 : 400);
   const height = container.clientHeight || (isModal ? 580 : 320);
   
-  // Camera FOV and Z-distance: closer for the modal scene so items are much larger, clear, and perfectly framed
-  const cameraZ = isModal ? 5.2 : 7.2;
+  // Camera FOV and Z-distance: slightly further back than before (5.8) so items fit comfortably without overflowing
+  const cameraZ = isModal ? 5.8 : 7.2;
   productCamera = new THREE.PerspectiveCamera(30, width / height, 0.1, 100);
   productCamera.position.set(0, 0, cameraZ);
   
@@ -2704,7 +2704,9 @@ function initProductViewer(container, imageUrl) {
   productScene.add(yellowLight);
 
   // Group for floating and rotation animation
+  const modalOffsetX = isModal ? -0.22 : 0;
   productGroup = new THREE.Group();
+  productGroup.position.x = modalOffsetX;
   productScene.add(productGroup);
   
   // Render Sandwich layers
@@ -2713,9 +2715,9 @@ function initProductViewer(container, imageUrl) {
     prepareTexture(texture);
     
     const layerCount = 24;
-    const thickness = isModal ? 0.26 : 0.22;
-    const width = isModal ? 2.8 : 2.4;
-    const height = isModal ? 2.8 : 2.4;
+    const thickness = isModal ? 0.24 : 0.22;
+    const width = isModal ? 2.5 : 2.4;
+    const height = isModal ? 2.5 : 2.4;
     const geom = new THREE.PlaneGeometry(width, height);
     
     const isWhite = imageUrl.includes('white');
@@ -2785,10 +2787,11 @@ function initProductViewer(container, imageUrl) {
     depthWrite: false
   });
   
-  const shadowMeshSize = isModal ? 2.8 : 2.4;
+  const shadowMeshSize = isModal ? 2.5 : 2.4;
   const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(shadowMeshSize, shadowMeshSize), shadowMat);
   shadowMesh.rotation.x = -Math.PI / 2;
-  shadowMesh.position.y = isModal ? -1.85 : -1.65;
+  shadowMesh.position.x = modalOffsetX;
+  shadowMesh.position.y = isModal ? -1.68 : -1.65;
   productScene.add(shadowMesh);
   
   // Animation loop
