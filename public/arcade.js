@@ -117,6 +117,20 @@ const FOREST_ENV_INTENSITY = 0.09;
    ========================================================== */
 window.initArcadeExperience = function() {
   if (sceneInitialized) {
+    // Restart the render loop if it was stopped when leaving the room
+    // (enterScreen cancels it so it doesn't run behind the gameplay).
+    if (!arcadeAnimationId) {
+      clock.getDelta(); // flush the large idle delta so the mixer doesn't jump
+      animate();
+    }
+    // Re-attach the window listeners removed by enterScreen — without this,
+    // a second visit to the room has dead canvas clicks/hover and no resize.
+    window.removeEventListener('click', onCanvasClick);
+    window.removeEventListener('mousemove', onCanvasMouseMove);
+    window.removeEventListener('resize', onResize);
+    window.addEventListener('click', onCanvasClick);
+    window.addEventListener('mousemove', onCanvasMouseMove);
+    window.addEventListener('resize', onResize);
     goToEntrance();
     return;
   }
@@ -344,15 +358,34 @@ function initScene() {
       scene.add(pacmanPrompt);
 
       hint.style.display = 'none';
+
+      // Model ready: fade the ROM loading overlay away
+      const overlay = document.getElementById('arcade-loading-overlay');
+      if (overlay) {
+        const fill = document.getElementById('rom-progress-fill');
+        const pct  = document.getElementById('rom-progress-pct');
+        if (fill) fill.style.width = '100%';
+        if (pct)  pct.textContent = '100%';
+        overlay.classList.add('done');
+      }
     },
     (progress) => {
-      hint.textContent = progress.total
-        ? `Loading: ${Math.round((progress.loaded / progress.total) * 100)}%`
-        : 'Loading scene…';
+      const fill = document.getElementById('rom-progress-fill');
+      const pct  = document.getElementById('rom-progress-pct');
+      if (progress.total) {
+        const p = Math.min(100, Math.round((progress.loaded / progress.total) * 100));
+        if (fill) fill.style.width = p + '%';
+        if (pct)  pct.textContent = p + '%';
+      } else if (pct) {
+        // No content-length available: show transferred MB instead of a percentage
+        pct.textContent = (progress.loaded / (1024 * 1024)).toFixed(1) + ' MB';
+      }
     },
     (error) => {
       console.error(error);
       hint.textContent = 'Error: GLB not found at public/models/scena-arcade.glb';
+      const pct = document.getElementById('rom-progress-pct');
+      if (pct) pct.textContent = 'ERROR: ROM NOT FOUND';
     }
   );
 
@@ -606,7 +639,13 @@ function enterScreen() {
       window.removeEventListener('click', onCanvasClick);
       window.removeEventListener('mousemove', onCanvasMouseMove);
       window.removeEventListener('resize', onResize);
-      
+
+      // Stop the 3D room render loop: it would otherwise keep rendering the
+      // heavy scene at 60fps behind the gameplay, stealing frames from the
+      // Pac-Man game (visible as stutter in its first seconds).
+      cancelAnimationFrame(arcadeAnimationId);
+      arcadeAnimationId = null;
+
       // Reset fade so the room can be reloaded later if needed
       gsap.set(blackFade, { opacity: 0 });
     },

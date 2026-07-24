@@ -4,6 +4,13 @@ preloadBtnUp.src = '/assets/arcade-button-up.png';
 const preloadBtnDown = new Image();
 preloadBtnDown.src = '/assets/arcade-button-down.png';
 
+// Pre-decode the maze background off the main thread so its first paint at
+// gameplay start doesn't stall the game's opening frames.
+const preloadMaze = new Image();
+preloadMaze.decoding = 'async';
+preloadMaze.src = '/assets/maze-without-pellets.png';
+if (preloadMaze.decode) preloadMaze.decode().catch(() => {});
+
 // STATE
 let currentState = 'LANDING';
 let easterEggClicks = 0;
@@ -11,6 +18,31 @@ let hasDiscount = false;
 let skippedExperience = false;
 let unlockedItems = [];
 const TOTAL_ITEMS = 4;
+
+// --- Progress persistence: reward and unlocks survive page reloads ---
+const PROGRESS_STORAGE_KEY = 'pacman-uniqlo-progress';
+
+function saveProgress() {
+  try {
+    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify({
+      hasDiscount,
+      skippedExperience,
+      unlockedItems,
+    }));
+  } catch (_) { /* storage unavailable (private mode, etc.) — non-fatal */ }
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (typeof p.hasDiscount === 'boolean') hasDiscount = p.hasDiscount;
+    if (typeof p.skippedExperience === 'boolean') skippedExperience = p.skippedExperience;
+    if (Array.isArray(p.unlockedItems)) unlockedItems = p.unlockedItems;
+  } catch (_) { /* corrupted entry — start fresh */ }
+}
+loadProgress();
 
 let startGameTimeout = null;
 let startBlinkInterval = null;
@@ -218,10 +250,12 @@ function updatePacmanEasterEgg() {
   egg.style.width = hitBoxSize + 'px';
   egg.style.height = hitBoxSize + 'px';
 
-  // Keep the hint label always above the top of the hit-box (never overlapping the SVG)
+  // Keep the hint label snug above the VISIBLE Pac-Man sprite: the hit-box
+  // has 20px of transparent padding, so pull the label down into it (20-14=6px
+  // above the sprite) instead of floating detached above the whole hit-box.
   const hintLbl = egg.querySelector('.pacman-click-label');
   if (hintLbl) {
-    hintLbl.style.bottom = 'calc(100% + 4px)';
+    hintLbl.style.bottom = 'calc(100% - 14px)';
     hintLbl.style.left = '50%';
   }
 
@@ -269,7 +303,7 @@ if (easterEgg) {
     // Update CLICCAMI countdown label
     const hintLabel = easterEgg.querySelector('.pacman-click-label');
     if (hintLabel) {
-      hintLabel.textContent = `CLICCAMI (${3 - easterEggClicks})`;
+      hintLabel.textContent = `CLICK ME (${3 - easterEggClicks})`;
     }
     
     if (easterEggClicks >= 3) {
@@ -493,7 +527,7 @@ function startReverseTransition() {
       if (egg) {
         egg.style.display = '';
         const hintLbl = egg.querySelector('.pacman-click-label');
-        if (hintLbl) hintLbl.textContent = 'CLICCAMI (3)';
+        if (hintLbl) hintLbl.textContent = 'CLICK ME (3)';
       }
       requestAnimationFrame(updatePacmanEasterEgg);
     }
@@ -1161,8 +1195,18 @@ function onCabinetClick() {
 // =========================================
 function showPressStartButton() {
   showScreen('pressStart');
+  // Reset the residues of a previous pass (fade-out opacity, pressed state,
+  // button-down image) — without this a replay shows an invisible screen
+  // with the button stuck in its pressed frame.
+  const ps = document.getElementById('screen-press-start');
+  if (ps) { ps.style.transition = ''; ps.style.opacity = ''; }
+  const btnImg = document.getElementById('arcade-btn-img');
+  if (btnImg) btnImg.src = '/assets/arcade-button-up.png';
   const btn = document.getElementById('arcade-start-btn');
-  if (btn) btn.addEventListener('click', onPressStartClick, { once: true });
+  if (btn) {
+    btn.classList.remove('pressed');
+    btn.addEventListener('click', onPressStartClick, { once: true });
+  }
 }
 
 function onPressStartClick() {
@@ -1174,22 +1218,22 @@ function onPressStartClick() {
     btnImg.src = '/assets/arcade-button-down.png';
   }
 
-  // Play the retro explosion sound immediately upon click
+  // Arcade cabinet button "click": a short punchy square-wave tap with a
+  // lower mechanical thock right after — no explosion rumble.
   try {
-    blip({ freq: 90, dur: 0.5, type: 'sawtooth', slide: 500, vol: 0.12 });
+    blip({ freq: 660, dur: 0.05, type: 'square', vol: 0.18 });
+    blip({ freq: 180, dur: 0.07, type: 'square', vol: 0.14, delay: 0.03 });
   } catch (_) {}
 
-  // Keep button visible in pressed state for a short moment, then fade and launch code explosion
+  // Keep button visible in pressed state for a short moment, then fade and
+  // go straight to the game start screen (code-explosion step removed).
   setTimeout(() => {
     const ps = document.getElementById('screen-press-start');
     if (ps) { ps.style.transition = 'opacity 0.45s ease'; ps.style.opacity = '0'; }
     setTimeout(() => {
-      // Pass skipSound = true so it does not play the sound again
-      playCodeExplosion(() => {
-        if (typeof window.transitionFromArcadeToGameStart === 'function') {
-          window.transitionFromArcadeToGameStart();
-        }
-      }, true);
+      if (typeof window.transitionFromArcadeToGameStart === 'function') {
+        window.transitionFromArcadeToGameStart();
+      }
     }, 450);
   }, 400);
 }
@@ -1209,6 +1253,7 @@ document.getElementById('btn-skip-confirm')?.addEventListener('click', () => {
   document.getElementById('skip-confirm-modal')?.classList.add('hidden');
   hasDiscount = false;
   skippedExperience = true;
+  saveProgress();
   startMegaTransition('arcadeCollection', () => {
     renderArcadeCollection();
     initArcadeCollection();
@@ -1225,7 +1270,14 @@ document.getElementById('btn-play-game')?.addEventListener('click', () => {
 });
 
 document.getElementById('btn-back-to-uniqlo')?.addEventListener('click', () => {
-  document.getElementById('back-uniqlo-btn')?.click();
+  // Reset the 3D arcade camera if the scene is live (safe no-op otherwise),
+  // then run the reverse page-regeneration transition directly. No proxy
+  // click on #back-uniqlo-btn: its listener only exists after the arcade
+  // scene has initialized, which made this button silently do nothing.
+  if (typeof window.goToEntrance3D === 'function') {
+    try { window.goToEntrance3D(); } catch (_) { /* scene not initialized */ }
+  }
+  startReverseTransition();
 });
 
 document.getElementById('btn-close-popup')?.addEventListener('click', () => {
@@ -1803,6 +1855,7 @@ function updateGame() {
     if (!c.collected && c.r === pacman.r && c.c === pacman.c) {
       c.collected = true;
       unlockedItems.push(c.id);
+      saveProgress();
       score += 1000;
       SFX.collectible();
       updateHud();
@@ -1854,6 +1907,12 @@ function startGame() {
   resetGame();
   drawGame();
   clearPauseState();
+
+  // Start the 60fps render loop already during the READY countdown: it draws
+  // the static scene, warming up the canvas pipeline and JIT so the first
+  // seconds of actual movement are smooth instead of stuttery.
+  cancelAnimationFrame(renderId);
+  renderId = requestAnimationFrame(renderLoop);
 
   const pauseBtn = document.getElementById('btn-pause');
   if (pauseBtn && !pauseBtn.dataset.wired) {
@@ -1936,6 +1995,10 @@ function checkWin() {
     document.removeEventListener('keydown', handleInput);
     document.getElementById('reward-overlay').classList.remove('hidden');
     hasDiscount = true;
+    // They played (and won) the experience, even if they skipped it earlier:
+    // clearing the flag keeps the checkout reward logic consistent.
+    skippedExperience = false;
+    saveProgress();
     SFX.reward();
   }
 }
@@ -2343,6 +2406,16 @@ function drawFrightenedFace(ctx, x, y, r, bodyColor) {
 
 
 // Back to start menu
+// Arrow-keys hint: pulse only until the player presses the first arrow,
+// then dim it — they clearly got how to play.
+const keysHintFirstInput = (e) => {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    document.getElementById('game-keys-hint')?.classList.add('used');
+    document.removeEventListener('keydown', keysHintFirstInput);
+  }
+};
+document.addEventListener('keydown', keysHintFirstInput);
+
 document.getElementById('btn-back-to-menu')?.addEventListener('click', () => {
   clearInterval(gameInterval);
   gameInterval = null;
@@ -2429,6 +2502,7 @@ function resetGame() {
   updateHud();
   collectibles.forEach(c => c.collected = false);
   unlockedItems = [];
+  saveProgress();
   generateMapAndPellets();
   initGhosts();
 }
@@ -2555,9 +2629,10 @@ function initArcadeCollection() {
     };
   }
 
-  // Keyboard navigation
+  // Keyboard navigation intentionally disabled: the store is mouse-only
+  // (list clicks, VIEW ITEM and BACK buttons). handleArcadeKeyboard is no
+  // longer registered.
   document.removeEventListener('keydown', handleArcadeKeyboard);
-  document.addEventListener('keydown', handleArcadeKeyboard);
 }
 
 function updateArcadeSelection() {
@@ -2632,8 +2707,21 @@ function exitArcadeCollection() {
   arcadeCollectionActive = false;
   document.removeEventListener('keydown', handleArcadeKeyboard);
   closeProductViewer();
-  startMegaTransition('gameStart');
+  startMegaTransition('gameStart', () => {
+    // Restore the menu phase of the gameStart screen, otherwise it can come
+    // back with all its sub-sections hidden (blank page)
+    document.getElementById('startup-self-test')?.classList.add('hidden');
+    document.getElementById('startup-attract')?.classList.add('hidden');
+    const menuContent = document.getElementById('start-menu-content');
+    if (menuContent) {
+      menuContent.classList.remove('hidden');
+      menuContent.style.opacity = '1';
+    }
+  }, true);
 }
+
+// Top-left back button on the collection screen — same action as ESC
+document.getElementById('btn-collection-back')?.addEventListener('click', exitArcadeCollection);
 
 // =========================================
 // ITEM VIEW MODAL LOGIC
@@ -2641,7 +2729,50 @@ function exitArcadeCollection() {
 let currentViewItem = null;
 
 let productScene, productCamera, productRenderer, productGroup, productAnimationId, productResizeHandler;
+let productInteractionCleanup = null;
 const productTextureCache = {};
+
+// "-back" asset path derived from the front one (tshirt-black.png -> tshirt-black-back.png)
+function productBackImageUrl(frontUrl) {
+  return frontUrl.replace(/\.png$/i, '-back.png');
+}
+
+// Loads the front texture and its "-back" counterpart, then calls
+// callback(frontTexture, backTexture). If the back image is missing the
+// front texture is reused as a temporary fallback so the viewer never breaks.
+function loadProductTexturePair(frontUrl, callback) {
+  const backUrl = productBackImageUrl(frontUrl);
+  const loader = new THREE.TextureLoader();
+
+  const withFront = (frontTexture) => {
+    if (productTextureCache[backUrl]) {
+      callback(frontTexture, productTextureCache[backUrl]);
+      return;
+    }
+    loader.load(
+      backUrl,
+      (backTexture) => {
+        productTextureCache[backUrl] = backTexture;
+        callback(frontTexture, backTexture);
+      },
+      undefined,
+      () => {
+        // FALLBACK: no "-back" asset found — reuse the front image so the
+        // product keeps rendering (it will look mirrored until the asset exists).
+        callback(frontTexture, frontTexture);
+      }
+    );
+  };
+
+  if (productTextureCache[frontUrl]) {
+    withFront(productTextureCache[frontUrl]);
+  } else {
+    loader.load(frontUrl, (frontTexture) => {
+      productTextureCache[frontUrl] = frontTexture;
+      withFront(frontTexture);
+    });
+  }
+}
 
 function initProductViewer(container, imageUrl) {
   // Clear container
@@ -2711,23 +2842,28 @@ function initProductViewer(container, imageUrl) {
   productGroup.position.y = modalOffsetY;
   productScene.add(productGroup);
   
-  // Render Sandwich layers
-  const buildLayers = (texture) => {
+  // Render Sandwich layers.
+  // Each layer is a PAIR of single-sided planes at the same depth: one facing
+  // forward with the front artwork and one rotated 180° with the "-back"
+  // artwork. Backface culling picks the right image per viewing angle, so the
+  // back of the product shows the real back photo instead of a mirrored front.
+  const buildLayers = (texture, backTexture) => {
     productGroup.clear(); // Clear any old layers first
     prepareTexture(texture);
-    
+    if (backTexture !== texture) prepareTexture(backTexture);
+
     const layerCount = 24;
     const thickness = isModal ? 0.22 : 0.22;
     const width = isModal ? 2.35 : 2.4;
     const height = isModal ? 2.35 : 2.4;
     const geom = new THREE.PlaneGeometry(width, height);
-    
+
     const isWhite = imageUrl.includes('white');
-    
+
     for (let i = 0; i < layerCount; i++) {
       // Calculate how close this layer is to the center (0 = outer, 1 = center)
       const centerFactor = 1.0 - Math.abs(i - (layerCount - 1) / 2) / ((layerCount - 1) / 2);
-      
+
       let tint, roughness, metalness;
       if (isWhite) {
         // Soft off-white cap to prevent clipping/burnout, plus ambient occlusion depth
@@ -2736,37 +2872,39 @@ function initProductViewer(container, imageUrl) {
         metalness = 0.0;  // Fully non-metallic to prevent hot shiny spots
       } else {
         // High quality matte fabric finish so printed graphic artwork stays rich, sharp & glare-free
-        tint = 1.0 - centerFactor * 0.35; 
+        tint = 1.0 - centerFactor * 0.35;
         roughness = 0.85; // Realistic matte cotton fabric
         metalness = 0.0;  // Non-metallic fabric
       }
-      
-      const mat = new THREE.MeshStandardMaterial({
-        map: texture,
+
+      const layerZ = -thickness/2 + (i / (layerCount - 1)) * thickness;
+
+      const makeMat = (map) => new THREE.MeshStandardMaterial({
+        map: map,
         transparent: true,
         roughness: roughness,
         metalness: metalness,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
         alphaTest: 0.05,
         color: new THREE.Color(tint, tint, tint)
       });
-      
-      const mesh = new THREE.Mesh(geom, mat);
-      mesh.position.z = -thickness/2 + (i / (layerCount - 1)) * thickness;
-      productGroup.add(mesh);
+
+      const frontMesh = new THREE.Mesh(geom, makeMat(texture));
+      frontMesh.position.z = layerZ;
+      frontMesh.userData = { layerIndex: i, face: 'front' };
+      productGroup.add(frontMesh);
+
+      const backMesh = new THREE.Mesh(geom, makeMat(backTexture));
+      backMesh.position.z = layerZ;
+      backMesh.rotation.y = Math.PI; // faces backward, so the back art reads correctly
+      backMesh.userData = { layerIndex: i, face: 'back' };
+      productGroup.add(backMesh);
     }
   };
 
-  // Load from cache or remote
-  if (productTextureCache[imageUrl]) {
-    buildLayers(productTextureCache[imageUrl]);
-  } else {
-    const loader = new THREE.TextureLoader();
-    loader.load(imageUrl, (texture) => {
-      productTextureCache[imageUrl] = texture;
-      buildLayers(texture);
-    });
-  }
+  // Load front + "-back" variant (derived from the front path, e.g.
+  // tshirt-black.png -> tshirt-black-back.png), then build the layers.
+  loadProductTexturePair(imageUrl, buildLayers);
   
   // Call shading adjustment to set correct light intensities
   adjustViewerShading(imageUrl.includes('white'));
@@ -2796,35 +2934,144 @@ function initProductViewer(container, imageUrl) {
   shadowMesh.position.y = isModal ? -1.78 : -1.65;
   productScene.add(shadowMesh);
   
+  // =========================================
+  // MANUAL INTERACTION (drag to rotate, scroll to zoom)
+  // The auto spin is accumulated per-frame instead of derived from absolute
+  // elapsed time, so it can pause during a drag and resume from wherever the
+  // user left the product — no snap back.
+  // =========================================
+  let isDragging = false;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+  let manualRotationX = 0;      // smoothed values applied to the group
+  let manualRotationY = 0;
+  let targetManualX = 0;        // raw values updated by the mouse
+  let targetManualY = 0;
+  let autoRotationEnabled = true;
+  let autoSpinAngle = 0;
+  let currentZoom = 1;
+  let targetZoom = 1;
+  let zoomResetTimeout = null;
+
+  // Manual interaction is only for the View Item modal, not the collection preview
+  const interactive = isModal;
+
+  const canvas = productRenderer.domElement;
+  if (interactive) {
+    canvas.style.cursor = 'grab';
+    canvas.style.touchAction = 'none';
+  }
+
+  const onProductMouseDown = (e) => {
+    if (e.button !== 0) return;
+    isDragging = true;
+    autoRotationEnabled = false;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    canvas.style.cursor = 'grabbing';
+    // Holding the button keeps the current zoom: cancel any pending reset
+    if (zoomResetTimeout) {
+      clearTimeout(zoomResetTimeout);
+      zoomResetTimeout = null;
+    }
+    e.preventDefault(); // avoid accidental image/text selection while dragging
+  };
+
+  const onProductMouseMove = (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    targetManualY += dx * 0.006;
+    // Slight X tilt, clamped so the item can never flip over or hide its face
+    targetManualX = Math.max(-0.5, Math.min(0.5, targetManualX + dy * 0.003));
+  };
+
+  const onProductMouseUp = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    autoRotationEnabled = true; // spin resumes from the current pose
+    canvas.style.cursor = 'grab';
+    // Button released: ease the zoom back to normal
+    targetZoom = 1;
+    if (zoomResetTimeout) {
+      clearTimeout(zoomResetTimeout);
+      zoomResetTimeout = null;
+    }
+  };
+
+  const onProductWheel = (e) => {
+    e.preventDefault(); // only inside the product canvas, page scroll untouched
+    targetZoom = Math.max(1, Math.min(1.35, targetZoom - e.deltaY * 0.0012));
+    if (zoomResetTimeout) clearTimeout(zoomResetTimeout);
+    // While the mouse button is held down the zoom stays where it is;
+    // the auto-reset only applies when scrolling without holding.
+    if (!isDragging) {
+      zoomResetTimeout = setTimeout(() => { targetZoom = 1; }, 900);
+    }
+  };
+
+  if (interactive) {
+    canvas.addEventListener('mousedown', onProductMouseDown);
+    window.addEventListener('mousemove', onProductMouseMove);
+    window.addEventListener('mouseup', onProductMouseUp);
+    canvas.addEventListener('wheel', onProductWheel, { passive: false });
+
+    productInteractionCleanup = () => {
+      canvas.removeEventListener('mousedown', onProductMouseDown);
+      window.removeEventListener('mousemove', onProductMouseMove);
+      window.removeEventListener('mouseup', onProductMouseUp);
+      canvas.removeEventListener('wheel', onProductWheel);
+      if (zoomResetTimeout) clearTimeout(zoomResetTimeout);
+    };
+  }
+
   // Animation loop
   const clock = new THREE.Clock();
+  let lastElapsed = 0;
   function animate() {
     productAnimationId = requestAnimationFrame(animate);
     const elapsed = clock.getElapsedTime();
-    
+    // getDelta() would return 0 right after getElapsedTime(), so derive it manually
+    const delta = elapsed - lastElapsed;
+    lastElapsed = elapsed;
+
     if (productGroup) {
-      // Gentle Bobbing relative to modalOffsetY
+      // Gentle Bobbing relative to modalOffsetY (always on, even while dragging)
       productGroup.position.y = modalOffsetY + Math.sin(elapsed * 1.8) * (isModal ? 0.10 : 0.15);
-      
-      // Slow rotation
-      productGroup.rotation.y = elapsed * 0.65;
-      
-      // Secondary minor tilts for premium 3D feeling
-      productGroup.rotation.x = Math.sin(elapsed * 0.9) * 0.08;
+
+      // Slow auto rotation, paused while the user is dragging
+      if (autoRotationEnabled) autoSpinAngle += delta * 0.65;
+
+      // Smooth the manual input so the drag feels fluid, never jerky
+      manualRotationY += (targetManualY - manualRotationY) * 0.18;
+      manualRotationX += (targetManualX - manualRotationX) * 0.18;
+      // Once released, ease the X tilt back to the natural pose
+      if (!isDragging) targetManualX *= 0.94;
+
+      productGroup.rotation.y = autoSpinAngle + manualRotationY;
+
+      // Secondary minor tilts for premium 3D feeling + manual tilt
+      productGroup.rotation.x = Math.sin(elapsed * 0.9) * 0.08 + manualRotationX;
       productGroup.rotation.z = Math.cos(elapsed * 0.9) * 0.05;
-      
+
+      // Temporary zoom with soft easing, clamped between 1 and 1.35
+      currentZoom += (targetZoom - currentZoom) * 0.1;
+      productGroup.scale.set(currentZoom, currentZoom, currentZoom);
+
       // Shadow responds in size and opacity
       if (shadowMesh) {
         const h = productGroup.position.y - modalOffsetY;
-        const s = 1.0 - h * 0.32;
+        const s = (1.0 - h * 0.32) * currentZoom;
         shadowMesh.scale.set(s, s, 1);
         shadowMesh.material.opacity = 0.75 - h * 0.45;
       }
     }
-    
+
     productRenderer.render(productScene, productCamera);
   }
-  
+
   animate();
   
   // Resize Handler
@@ -2864,12 +3111,18 @@ function adjustViewerShading(isWhite) {
     if (yellowLight) yellowLight.intensity = 0.3;
   }
 
-  // Update material properties of existing sandwich layers if they exist
+  // Update material properties of existing sandwich layers if they exist.
+  // Layers are front/back mesh pairs sharing a layerIndex, so the depth tint
+  // is driven by userData.layerIndex rather than the raw child position.
   if (productGroup) {
-    const layerCount = productGroup.children.length;
+    const layerCount = productGroup.children.reduce(
+      (max, mesh) => Math.max(max, (mesh.userData.layerIndex ?? 0) + 1), 1);
     productGroup.children.forEach((mesh, i) => {
       if (mesh.material) {
-        const centerFactor = 1.0 - Math.abs(i - (layerCount - 1) / 2) / ((layerCount - 1) / 2);
+        const li = mesh.userData.layerIndex ?? i;
+        const centerFactor = layerCount > 1
+          ? 1.0 - Math.abs(li - (layerCount - 1) / 2) / ((layerCount - 1) / 2)
+          : 1.0;
         
         if (isWhite) {
           const tint = 0.96 - centerFactor * 0.32;
@@ -2890,10 +3143,10 @@ function adjustViewerShading(isWhite) {
 
 function updateProductViewerTexture(imageUrl) {
   if (!productGroup) return;
-  
+
   const isWhite = imageUrl.includes('white');
-  
-  const applyTexture = (texture) => {
+
+  const prep = (texture) => {
     if (productRenderer && productRenderer.capabilities) {
       texture.anisotropy = productRenderer.capabilities.getMaxAnisotropy() || 16;
     }
@@ -2905,32 +3158,33 @@ function updateProductViewerTexture(imageUrl) {
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.needsUpdate = true;
+  };
+
+  // Both faces switch together so black uses black front+back and white
+  // uses white front+back — colors are never mixed.
+  loadProductTexturePair(imageUrl, (frontTexture, backTexture) => {
+    prep(frontTexture);
+    if (backTexture !== frontTexture) prep(backTexture);
 
     productGroup.children.forEach(mesh => {
       if (mesh.material) {
-        mesh.material.map = texture;
+        mesh.material.map = (mesh.userData.face === 'back') ? backTexture : frontTexture;
         mesh.material.needsUpdate = true;
       }
     });
     // Dynamically adjust lighting and material shading parameters for the active variant
     adjustViewerShading(isWhite);
-  };
-  
-  if (productTextureCache[imageUrl]) {
-    applyTexture(productTextureCache[imageUrl]);
-  } else {
-    const loader = new THREE.TextureLoader();
-    loader.load(imageUrl, (texture) => {
-      productTextureCache[imageUrl] = texture;
-      applyTexture(texture);
-    });
-  }
+  });
 }
 
 function closeProductViewer() {
   if (productAnimationId) {
     cancelAnimationFrame(productAnimationId);
     productAnimationId = null;
+  }
+  if (productInteractionCleanup) {
+    productInteractionCleanup();
+    productInteractionCleanup = null;
   }
   if (productResizeHandler) {
     window.removeEventListener('resize', productResizeHandler);
@@ -3467,27 +3721,27 @@ function validateCheckoutForm() {
   // Email (required, format check)
   const email = (document.getElementById('cf-email')?.value || '').trim();
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email) { setCheckoutFieldError('cf-email', 'Campo obbligatorio'); valid = false; }
-  else if (!emailRe.test(email)) { setCheckoutFieldError('cf-email', "Inserisci un'email valida"); valid = false; }
+  if (!email) { setCheckoutFieldError('cf-email', 'This field is required'); valid = false; }
+  else if (!emailRe.test(email)) { setCheckoutFieldError('cf-email', 'Enter a valid email address'); valid = false; }
   else setCheckoutFieldError('cf-email', '');
 
   // Required shipping text fields
   ['cf-firstname', 'cf-lastname', 'cf-address', 'cf-city', 'cf-zip'].forEach(id => {
     const val = (document.getElementById(id)?.value || '').trim();
-    if (!val) { setCheckoutFieldError(id, 'Campo obbligatorio'); valid = false; }
+    if (!val) { setCheckoutFieldError(id, 'This field is required'); valid = false; }
     else setCheckoutFieldError(id, '');
   });
 
   // Country select
   const country = document.getElementById('cf-country')?.value || '';
-  if (!country) { setCheckoutFieldError('cf-country', 'Campo obbligatorio'); valid = false; }
+  if (!country) { setCheckoutFieldError('cf-country', 'This field is required'); valid = false; }
   else setCheckoutFieldError('cf-country', '');
 
   // Delivery method
   const deliveryChecked = document.querySelector('input[name="delivery"]:checked');
   const deliveryErr = document.getElementById('err-delivery');
   if (!deliveryChecked) {
-    if (deliveryErr) deliveryErr.textContent = 'Seleziona un metodo di consegna';
+    if (deliveryErr) deliveryErr.textContent = 'Select a delivery method';
     valid = false;
   } else if (deliveryErr) deliveryErr.textContent = '';
 
@@ -3495,29 +3749,29 @@ function validateCheckoutForm() {
   const paymentChecked = document.querySelector('input[name="payment"]:checked');
   const paymentErr = document.getElementById('err-payment');
   if (!paymentChecked) {
-    if (paymentErr) paymentErr.textContent = 'Seleziona un metodo di pagamento';
+    if (paymentErr) paymentErr.textContent = 'Select a payment method';
     valid = false;
   } else if (paymentErr) paymentErr.textContent = '';
 
   // Card fields, only required if Card was selected
   if (paymentChecked && paymentChecked.value === 'card') {
     const cardNum = (document.getElementById('cf-card-number')?.value || '').replace(/\s/g, '');
-    if (!cardNum) { setCheckoutFieldError('cf-card-number', 'Campo obbligatorio'); valid = false; }
-    else if (!/^\d{12,19}$/.test(cardNum)) { setCheckoutFieldError('cf-card-number', 'Numero carta non valido'); valid = false; }
+    if (!cardNum) { setCheckoutFieldError('cf-card-number', 'This field is required'); valid = false; }
+    else if (!/^\d{12,19}$/.test(cardNum)) { setCheckoutFieldError('cf-card-number', 'Invalid card number'); valid = false; }
     else setCheckoutFieldError('cf-card-number', '');
 
     const expiry = (document.getElementById('cf-card-expiry')?.value || '').trim();
-    if (!expiry) { setCheckoutFieldError('cf-card-expiry', 'Campo obbligatorio'); valid = false; }
-    else if (!/^\d{2}\/\d{2}$/.test(expiry)) { setCheckoutFieldError('cf-card-expiry', 'Formato MM/YY'); valid = false; }
+    if (!expiry) { setCheckoutFieldError('cf-card-expiry', 'This field is required'); valid = false; }
+    else if (!/^\d{2}\/\d{2}$/.test(expiry)) { setCheckoutFieldError('cf-card-expiry', 'Use MM/YY format'); valid = false; }
     else setCheckoutFieldError('cf-card-expiry', '');
 
     const cvc = (document.getElementById('cf-card-cvc')?.value || '').trim();
-    if (!cvc) { setCheckoutFieldError('cf-card-cvc', 'Campo obbligatorio'); valid = false; }
-    else if (!/^\d{3,4}$/.test(cvc)) { setCheckoutFieldError('cf-card-cvc', 'CVC non valido'); valid = false; }
+    if (!cvc) { setCheckoutFieldError('cf-card-cvc', 'This field is required'); valid = false; }
+    else if (!/^\d{3,4}$/.test(cvc)) { setCheckoutFieldError('cf-card-cvc', 'Invalid CVC'); valid = false; }
     else setCheckoutFieldError('cf-card-cvc', '');
 
     const cardName = (document.getElementById('cf-card-name')?.value || '').trim();
-    if (!cardName) { setCheckoutFieldError('cf-card-name', 'Campo obbligatorio'); valid = false; }
+    if (!cardName) { setCheckoutFieldError('cf-card-name', 'This field is required'); valid = false; }
     else setCheckoutFieldError('cf-card-name', '');
   }
 
@@ -3546,11 +3800,21 @@ function completeOrder() {
   checkoutPaymentMethod = null;
 }
 
+// If the Item View modal is still open under the checkout, close it properly
+// (its close button also restores the collection's 3D preview).
+function closeItemViewIfOpen() {
+  const overlay = document.getElementById('item-view-overlay');
+  if (overlay && !overlay.classList.contains('hidden')) {
+    document.getElementById('btn-close-item-view')?.click();
+  }
+}
+
 function initCheckoutBinds() {
   document.getElementById('btn-checkout-back')?.addEventListener('click', backToBagFromCheckout);
 
   document.getElementById('btn-checkout-empty-back')?.addEventListener('click', () => {
     closeCheckoutOverlay();
+    closeItemViewIfOpen();
     startMegaTransition('arcadeCollection', () => {});
   });
 
@@ -3575,12 +3839,22 @@ function initCheckoutBinds() {
 
   document.getElementById('btn-complete-back-collection')?.addEventListener('click', () => {
     closeCheckoutOverlay();
+    closeItemViewIfOpen();
     startMegaTransition('arcadeCollection', () => {});
   });
 
   document.getElementById('btn-complete-back-uniqlo')?.addEventListener('click', () => {
     closeCheckoutOverlay();
-    showScreen('landing');
+    closeItemViewIfOpen();
+    // Leaving the store entirely: stop the collection's 3D preview loop so it
+    // doesn't keep rendering behind the landing page.
+    arcadeCollectionActive = false;
+    document.removeEventListener('keydown', handleArcadeKeyboard);
+    closeProductViewer();
+    // Use the reverse page-regeneration transition: unlike a plain
+    // showScreen('landing'), it also resets the walking Pac-Man easter egg
+    // (otherwise the landing would come back without it, dead-ending replays).
+    startReverseTransition();
   });
 
   // Clear a field's error state as soon as the user edits it

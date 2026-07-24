@@ -168,17 +168,17 @@ body, html {
 /* Floating click hint above Pac-Man */
 .pacman-click-label {
   position: absolute;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  font-size: 11px;
   color: var(--pacman-yellow);
   white-space: nowrap;
   letter-spacing: 1px;
-  text-shadow: 0 0 4px #000, 0 0 4px #000, 0 0 4px #000, 0 0 6px var(--pacman-yellow);
-  pointer-events: none;
-  animation: bounce-text 0.8s ease-in-out infinite alternate, label-blink 0.5s step-end infinite;
+  text-shadow: 0 0 4px #000, 0 0 4px #000, 0 0 4px #000, 0 0 8px var(--pacman-yellow);
+  cursor: pointer; /* clickable: the click bubbles up to #pacman-easter-egg */
+  animation: bounce-text 0.8s ease-in-out infinite alternate, label-blink 1.4s step-end infinite;
 }
 
 @keyframes bounce-text {
@@ -188,7 +188,7 @@ body, html {
 
 @keyframes label-blink {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
+  50%       { opacity: 0.55; }
 }
 
 .pacman-egg-svg svg {
@@ -1154,6 +1154,16 @@ body, html {
   transition: transform 0.5s ease;
 }
 
+/* The scale(0.97) above uncovers the page edges: keep the surround black
+   (not the store-white body) whenever an arcade screen is on stage.
+   transition: none — the default 1s body background transition would repaint
+   the whole page every frame right as the game starts (first-seconds jank). */
+body:has(.screen.arcade-mode.active),
+html:has(.screen.arcade-mode.active) {
+  background-color: #000;
+  transition: none;
+}
+
 .arcade-start-menu {
   text-align: center;
 }
@@ -1421,6 +1431,76 @@ body, html {
   z-index: 10;
 }
 
+/* Arrow-keys hint under the pause/skip buttons */
+.game-keys-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.keys-hint-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #888;
+}
+
+.keys-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.keys-row {
+  display: flex;
+  gap: 5px;
+}
+
+.key-cap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid #3a3a42;
+  border-radius: 4px;
+  animation: keys-hint-pulse 2s ease-in-out infinite;
+}
+
+/* Identical minimal chevron for all four keys, just rotated */
+.key-arrow {
+  width: 8px;
+  height: 8px;
+  border-top: 1.5px solid var(--pacman-yellow);
+  border-right: 1.5px solid var(--pacman-yellow);
+}
+
+.arrow-up    { transform: rotate(-45deg) translate(-1px, 1px); }
+.arrow-right { transform: rotate(45deg)  translate(-1px, -1px); }
+.arrow-down  { transform: rotate(135deg) translate(1px, -1px); }
+.arrow-left  { transform: rotate(-135deg) translate(1px, 1px); }
+
+@keyframes keys-hint-pulse {
+  0%, 100% { border-color: #3a3a42; }
+  50%      { border-color: var(--pacman-yellow); }
+}
+
+/* After the first arrow press the hint stops pulsing and fades back */
+.game-keys-hint.used {
+  opacity: 0.3;
+  transition: opacity 0.6s ease;
+}
+
+.game-keys-hint.used .key-cap {
+  animation: none;
+}
+
 /* =========================================
    SCREEN 7: COLLECTION
 ========================================= */
@@ -1627,6 +1707,26 @@ body, html {
   text-shadow: 0 0 10px rgba(230, 0, 18, 0.8);
   letter-spacing: 1px;
   font-size: 12px;
+}
+
+/* Back button on the collection screen (same action as ESC) */
+.collection-back-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #ccc;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.collection-back-btn:hover {
+  border-color: var(--pacman-yellow);
+  color: var(--pacman-yellow);
 }
 
 .crt-sep {
@@ -4064,3 +4164,97 @@ select.form-input {
 }
 
 
+
+/* =========================================
+   ROM LOADING OVERLAY (3D arcade room)
+========================================= */
+#arcade-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #02040d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  transition: opacity 0.6s ease;
+}
+
+#arcade-loading-overlay.done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rom-loading-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: var(--pacman-yellow);
+  animation: label-blink 1.4s step-end infinite;
+}
+
+.rom-progress-frame {
+  width: min(420px, 70vw);
+  height: 24px;
+  border: 2px solid #fff;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+#rom-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--pacman-yellow) 0px,
+    var(--pacman-yellow) 10px,
+    transparent 10px,
+    transparent 14px
+  );
+  transition: width 0.25s linear;
+}
+
+#rom-progress-pct {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #888;
+}
+
+/* =========================================
+   UNIQLO WATERMARK (arcade screens)
+========================================= */
+.uniqlo-watermark {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  width: 34px;
+  height: auto;
+  opacity: 0.72;
+  z-index: 60;
+  pointer-events: none;
+  user-select: none;
+}
+
+.drawer-uniqlo-logo {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 9px;
+}
+
+.checkout-brand-logo {
+  width: 16px;
+  height: 16px;
+  vertical-align: text-bottom;
+  margin-right: 6px;
+}
+
+.complete-uniqlo-logo {
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 16px auto 0;
+  opacity: 0.9;
+}
