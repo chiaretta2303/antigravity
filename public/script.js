@@ -53,11 +53,9 @@ const screens = {
   transition: document.getElementById('screen-transition'),
   bootup: document.getElementById('screen-bootup'),
   pressStart: document.getElementById('screen-press-start'),
-  arcadeLoader: document.getElementById('screen-arcade-loader'),
   arcadeReveal: document.getElementById('screen-arcade-reveal'),
   gameStart: document.getElementById('screen-game-start'),
   gameplay: document.getElementById('screen-gameplay'),
-  collection: document.getElementById('screen-collection'),
   arcadeCollection: document.getElementById('screen-arcade-collection')
 };
 
@@ -93,7 +91,7 @@ function showScreen(screenKey) {
   // Robust CRT overlay activation and reduction logic
   const crt = document.getElementById('crt-overlay');
   if (crt) {
-    const disabledScreens = ['landing', 'transition', 'arcadeLoader', 'arcadeReveal'];
+    const disabledScreens = ['landing', 'transition', 'arcadeReveal'];
     if (disabledScreens.includes(screenKey)) {
       crt.classList.remove('active');
       crt.classList.remove('reduced-crt');
@@ -632,108 +630,8 @@ function playBootSequence(onDone) {
 }
 
 // =========================================
-// CODE EXPLOSION (press-start → cabinet)
-// A burst of numbers/code explodes outward while the screen floods with
-// cascading garbage, white-flashes, then fades to black → cabinet reveal.
-// =========================================
-function playCodeExplosion(onDone, skipSound = false) {
-  const s = _bootCanvasSetup();
-  if (!s) { onDone(); return; }
-  showScreen('bootup');
-  const { canvas, ctx, DPR, dispose } = s;
-  const W0 = canvas.width, H0 = canvas.height;
-  const cell = Math.max(15, Math.min(W0, H0) / 32);
-
-  // outward burst particles from centre
-  const parts = [];
-  for (let i = 0; i < 170; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const sp = (0.4 + Math.random() * 1.7) * Math.min(W0, H0) / 60;
-    parts.push({ x: W0 / 2, y: H0 / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, ch: _rc(_GLITCH_CHARS), col: _rc(_GLITCH_COLS), life: 1 });
-  }
-  // matrix-style cascading columns
-  const colCount = Math.ceil(W0 / (cell * 0.9));
-  const drops = new Array(colCount).fill(0).map(() => Math.random() * -H0);
-
-  if (!skipSound) {
-    try { blip({ freq: 90, dur: 0.5, type: 'sawtooth', slide: 500, vol: 0.12 }); } catch (_) {}
-  }
-
-  const start = performance.now();
-  const DUR = 2.2;
-  let rafId = 0;
-
-  function frame(now) {
-    const e = (now - start) / 1000;
-    const W = canvas.width, H = canvas.height, t = e / DUR;
-
-    // motion-blur trail instead of a full clear
-    ctx.fillStyle = 'rgba(0,0,0,0.30)';
-    ctx.fillRect(0, 0, W, H);
-
-    const shake = (1 - t) * cell * 0.7;
-    ctx.save();
-    ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
-    ctx.textBaseline = 'top';
-
-    // cascading garbage columns (accelerate over time)
-    ctx.font = `${cell}px "Courier New", monospace`;
-    const flow = 1 + t * 6;
-    for (let c = 0; c < colCount; c++) {
-      drops[c] += cell * flow;
-      if (drops[c] > H) drops[c] = Math.random() * -H * 0.5;
-      for (let k = 0; k < 3; k++) {
-        ctx.fillStyle = _rc(_GLITCH_COLS);
-        ctx.globalAlpha = 0.4 + Math.random() * 0.5;
-        ctx.fillText(_rc(_GLITCH_CHARS), c * cell * 0.9, drops[c] - k * cell);
-      }
-    }
-    ctx.globalAlpha = 1;
-
-    // exploding code particles
-    ctx.font = `bold ${cell * 1.2}px "Courier New", monospace`;
-    for (const p of parts) {
-      p.x += p.vx; p.y += p.vy; p.vx *= 1.012; p.vy *= 1.012; p.life -= 0.011;
-      if (p.life <= 0) continue;
-      if (Math.random() < 0.15) p.ch = _rc(_GLITCH_CHARS);
-      ctx.fillStyle = p.col;
-      ctx.globalAlpha = Math.max(0, p.life);
-      ctx.fillText(p.ch, p.x, p.y);
-    }
-    ctx.globalAlpha = 1;
-
-    // glitch bands
-    for (let b = 0; b < 3; b++) {
-      if (Math.random() > 0.55) continue;
-      const by = Math.random() * H, bh = cell * (0.5 + Math.random() * 2.5);
-      ctx.fillStyle = _rc(_GLITCH_COLS);
-      ctx.globalAlpha = 0.12 + Math.random() * 0.3;
-      ctx.fillRect(0, by, W, bh);
-    }
-    ctx.globalAlpha = 1;
-    ctx.restore();
-
-    // white flash at the burst peak
-    if (t > 0.32 && t < 0.5) { ctx.fillStyle = `rgba(255,255,255,${(0.5 - t) * 2 * 0.55})`; ctx.fillRect(0, 0, W, H); }
-
-    // scanlines
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    for (let y = 0; y < H; y += Math.max(2, Math.round(DPR * 2))) ctx.fillRect(0, y, W, 1);
-
-    // fade to black at the end → cabinet appears
-    if (t > 0.7) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, (t - 0.7) / 0.3)})`; ctx.fillRect(0, 0, W, H); }
-
-    if (e < DUR) rafId = requestAnimationFrame(frame);
-    else { cancelAnimationFrame(rafId); dispose(); onDone(); }
-  }
-  rafId = requestAnimationFrame(frame);
-}
-
-// =========================================
 // GENERAL SCREEN TRANSITION (MEGA PAC-MAN)
 // =========================================
-window.playCodeExplosion = playCodeExplosion;
-
 function startMegaTransition(nextScreenKey, callback, isGoingBack) {
   const transitionScreen = screens.transition;
   const canvas = document.getElementById('transition-canvas');
@@ -836,209 +734,6 @@ window.transitionFromArcadeToGameStart = function() {
   const crt = document.getElementById('crt-overlay');
   if (crt) crt.classList.add('active');
 };
-
-function startArcadeLoader() {
-  showScreen('arcadeLoader');
-  
-  const lines = document.querySelectorAll('.console-line');
-  lines.forEach((line, index) => {
-    line.style.opacity = index === 0 ? '1' : '0';
-  });
-  
-  // Sequential diagnostic text reveal
-  setTimeout(() => {
-    const line2 = document.querySelector('.console-line:nth-child(2)');
-    if (line2) line2.style.opacity = '1';
-  }, 800);
-  
-  setTimeout(() => {
-    const line3 = document.querySelector('.console-line:nth-child(3)');
-    if (line3) line3.style.opacity = '1';
-  }, 1600);
-  
-  // Transition to cabinet reveal after the custom cubic loader bar finishes
-  setTimeout(() => {
-    startCabinetReveal();
-  }, 3200);
-}
-
-function startCabinetReveal() {
-  showScreen('arcadeReveal');
-  initThreeJSCabinet();
-  
-  cabinetState = 'hidden';
-  cabinetApproachProgress = 0;
-  
-  setTimeout(() => {
-    cabinetState = 'approaching';
-    animateCabinet();
-  }, 1000);
-}
-
-function animateCabinet() {
-  cabinetAnimationId = requestAnimationFrame(animateCabinet);
-  
-  if (!cabinetModel) return;
-  
-  if (cabinetState === 'approaching') {
-    // 6 second approach approx at 60fps
-    cabinetApproachProgress += 1 / (60 * 6);
-    if (cabinetApproachProgress >= 1) {
-      cabinetApproachProgress = 1;
-      cabinetState = 'idle';
-      const container = document.getElementById('three-cabinet-container');
-      container.addEventListener('click', onCabinetClick, { once: true });
-    }
-    
-    // Smooth cubic ease out
-    const ease = 1 - Math.pow(1 - cabinetApproachProgress, 3);
-    
-    const s = 0.01 + ease * 0.99;
-    cabinetModel.scale.set(s, s, s);
-    
-    // Rotate fully to reveal sides in 3D space
-    cabinetModel.rotation.y = -Math.PI * 2 * (1 - ease);
-    
-    // Dynamic cinematic light fade-up
-    const amb = cabinetScene.getObjectByName('ambientLight');
-    const dir1 = cabinetScene.getObjectByName('dirLight1');
-    const dir2 = cabinetScene.getObjectByName('dirLight2');
-    
-    if (amb) amb.intensity = 0.6 * ease;
-    if (dir1) dir1.intensity = 1.2 * ease;
-    if (dir2) dir2.intensity = 0.4 * ease;
-    
-    cabinetCamera.position.z = baseCameraZ * (8 - ease * 7);
-    cabinetCamera.lookAt(0, 0, 0);
-  } else if (cabinetState === 'idle') {
-    // Subtle idle rotation
-    cabinetModel.rotation.y += 0.002;
-  } else if (cabinetState === 'aligning_front') {
-    alignProgress += 1 / (60 * 0.8); // 0.8s alignment
-    if (alignProgress >= 1) {
-      alignProgress = 1;
-      cabinetState = 'zooming_coin';
-      cabinetZoomProgress = 0;
-    }
-    const ease = 1 - Math.pow(1 - alignProgress, 3);
-    
-    // Smoothly rotate model to Y = 0 (perfect frontal face)
-    cabinetModel.rotation.y = THREE.MathUtils.lerp(startCabinetRotY, 0, ease);
-    
-    // Smoothly reposition camera to frontal center
-    cabinetCamera.position.x = THREE.MathUtils.lerp(startCameraX, 0, ease);
-    cabinetCamera.position.y = THREE.MathUtils.lerp(startCameraY, 0, ease);
-    cabinetCamera.position.z = THREE.MathUtils.lerp(startCameraZ, baseCameraZ, ease);
-    cabinetCamera.lookAt(0, 0, 0);
-  } else if (cabinetState === 'zooming_coin') {
-    cabinetZoomProgress += 1 / (60 * 2); // 2s zoom
-    if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
-    const ease = 1 - Math.pow(1 - cabinetZoomProgress, 3);
-    
-    // Physically move camera to view coin slot
-    currentCameraY = THREE.MathUtils.lerp(0, -cabinetMaxDim * 0.15, ease);
-    currentCameraZ = THREE.MathUtils.lerp(baseCameraZ, baseCameraZ * 0.45, ease);
-    
-    cabinetCamera.position.y = currentCameraY;
-    cabinetCamera.position.z = currentCameraZ;
-    cabinetCamera.lookAt(0, currentCameraY, 0);
-  } else if (cabinetState === 'inserting_coin') {
-    coinProgress += 1 / (60 * 1.2); // 1.2s insertion
-    if (coinProgress > 1) coinProgress = 1;
-    
-    // Ease-in to feel like it's dropping naturally
-    const ease = Math.pow(coinProgress, 2);
-    
-    const startY = -cabinetMaxDim * 0.05;
-    const endY = -cabinetMaxDim * 0.20;
-    const startZ = cabinetSizeZ * 0.5 + cabinetMaxDim * 0.02;
-    const endZ = cabinetSizeZ * 0.5; // flush with cabinet face
-    
-    cabinetCoin.position.x = cabinetMaxDim * 0.08; // slightly offset to the right
-    cabinetCoin.position.y = THREE.MathUtils.lerp(startY, endY, ease);
-    cabinetCoin.position.z = THREE.MathUtils.lerp(startZ, endZ, Math.pow(coinProgress, 0.5));
-    
-  } else if (cabinetState === 'zooming_screen') {
-    cabinetZoomProgress += 1 / (60 * 2.5);
-    if (cabinetZoomProgress > 1) cabinetZoomProgress = 1;
-    const ease = 1 - Math.pow(1 - cabinetZoomProgress, 3);
-    currentCameraY = THREE.MathUtils.lerp(startCameraY, cabinetMaxDim * 0.12, ease);
-    currentCameraZ = THREE.MathUtils.lerp(startCameraZ, baseCameraZ * 0.45, ease);
-    cabinetCamera.position.y = currentCameraY;
-    cabinetCamera.position.z = currentCameraZ;
-    cabinetCamera.lookAt(0, currentCameraY, 0);
-
-  // ─── NEW SCROLL-DRIVEN APPROACH ───────────────────────────────────
-  } else if (cabinetState === 'dropping' || cabinetState === 'settling') {
-    // These states are no longer used in the new scroll entrance
-    cabinetState = 'scroll_idle';
-  } else if (cabinetState === 'scroll_idle') {
-    // Smooth lerp scroll progress
-    scrollCurrent += (scrollTarget - scrollCurrent) * 0.06;
-    
-    // Update progress bar UI
-    const bar = document.getElementById('scroll-progress-bar');
-    if (bar) bar.style.width = (scrollCurrent * 100) + '%';
-    
-    const t = scrollCurrent;
-    
-    // Update lighting based on scroll progress
-    const amb = cabinetScene.getObjectByName('ambientLight');
-    const dir1 = cabinetScene.getObjectByName('dirLight1');
-    const dir2 = cabinetScene.getObjectByName('dirLight2');
-    if (amb) amb.intensity = THREE.MathUtils.lerp(0.05, 0.6, Math.min(1, t / 0.5));
-    if (dir1) dir1.intensity = THREE.MathUtils.lerp(0.1, 1.2, Math.min(1, t / 0.5));
-    if (dir2) dir2.intensity = THREE.MathUtils.lerp(0.05, 0.4, Math.min(1, t / 0.5));
-
-    let cameraX = 0;
-    let cameraY = 0;
-    let cameraZ = baseCameraZ * 4;
-    let lookAtX = 0;
-    let lookAtY = 0;
-    let lookAtZ = 0;
-
-    if (t <= 0.5) {
-      // Phase 1: Approach and rotate on itself, resolving exactly to frontal facing at t = 0.5
-      const p = t / 0.5; // ranges 0 to 1
-      
-      cameraZ = THREE.MathUtils.lerp(baseCameraZ * 4, baseCameraZ * 0.72, p);
-      
-      // Rotates on itself (3 complete rotations, ending at 0)
-      cabinetModel.rotation.y = (1 - p) * Math.PI * 6;
-    } else {
-      // Phase 2: Zoom straight into the cabinet screen, no rotation
-      const p = (t - 0.5) / 0.5; // ranges 0 to 1
-      
-      cameraY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, p);
-      cameraZ = THREE.MathUtils.lerp(baseCameraZ * 0.72, baseCameraZ * 0.28, p);
-      
-      cabinetModel.rotation.y = 0;
-      
-      lookAtY = THREE.MathUtils.lerp(0, cabinetMaxDim * 0.12, p);
-    }
-
-    // Keep cabinet centered at the origin
-    cabinetModel.position.set(0, 0, 0);
-    cabinetModel.rotation.x = 0;
-    cabinetModel.rotation.z = 0;
-
-    cabinetCamera.position.set(cameraX, cameraY, cameraZ);
-    cabinetCamera.lookAt(lookAtX, lookAtY, lookAtZ);
-    
-    // Hide scroll hint once user starts scrolling
-    if (scrollTarget > 0.05) {
-      const hint = document.getElementById('scroll-hint');
-      if (hint && !hint.classList.contains('fading')) hint.classList.add('fading');
-    }
-    // Trigger entry at 95% scroll
-    if (scrollCurrent >= 0.95 && !enterTriggered) {
-      enterTriggered = true;
-      enterCabinetScreen();
-    }
-  }
-  
-  cabinetRenderer.render(cabinetScene, cabinetCamera);
-}
 
 function runStartSequence() {
   // Hide all screens/phases first
@@ -1145,49 +840,6 @@ function runStartSequence() {
       menuContent.style.opacity = '1';
     }
   }, 4200);
-}
-
-function onCabinetClick() {
-  cabinetState = 'aligning_front';
-  alignProgress = 0;
-  startCabinetRotY = cabinetModel.rotation.y;
-  startCameraX = cabinetCamera.position.x;
-  startCameraY = cabinetCamera.position.y;
-  startCameraZ = cabinetCamera.position.z;
-  
-  // Staggered absolute timing after click
-  // 1. Zoom to coin slot starts 800ms after frontal alignment finishes
-  // 2. Coin shows & drops at 2800ms (800ms alignment + 2000ms zoom)
-  setTimeout(() => {
-    cabinetState = 'inserting_coin';
-    if (cabinetCoin) cabinetCoin.visible = true;
-    coinProgress = 0;
-  }, 2800);
-  
-  // 3. Zoom to screen starts at 4300ms (2800ms + 1500ms insertion)
-  setTimeout(() => {
-    if (cabinetCoin) cabinetCoin.visible = false;
-    cabinetState = 'zooming_screen';
-    cabinetZoomProgress = 0;
-    startCameraY = cabinetCamera.position.y;
-    startCameraZ = cabinetCamera.position.z;
-  }, 4300);
-  
-  // 4. Pre-transition cross-fade at 6400ms (inspired by shader.se continuous flow)
-  setTimeout(() => {
-    const container = document.getElementById('three-cabinet-container');
-    container.style.transition = 'opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
-    container.style.opacity = '0';
-  }, 6400);
-  
-  // 5. Final transition to gameStart at 6800ms
-  setTimeout(() => {
-    cancelAnimationFrame(cabinetAnimationId);
-    window.transitionFromArcadeToGameStart();
-    const container = document.getElementById('three-cabinet-container');
-    container.style.transition = 'none';
-    container.style.opacity = '1';
-  }, 6800);
 }
 
 // =========================================
@@ -2529,10 +2181,10 @@ document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
 // SCREEN 7: COLLECTION
 // =========================================
 const productsData = [
-  { id: 'tshirt',     name: 'Pac-Man Graphic T-Shirt',    price: 24.90, pixelIcon: '/assets/icon-tshirt-pixel.png.png',     hasVariants: true, variants: { black: '/assets/products/tshirt-black.png',     white: '/assets/products/tshirt-white.png'     } },
-  { id: 'sweatshirt', name: 'Pac-Man Arcade Hoodie',      price: 49.90, pixelIcon: '/assets/icon-sweatshirt-pixel.png.png', hasVariants: true, variants: { black: '/assets/products/hoodie-black.png', white: '/assets/products/hoodie-white.png' } },
-  { id: 'cap',        name: 'Pac-Man Logo Cap',           price: 19.90, pixelIcon: '/assets/icon-cap-pixel.png.png',       hasVariants: true, variants: { black: '/assets/products/cap-black.png',       white: '/assets/products/cap-white.png'       } },
-  { id: 'tote',       name: 'UNIQLO x Pac-Man Bag',       price: 14.90, pixelIcon: '/assets/icon-bag-pixel.png.png',       hasVariants: true, variants: { black: '/assets/products/bag-black.png',       white: '/assets/products/bag-white.png'       } }
+  { id: 'tshirt',     name: 'Pac-Man Graphic T-Shirt',    price: 24.90, hasVariants: true, variants: { black: '/assets/products/tshirt-black.png',     white: '/assets/products/tshirt-white.png'     } },
+  { id: 'sweatshirt', name: 'Pac-Man Arcade Hoodie',      price: 49.90, hasVariants: true, variants: { black: '/assets/products/hoodie-black.png', white: '/assets/products/hoodie-white.png' } },
+  { id: 'cap',        name: 'Pac-Man Logo Cap',           price: 19.90, hasVariants: true, variants: { black: '/assets/products/cap-black.png',       white: '/assets/products/cap-white.png'       } },
+  { id: 'tote',       name: 'UNIQLO x Pac-Man Bag',       price: 14.90, hasVariants: true, variants: { black: '/assets/products/bag-black.png',       white: '/assets/products/bag-white.png'       } }
 ];
 
 
