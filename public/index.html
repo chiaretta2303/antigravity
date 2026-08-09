@@ -39,9 +39,12 @@
         <span>Stores &nbsp;|&nbsp; FAQ &nbsp;|&nbsp; App</span>
       </div>
 
-      <!-- ── MAIN HEADER ── -->
+      <!-- ── MAIN HEADER — transparent, sits outside the scroll area (so it
+           never moves while the page scrolls) but is pulled up over the
+           hero's top edge via negative margin, like the real UNIQLO
+           homepage header floating on the campaign photo ── -->
       <header class="uq-header-v2">
-        <!-- Logo block (red square with hidden Pac-Man) -->
+        <!-- Logo block: Japanese mark + wordmark side by side (hidden Pac-Man tucked next to it) -->
         <div class="uq-logo-v2" id="uq-logo-area">
           <!-- Hidden easter egg: Pac-Man peeks from behind/beside logo -->
           <div id="pacman-easter-egg" class="pacman-egg-svg" title="">
@@ -51,13 +54,9 @@
               <circle cx="16" cy="8" r="2.5" fill="#333"/>
             </svg>
           </div>
-          <!-- UNIQLO red logo -->
+          <!-- UNIQLO logo lockup: Japanese mark + wordmark, single reference photo -->
           <div class="uq-logo-block">
-            <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
-              <rect width="56" height="56" fill="#E60012"/>
-              <text x="50%" y="32%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Helvetica Neue,Arial,sans-serif" font-weight="900" font-size="9.5" letter-spacing="0.5">UNI</text>
-              <text x="50%" y="68%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Helvetica Neue,Arial,sans-serif" font-weight="900" font-size="9.5" letter-spacing="0.5">QLO</text>
-            </svg>
+            <img src="/assets/uniqlo-logo-jp.png" alt="UNIQLO" class="uq-logo-img uq-logo-combined">
           </div>
         </div>
 
@@ -253,14 +252,23 @@
             <button class="uq-btn-primary" style="margin-top:32px;">EXPLORE THE COLLECTION</button>
           </div>
           <div class="uq-ut-right">
-            <!-- Pixel art decorative grid -->
+            <!-- Pixel art decorative grid: ghosts fleeing above, Pac-Man
+                 chasing a trail of pellets below — a small deliberate scene
+                 instead of loose shapes floating in empty space. -->
             <div class="uq-pixel-grid">
-              <div class="px-ghost red-g"></div>
-              <div class="px-ghost pink-g"></div>
-              <div class="px-ghost cyan-g"></div>
-              <div class="px-ghost orange-g"></div>
-              <div class="px-pacman"></div>
-              <div class="px-pellets"></div>
+              <div class="px-ghost-row">
+                <div class="px-ghost red-g"></div>
+                <div class="px-ghost pink-g"></div>
+                <div class="px-ghost cyan-g"></div>
+                <div class="px-ghost orange-g"></div>
+              </div>
+              <div class="px-chase-row">
+                <div class="px-pacman"></div>
+                <div class="px-pellets"></div>
+                <div class="px-pellets"></div>
+                <div class="px-pellets"></div>
+                <div class="px-pellets"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -550,16 +558,27 @@
           <button id="btn-pause" class="arcade-btn small" aria-label="Pause game">PAUSE</button>
           <button id="btn-skip-game" class="arcade-btn small secondary">SKIP THE GAME</button>
 
-          <!-- Arrow-keys hint: tells the player the game is controlled with the keyboard.
-               Arrows are identical CSS chevrons (rotated), so all four match visually. -->
+          <!-- Movement-keys hint: tells the player the game accepts both the
+               arrow keys and WASD. The two clusters overlap in the same spot
+               and cross-fade via CSS animation (see .keys-cluster rules). -->
           <div class="game-keys-hint" id="game-keys-hint">
             <span class="keys-hint-label">MOVE</span>
-            <div class="keys-cluster">
-              <kbd class="key-cap"><span class="key-arrow arrow-up"></span></kbd>
-              <div class="keys-row">
-                <kbd class="key-cap"><span class="key-arrow arrow-left"></span></kbd>
-                <kbd class="key-cap"><span class="key-arrow arrow-down"></span></kbd>
-                <kbd class="key-cap"><span class="key-arrow arrow-right"></span></kbd>
+            <div class="keys-cluster-wrap">
+              <div class="keys-cluster arrows-cluster">
+                <kbd class="key-cap"><span class="key-arrow arrow-up"></span></kbd>
+                <div class="keys-row">
+                  <kbd class="key-cap"><span class="key-arrow arrow-left"></span></kbd>
+                  <kbd class="key-cap"><span class="key-arrow arrow-down"></span></kbd>
+                  <kbd class="key-cap"><span class="key-arrow arrow-right"></span></kbd>
+                </div>
+              </div>
+              <div class="keys-cluster wasd-cluster">
+                <kbd class="key-cap key-letter">W</kbd>
+                <div class="keys-row">
+                  <kbd class="key-cap key-letter">A</kbd>
+                  <kbd class="key-cap key-letter">S</kbd>
+                  <kbd class="key-cap key-letter">D</kbd>
+                </div>
               </div>
             </div>
           </div>
@@ -728,7 +747,7 @@
     <div id="shopping-bag-drawer" class="shopping-bag-drawer arcade-mode">
       <div class="scanlines"></div>
       
-      <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #222;">
+      <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid rgba(0, 59, 255, 0.4);">
         <span class="drawer-title" style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; color: var(--pacman-yellow);"><img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="drawer-uniqlo-logo">// YOUR BAG</span>
         <button id="btn-close-bag" class="wahba-btn small" style="padding: 5px 12px; font-size: 0.8rem;">CLOSE ✕</button>
       </div>
@@ -746,7 +765,7 @@
         </div>
       </div>
       
-      <div class="drawer-footer" style="padding: 20px; border-top: 1px solid #222; background: #080808; display: flex; flex-direction: column; gap: 15px;">
+      <div class="drawer-footer" style="padding: 20px; border-top: 1px solid rgba(0, 59, 255, 0.4); background: #080808; display: flex; flex-direction: column; gap: 15px;">
         <div class="price-summary-row" style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #888;">
           <span>SUBTOTAL</span>
           <span id="cart-subtotal-val">$0.00</span>
@@ -1000,7 +1019,7 @@
   <!-- CRT TELEVISION OVERLAY (Hidden by default, activated after cabinet zoom) -->
   <div id="crt-overlay"></div>
 
-  <script type="module" src="arcade.js?v=13"></script>
+  <script type="module" src="arcade.js?v=17"></script>
   <script src="script.js?v=17"></script>
 </body>
 

@@ -113,18 +113,22 @@ body, html {
 }
 
 /* ── Main Header v2 ── */
+/* Transparent, floats over the hero's top edge — same treatment as the real
+   UNIQLO homepage header. It sits OUTSIDE .uq-page-body (the only scrolling
+   element), so it never moves while the page scrolls; the negative margin
+   pulls the hero section (which follows right after) up underneath it,
+   producing the overlap without needing absolute/fixed positioning (which
+   would either scroll away with the hero or require extra offset math). */
 .uq-header-v2 {
   display: flex;
   align-items: center;
   gap: 0;
   padding: 0 24px;
-  border-bottom: 1px solid #e8e8e8;
-  background: #fff;
+  background: transparent;
   height: 56px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  margin-bottom: -56px;
+  position: relative;
+  z-index: 50;
 }
 
 /* Logo area: red block + hidden pac-man */
@@ -143,6 +147,19 @@ body, html {
   cursor: default;
   position: relative;
   z-index: 2;
+}
+
+.uq-logo-img {
+  width: 56px;
+  height: 56px;
+  display: block;
+}
+
+/* Combined JP mark + wordmark reference photo — wide rectangle, sized by
+   height with width following its natural aspect ratio (~2.2:1). */
+.uq-logo-combined {
+  width: auto;
+  height: 46px;
 }
 
 /* Pac-Man easter egg — transparent 70px click hit-box containing Pac-Man SVG */
@@ -281,7 +298,7 @@ body, html {
 /* ── Hero Banner ── */
 .uq-hero-v2 {
   position: relative;
-  height: calc(100vh - 88px); /* full viewport minus header + utility bar */
+  height: calc(100vh - 32px); /* full viewport minus utility bar — the header now floats over the hero itself, no longer subtracted */
   min-height: 520px;
   max-height: 780px;
   overflow: hidden;
@@ -295,27 +312,21 @@ body, html {
   inset: 0;
 }
 
+/* Bright, light campaign banner — real UNIQLO heroes are high-key studio
+   photography, not dark/moody gradients. Recreated here as a clean warm
+   neutral backdrop (no scraped imagery) with a soft Pac-Man silhouette as
+   the only nod to the collab, kept subtle enough to read as UNIQLO first. */
 .uq-hero-gradient {
-  background:
-    linear-gradient(
-      105deg,
-      #0a0a0a 0%,
-      #1a0a00 20%,
-      #2d0d0d 40%,
-      #1a1a3e 70%,
-      #050520 100%
-    );
+  background: linear-gradient(115deg, #f7f3ec 0%, #f1ece2 45%, #ece5d6 100%);
 }
 
-/* Subtle pac-man maze pattern overlay */
 .uq-hero-gradient::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle at 15% 30%, rgba(255,212,59,0.06) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(230,0,18,0.08) 0%, transparent 35%),
-    radial-gradient(circle at 50% 80%, rgba(0,59,255,0.05) 0%, transparent 40%);
+  background-image: radial-gradient(circle at 82% 45%, rgba(255, 212, 59, 0.5) 0%, transparent 38%);
+  -webkit-mask-image: radial-gradient(circle at 82% 45%, #000 0%, transparent 42%);
+          mask-image: radial-gradient(circle at 82% 45%, #000 0%, transparent 42%);
 }
 
 .uq-hero-content {
@@ -323,14 +334,14 @@ body, html {
   z-index: 10;
   padding: 0 80px 80px;
   max-width: 700px;
-  color: #fff;
+  color: #111;
 }
 
 .uq-hero-eyebrow {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 3px;
-  color: rgba(255,255,255,0.55);
+  color: #b03a3a;
   margin-bottom: 20px;
   text-transform: uppercase;
 }
@@ -341,13 +352,13 @@ body, html {
   line-height: 0.95;
   letter-spacing: -2px;
   margin-bottom: 24px;
-  color: #fff;
+  color: #111;
 }
 
 .uq-hero-desc {
   font-size: 15px;
   line-height: 1.65;
-  color: rgba(255,255,255,0.7);
+  color: #555;
   margin-bottom: 36px;
   max-width: 480px;
 }
@@ -378,8 +389,8 @@ body, html {
 
 .uq-btn-ghost {
   background: transparent;
-  color: #fff;
-  border: 1.5px solid rgba(255,255,255,0.45);
+  color: #111;
+  border: 1.5px solid rgba(17,17,17,0.35);
   padding: 14px 32px;
   font-size: 13px;
   font-weight: 600;
@@ -390,13 +401,13 @@ body, html {
 }
 
 .uq-btn-ghost:hover {
-  border-color: #fff;
-  background: rgba(255,255,255,0.08);
+  border-color: #111;
+  background: rgba(17,17,17,0.05);
 }
 
 .uq-hero-deco {
   position: absolute;
-  top: 40px;
+  top: 76px; /* below the transparent header (56px) now overlaid on the hero */
   right: 60px;
   z-index: 10;
 }
@@ -660,12 +671,23 @@ body, html {
   border-radius: 8px;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
+  gap: 44px;
   padding: 32px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.px-ghost-row {
+  display: flex;
+  gap: 20px;
+}
+
+.px-chase-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 /* Mini pixel ghosts in the UT editorial */
@@ -694,12 +716,13 @@ body, html {
 .orange-g{ background: #FFB852; color: #FFB852; }
 
 .px-pacman {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   background: #FFD43B;
   border-radius: 50%;
-  clip-path: polygon(50% 50%, 100% 15%, 100% 85%);
+  clip-path: polygon(50% 50%, 100% 12%, 100% 88%);
   flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(255, 212, 59, 0.5);
 }
 
 .px-pellets {
@@ -940,8 +963,14 @@ body, html {
   animation: crt-flicker 0.15s infinite;
 }
 
-/* Reduced CRT effect for selection screen - no bezel overlap, full bleed visibility */
+/* Reduced CRT effect for selection screen and View Item - no bezel overlap,
+   full bleed visibility. animation: none is required here: #crt-overlay.active
+   runs a flicker animation that keyframes `opacity` itself (0.52-0.58), and a
+   running CSS animation always wins over a plain declaration on the same
+   property — without this override the flicker silently cancels out the
+   lighter opacity below and the screen stays at ~55% darkness regardless. */
 #crt-overlay.reduced-crt {
+  animation: none;
   opacity: 0.14;
   box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.4);
   border-radius: 0;
@@ -1329,11 +1358,36 @@ html:has(.screen.arcade-mode.active) {
   color: #888;
 }
 
+/* Fixed footprint (3 keys wide, 2 rows tall) so the arrows cluster and the
+   WASD cluster — same shape — can sit exactly on top of each other. */
+.keys-cluster-wrap {
+  position: relative;
+  width: 100px;
+  height: 65px;
+}
+
 .keys-cluster {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
+  /* Cross-fade loop, no JS: ~1.5s shown, brief fade, ~1.5s hidden, fade back.
+     The WASD cluster runs the exact same keyframes with a negative delay of
+     half the duration, so it is always the mirror image of the arrows. */
+  animation: keys-cluster-fade 3.6s ease-in-out infinite;
+}
+
+.wasd-cluster {
+  animation-delay: -1.8s;
+}
+
+@keyframes keys-cluster-fade {
+  0%, 41%  { opacity: 1; }
+  50%      { opacity: 0; }
+  91%      { opacity: 0; }
+  100%     { opacity: 1; }
 }
 
 .keys-row {
@@ -1366,15 +1420,36 @@ html:has(.screen.arcade-mode.active) {
 .arrow-down  { transform: rotate(135deg) translate(1px, -1px); }
 .arrow-left  { transform: rotate(-135deg) translate(1px, 1px); }
 
+/* WASD letters — same pixel font family used across the arcade UI */
+.key-letter {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--pacman-yellow);
+  line-height: 1;
+}
+
 @keyframes keys-hint-pulse {
   0%, 100% { border-color: #3a3a42; }
   50%      { border-color: var(--pacman-yellow); }
 }
 
-/* After the first arrow press the hint stops pulsing and fades back */
+/* After the first W/A/S/D or arrow press, freeze on the arrows (the state
+   the player already learned) and dim the whole hint back. */
 .game-keys-hint.used {
   opacity: 0.3;
   transition: opacity 0.6s ease;
+}
+
+.game-keys-hint.used .keys-cluster {
+  animation: none;
+}
+
+.game-keys-hint.used .arrows-cluster {
+  opacity: 1;
+}
+
+.game-keys-hint.used .wasd-cluster {
+  opacity: 0;
 }
 
 .game-keys-hint.used .key-cap {
@@ -1592,7 +1667,7 @@ html:has(.screen.arcade-mode.active) {
 /* Back button on the collection screen (same action as ESC) */
 .collection-back-btn {
   background: transparent;
-  border: 1px solid #444;
+  border: 1px solid var(--maze-blue);
   color: #ccc;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -1727,7 +1802,7 @@ html:has(.screen.arcade-mode.active) {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border: 3px solid #223;
+  border: 3px solid rgba(0, 59, 255, 0.4);
   background: rgba(1, 2, 8, 0.9);
   padding: 30px;
   box-sizing: border-box;
@@ -1746,7 +1821,7 @@ html:has(.screen.arcade-mode.active) {
 .arc-list-label {
   font-family: 'Press Start 2P', monospace;
   font-size: 11px;
-  color: #445;
+  color: #5c8fff;
   letter-spacing: 2px;
 }
 
@@ -1762,7 +1837,7 @@ html:has(.screen.arcade-mode.active) {
   align-items: center;
   padding: 20px 24px;
   background: rgba(8, 12, 28, 0.6);
-  border: 2px solid #223;
+  border: 2px solid rgba(0, 59, 255, 0.3);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1783,7 +1858,7 @@ html:has(.screen.arcade-mode.active) {
 }
 
 .arcade-product-item .item-number {
-  color: #556;
+  color: #4d7fd6;
   margin-right: 15px;
   margin-left: 12px;
   transition: color 0.15s ease;
@@ -1796,7 +1871,7 @@ html:has(.screen.arcade-mode.active) {
 
 .arcade-product-item:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: #445;
+  border-color: rgba(0, 59, 255, 0.75);
 }
 
 .arcade-product-item.selected {
@@ -2423,21 +2498,21 @@ html:has(.screen.arcade-mode.active) {
 }
 
 .player-text {
+  font-family: 'Press Start 2P', monospace;
   color: #00ffff;
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: 4px;
+  font-size: 15px;
+  letter-spacing: 3px;
   margin-top: 35px;
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
 }
 
 .ready-text {
+  font-family: 'Press Start 2P', monospace;
   color: var(--pacman-yellow);
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: 4px;
+  font-size: 22px;
+  letter-spacing: 3px;
   margin-top: 15px;
-  text-shadow: 0 0 10px rgba(255, 212, 59, 0.6);
+  text-shadow: 0 0 4px #000, 0 0 4px #000, 0 0 12px rgba(255, 212, 59, 0.7);
   animation: blink 0.3s step-end infinite;
 }
 
@@ -2572,7 +2647,7 @@ html:has(.screen.arcade-mode.active) {
   display: flex;
   flex-direction: column;
   background-color: #050505;
-  border-left: 2px solid #222;
+  border-left: 2px solid rgba(0, 59, 255, 0.5);
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.85);
   transform: translateX(100%);
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -3167,9 +3242,11 @@ html:has(.screen.arcade-mode.active) {
    ARCADE DESIGN SYSTEM - COHESIVE STYLE FOR ALL POST-ARCADE SCREENS
 ========================================= */
 
-/* Typography & Base Variables */
+/* Typography & Base Variables — arcade screens use only the pixel (titles/
+   buttons/HUD) and monospace (body/descriptions) fonts, never the landing's
+   Outfit, so every post-landing screen reads as one coherent system. */
 .arcade-mode, .wahba-shell, .shopping-bag-drawer {
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
 }
 
 /* Headings and labels using Press Start 2P */
@@ -3226,7 +3303,7 @@ html:has(.screen.arcade-mode.active) {
 
 /* Product names in detail and list */
 #item-view-name {
-  font-family: var(--font-body) !important;
+  font-family: var(--font-mono) !important;
   font-size: 22px !important;
   font-weight: 800 !important;
   letter-spacing: 0.5px !important;
@@ -3236,7 +3313,7 @@ html:has(.screen.arcade-mode.active) {
 
 /* Cart item details */
 .cart-item-name {
-  font-family: var(--font-body) !important;
+  font-family: var(--font-mono) !important;
   font-size: 14px !important;
   font-weight: 700 !important;
   color: #fff !important;
@@ -3247,9 +3324,10 @@ html:has(.screen.arcade-mode.active) {
   color: #7f8c8d !important;
 }
 
-/* Cohesive Retro Arcade Button Styling (Applying to ALL Buttons Across the Site) */
-.uq-btn-primary,
-.uq-btn-ghost,
+/* Cohesive Retro Arcade Button Styling — applies only to post-landing arcade
+   screens. The landing page (.uq-btn-primary / .uq-btn-ghost) must keep its
+   clean UNIQLO look (see its own rules near the top of this file) and is
+   deliberately excluded here. */
 .wahba-cta-btn,
 .wahba-btn,
 .arcade-btn,
@@ -3271,73 +3349,72 @@ html:has(.screen.arcade-mode.active) {
   transition: all 0.15s ease !important;
 }
 
-/* Primary Arcade Buttons (Red & Yellow themed key actions) */
-.uq-btn-primary,
+/* Primary Arcade Buttons — dark cabinet body + electric-blue border, with
+   red/yellow reserved as accents (per the arcade reference), not full fills. */
 .wahba-cta-btn,
 .arc-action-btn.primary,
 .arcade-btn.primary {
-  background: var(--uniqlo-red) !important;
-  color: #fff !important;
-  border: 2.5px solid #fff !important;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.85) !important;
+  background: #05070f !important;
+  color: var(--pacman-yellow) !important;
+  border: 2.5px solid var(--maze-blue) !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 59, 255, 0.25) !important;
+  text-shadow: 0 0 6px rgba(255, 212, 59, 0.35) !important;
 }
 
-.uq-btn-primary:hover,
 .wahba-cta-btn:hover,
 .arc-action-btn.primary:hover,
 .arcade-btn.primary:hover {
-  background: #fff !important;
-  color: var(--uniqlo-red) !important;
-  border-color: var(--uniqlo-red) !important;
-  box-shadow: 0 4px 0 rgba(230, 0, 18, 0.4) !important;
+  background: var(--pacman-yellow) !important;
+  color: #000 !important;
+  border-color: var(--pacman-yellow) !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 212, 59, 0.5) !important;
+  text-shadow: none !important;
   transform: translateY(-1.5px) !important;
 }
 
-/* Pac-man yellow primary variant (e.g. landing cta, skip modal confirms) */
-#btn-discover-collection,
+/* Red variant: reserved for alert/secondary-emphasis actions (e.g. the skip
+   confirm, which is framed as giving something up). */
 #btn-skip-confirm,
 #btn-play-from-skip,
 #btn-play-game {
-  background: var(--pacman-yellow) !important;
-  border-color: var(--pacman-yellow) !important;
-  color: #000 !important;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.85) !important;
+  background: #05070f !important;
+  color: var(--uniqlo-red) !important;
+  border-color: var(--uniqlo-red) !important;
+  text-shadow: 0 0 6px rgba(230, 0, 18, 0.35) !important;
 }
 
-#btn-discover-collection:hover,
 #btn-skip-confirm:hover,
 #btn-play-from-skip:hover,
 #btn-play-game:hover {
-  background: #fff !important;
-  border-color: #fff !important;
-  color: #000 !important;
-  box-shadow: 0 4px 0 rgba(255, 255, 255, 0.5) !important;
+  background: var(--uniqlo-red) !important;
+  color: #fff !important;
+  border-color: var(--uniqlo-red) !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.9), 0 0 20px rgba(230, 0, 18, 0.5) !important;
+  text-shadow: none !important;
   transform: translateY(-1.5px) !important;
 }
 
 /* Secondary / Ghost / Back Arcade Buttons */
-.uq-btn-ghost,
 .wahba-btn,
 .arcade-btn.secondary,
 .arc-action-btn.secondary,
 .arcade-btn,
 .arc-action-btn {
-  background: transparent !important;
-  color: #aaa !important;
-  border: 2.5px solid #555 !important;
+  background: #05070f !important;
+  color: #9db3d8 !important;
+  border: 2.5px solid rgba(0, 59, 255, 0.55) !important;
   box-shadow: none !important;
 }
 
-.uq-btn-ghost:hover,
 .wahba-btn:hover,
 .arcade-btn.secondary:hover,
 .arc-action-btn.secondary:hover,
 .arcade-btn:hover,
 .arc-action-btn:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-color: #fff !important;
+  background: rgba(0, 59, 255, 0.12) !important;
+  border-color: var(--maze-blue) !important;
   color: #fff !important;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 12px rgba(0, 59, 255, 0.35) !important;
   transform: translateY(-1.5px) !important;
 }
 
@@ -3345,7 +3422,7 @@ html:has(.screen.arcade-mode.active) {
 .color-btn, .size-btn {
   padding: 8px 16px !important;
   font-size: 11px !important;
-  font-family: var(--font-body) !important;
+  font-family: var(--font-mono) !important;
   min-width: 60px !important;
   border-radius: 4px !important;
   background: rgba(255, 255, 255, 0.03) !important;
@@ -3417,7 +3494,7 @@ html:has(.screen.arcade-mode.active) {
   z-index: 100001; /* above everything, incl. the pacman easter egg (9999) and locked popups (100000) */
   background: var(--bg-arcade);
   color: var(--text-white);
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   display: flex;
   flex-direction: column;
   opacity: 0;
@@ -3463,7 +3540,7 @@ html:has(.screen.arcade-mode.active) {
 
 .checkout-back-btn {
   background: transparent;
-  border: 1px solid #444;
+  border: 1px solid var(--maze-blue);
   color: #ccc;
   font-family: var(--font-mono);
   font-size: 0.8rem;
@@ -3560,7 +3637,7 @@ html:has(.screen.arcade-mode.active) {
 }
 
 .checkout-section {
-  border: 1px solid #222;
+  border: 1px solid rgba(0, 59, 255, 0.3);
   border-radius: 8px;
   background: #0a0a0e;
   padding: 20px 20px 22px;
@@ -3609,9 +3686,9 @@ html:has(.screen.arcade-mode.active) {
 
 .form-input {
   background: #14141a;
-  border: 1.5px solid #333;
+  border: 1.5px solid rgba(0, 59, 255, 0.35);
   color: var(--text-white);
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: 0.95rem;
   padding: 11px 13px;
   border-radius: 5px;
@@ -3641,7 +3718,7 @@ select.form-input {
 .form-error {
   display: block;
   min-height: 15px;
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 600;
   color: #ff6b6b;
@@ -3660,7 +3737,7 @@ select.form-input {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1.5px solid #2a2a32;
+  border: 1.5px solid rgba(0, 59, 255, 0.3);
   background: #101015;
   border-radius: 6px;
   padding: 13px 16px;
@@ -3669,7 +3746,7 @@ select.form-input {
 }
 
 .option-card:hover {
-  border-color: #555;
+  border-color: rgba(0, 59, 255, 0.7);
 }
 
 .option-card input[type="radio"] {
@@ -3859,23 +3936,27 @@ select.form-input {
   font-family: var(--font-pixel);
   font-size: 0.85rem;
   letter-spacing: 2px;
-  color: #fff;
-  background: var(--uniqlo-red);
-  border: none;
+  color: var(--pacman-yellow);
+  background: #05070f;
+  border: 2.5px solid var(--maze-blue);
   border-radius: 5px;
   cursor: pointer;
-  box-shadow: 0 0 18px rgba(230, 0, 18, 0.45);
+  box-shadow: 0 0 18px rgba(0, 59, 255, 0.3);
+  text-shadow: 0 0 6px rgba(255, 212, 59, 0.35);
   transition: all 0.2s;
 }
 
 .checkout-primary-btn:hover:not(:disabled) {
-  box-shadow: 0 0 28px rgba(230, 0, 18, 0.85);
+  background: var(--pacman-yellow);
+  color: #000;
+  text-shadow: none;
+  box-shadow: 0 0 28px rgba(255, 212, 59, 0.55);
   transform: translateY(-2px);
 }
 
 .checkout-primary-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 0 14px rgba(230, 0, 18, 0.5);
+  box-shadow: 0 0 14px rgba(255, 212, 59, 0.4);
 }
 
 .checkout-primary-btn:disabled {
@@ -4065,9 +4146,9 @@ select.form-input {
   position: absolute;
   bottom: 18px;
   right: 18px;
-  width: 34px;
+  width: 42px;
   height: auto;
-  opacity: 0.72;
+  opacity: 0.88;
   z-index: 60;
   pointer-events: none;
   user-select: none;

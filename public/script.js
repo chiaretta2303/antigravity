@@ -46,6 +46,7 @@ loadProgress();
 
 let startGameTimeout = null;
 let startBlinkInterval = null;
+let currentReadyAudio = null;
 
 // DOM Elements
 const screens = {
@@ -124,6 +125,17 @@ let pacmanMouthAngle = 20;
 let pacmanChompDir = 1;
 let pacmanWalkingLoopActive = true;
 let pacmanDirFrameCounter = 0;
+// Guards against starting a second concurrent requestAnimationFrame chain:
+// if the walking loop is (re)started while an earlier chain never actually
+// stopped (e.g. the user skipped the experience, so it never hit its own
+// "3 clicks" exit), two loops would both advance pacmanX/pacmanY every
+// frame, silently doubling the walk speed.
+let pacmanLoopRunning = false;
+function startPacmanWalkingLoop() {
+  if (pacmanLoopRunning) return;
+  pacmanLoopRunning = true;
+  requestAnimationFrame(updatePacmanEasterEgg);
+}
 
 function changePacmanRandomDirection() {
   const directions = [
@@ -165,7 +177,7 @@ function changePacmanRandomDirection() {
 }
 
 function updatePacmanEasterEgg() {
-  if (!pacmanWalkingLoopActive) return;
+  if (!pacmanWalkingLoopActive) { pacmanLoopRunning = false; return; }
 
   const egg = document.getElementById('pacman-easter-egg');
   if (!egg) {
@@ -323,7 +335,7 @@ if (easterEgg) {
   });
 
   // Launch update loop
-  requestAnimationFrame(updatePacmanEasterEgg);
+  startPacmanWalkingLoop();
 }
 
 // =========================================
@@ -527,7 +539,7 @@ function startReverseTransition() {
         const hintLbl = egg.querySelector('.pacman-click-label');
         if (hintLbl) hintLbl.textContent = 'CLICK ME (3)';
       }
-      requestAnimationFrame(updatePacmanEasterEgg);
+      startPacmanWalkingLoop();
     }
   }
 
@@ -1573,19 +1585,27 @@ function startGame() {
   }
 
   ensureAudio();
-  SFX.ready();
 
-  // READY blinks while the start jingle plays, then game starts.
+  // READY blinks while the intro plays, then game starts. Ghosts stay in
+  // 'waiting' state and handleInput isn't attached yet, so nothing can move
+  // or collide during this whole phase — see beginGameplay() below.
   let blink = 0;
   clearInterval(startBlinkInterval);
   startBlinkInterval = setInterval(() => {
     if (readyOverlay) readyOverlay.style.opacity = (++blink % 2) ? '0.3' : '1';
   }, 300);
 
-  clearTimeout(startGameTimeout);
-  startGameTimeout = setTimeout(() => {
+  // Runs exactly once, whichever fires first: the real intro track ending,
+  // or the fallback timer (audio blocked/missing/failed to decode).
+  let readyDone = false;
+  const beginGameplay = () => {
+    if (readyDone) return;
+    readyDone = true;
+
     clearInterval(startBlinkInterval);
     startBlinkInterval = null;
+    clearTimeout(startGameTimeout);
+    startGameTimeout = null;
     if (readyOverlay) {
       readyOverlay.classList.add('hidden');
       readyOverlay.style.opacity = '';
@@ -1597,7 +1617,31 @@ function startGame() {
     gameInterval = setInterval(gameLoop, TICK_MS);
     cancelAnimationFrame(renderId);
     renderId = requestAnimationFrame(renderLoop);
-  }, 3000);
+  };
+
+  // Fallback: guarantees gameplay always starts even if the intro track
+  // can't play (missing file, decode error, autoplay blocked). The real
+  // track is ~5.2s, so this is set well past that — it should only ever
+  // fire on a genuine failure, not cut the intro short.
+  clearTimeout(startGameTimeout);
+  startGameTimeout = setTimeout(() => {
+    if (currentReadyAudio) currentReadyAudio.pause();
+    beginGameplay();
+  }, 8000);
+
+  // Real READY intro track — plays once, moderate volume. By the time we
+  // reach this screen the player has already clicked through the cabinet /
+  // press-start flow, so autoplay is allowed; play().catch() covers the
+  // rare case where it still isn't.
+  try {
+    const readyAudio = new Audio('/assets/audio/pacman-ready-intro.mp3.mp3');
+    readyAudio.volume = 0.65;
+    readyAudio.loop = false;
+    readyAudio.addEventListener('ended', beginGameplay, { once: true });
+    readyAudio.addEventListener('error', () => {}, { once: true }); // fallback timer covers it
+    readyAudio.play().catch(() => { /* autoplay blocked — fallback timer covers it */ });
+    currentReadyAudio = readyAudio;
+  } catch (_) { /* fallback timer covers it */ }
 }
 
 function stopGame() {
@@ -1610,6 +1654,13 @@ function stopGame() {
   startGameTimeout = null;
   clearInterval(startBlinkInterval);
   startBlinkInterval = null;
+
+  // If the READY intro track was still playing (user left/skipped mid-intro),
+  // stop it so it doesn't keep playing over other screens.
+  if (currentReadyAudio) {
+    currentReadyAudio.pause();
+    currentReadyAudio = null;
+  }
 
   document.removeEventListener('keydown', handleInput);
   clearPauseState();
@@ -1629,10 +1680,13 @@ document.addEventListener('visibilitychange', () => {
 function handleInput(e) {
   if (e.key === 'p' || e.key === 'P') { togglePause(); e.preventDefault(); return; }
   if (isPaused) return; // ignore movement input while paused
-  if (e.key === 'ArrowUp') pacman.nextDir = { r: -1, c: 0 };
-  if (e.key === 'ArrowDown') pacman.nextDir = { r: 1, c: 0 };
-  if (e.key === 'ArrowLeft') pacman.nextDir = { r: 0, c: -1 };
-  if (e.key === 'ArrowRight') pacman.nextDir = { r: 0, c: 1 };
+  const key = e.key.toLowerCase();
+  // WASD is a plain alternative to the arrow keys — same nextDir buffering,
+  // same tile-based movement, no new logic path.
+  if (e.key === 'ArrowUp' || key === 'w') pacman.nextDir = { r: -1, c: 0 };
+  if (e.key === 'ArrowDown' || key === 's') pacman.nextDir = { r: 1, c: 0 };
+  if (e.key === 'ArrowLeft' || key === 'a') pacman.nextDir = { r: 0, c: -1 };
+  if (e.key === 'ArrowRight' || key === 'd') pacman.nextDir = { r: 0, c: 1 };
   if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
       e.preventDefault();
   }
@@ -2061,7 +2115,8 @@ function drawFrightenedFace(ctx, x, y, r, bodyColor) {
 // Arrow-keys hint: pulse only until the player presses the first arrow,
 // then dim it — they clearly got how to play.
 const keysHintFirstInput = (e) => {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+  const key = e.key.toLowerCase();
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
     document.getElementById('game-keys-hint')?.classList.add('used');
     document.removeEventListener('keydown', keysHintFirstInput);
   }
@@ -2878,11 +2933,11 @@ function openItemView(productId) {
   // Cleanup active WebGL shop selection preview before opening the modal detailed view
   closeProductViewer();
 
-  // Make the CRT overlay stronger for the focused item detail view
-  const crt = document.getElementById('crt-overlay');
-  if (crt) {
-    crt.classList.remove('reduced-crt');
-  }
+  // Keep the CRT overlay in its lighter "reduced" state (already active from
+  // the collection screen) instead of the full-strength version: at full
+  // strength the vignette/scanlines/flicker visibly darken and blur the
+  // product itself, not just the surrounding UI. The arcade mood stays in
+  // the background/frame; the product preview stays sharp and readable.
 
   currentViewItem = item;
   

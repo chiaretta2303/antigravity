@@ -99,7 +99,7 @@ const ENTRANCE_VIEW = {
 // Extra yaw (degrees, world Y axis) applied to the Pac-Man cabinet on load
 // so it faces the camera more frontally. Code-only fix, GLB untouched.
 // Tuned empirically via live screenshots at the 'pacman' tour point.
-const PACMAN_CABINET_YAW_DEG = 6;
+const PACMAN_CABINET_YAW_DEG = 6.8;
 
 const CLICKABLE_KEYWORDS = {
   pacman: ['pac'],
@@ -617,8 +617,47 @@ function enterScreen() {
   const pos    = new THREE.Vector3(1.35, 1.55, -1.2);
   const target = new THREE.Vector3(2.20, 1.00, -1.2);
   const WALK   = 3.2;
-  
+
   moveCamera(pos, target, WALK);
+
+  // Runs exactly once, whichever fires first: the real gsap fade-to-black
+  // completing, or the fallback timer below. Without this guard, a player
+  // who tabs away (or any other rAF hiccup) mid-walk can strand the gsap
+  // tween indefinitely — rAF-driven tweens don't advance on a backgrounded
+  // tab — leaving the red Press Start button stuck behind a black screen
+  // with no way forward. Same "readyDone" pattern used in startGame().
+  let enteredDone = false;
+  const finishEnterScreen = () => {
+    if (enteredDone) return;
+    enteredDone = true;
+    clearTimeout(enterScreenFallback);
+
+    // Show red press-start button → user clicks → code explosion → ghost intro → gameplay
+    if (typeof window.showPressStartButton === 'function') {
+      window.showPressStartButton();
+    } else if (typeof window.transitionFromArcadeToGameStart === 'function') {
+      window.transitionFromArcadeToGameStart();
+    }
+
+    // Clean up local listeners to prevent leaks
+    window.removeEventListener('click', onCanvasClick);
+    window.removeEventListener('mousemove', onCanvasMouseMove);
+    window.removeEventListener('resize', onResize);
+
+    // Stop the 3D room render loop: it would otherwise keep rendering the
+    // heavy scene at 60fps behind the gameplay, stealing frames from the
+    // Pac-Man game (visible as stutter in its first seconds).
+    cancelAnimationFrame(arcadeAnimationId);
+    arcadeAnimationId = null;
+
+    // Reset fade so the room can be reloaded later if needed
+    gsap.set(blackFade, { opacity: 0 });
+  };
+
+  // Fallback: guarantees the player always reaches Press Start even if the
+  // fade tween never completes. Set comfortably past the real WALK + delay
+  // + fade duration (~4.6s), so it should only ever fire on a genuine stall.
+  const enterScreenFallback = setTimeout(finishEnterScreen, (WALK + 0.2 + 1.2) * 1000 + 2000);
 
   gsap.killTweensOf(blackFade);
   gsap.set(blackFade, { opacity: 0 });
@@ -627,28 +666,7 @@ function enterScreen() {
     duration:   1.2,
     delay:      WALK + 0.2, // was +0.7 — shorter hold once the camera stops
     ease:       'power2.inOut',
-    onComplete: () => {
-      // Show red press-start button → user clicks → code explosion → ghost intro → gameplay
-      if (typeof window.showPressStartButton === 'function') {
-        window.showPressStartButton();
-      } else if (typeof window.transitionFromArcadeToGameStart === 'function') {
-        window.transitionFromArcadeToGameStart();
-      }
-      
-      // Clean up local listeners to prevent leaks
-      window.removeEventListener('click', onCanvasClick);
-      window.removeEventListener('mousemove', onCanvasMouseMove);
-      window.removeEventListener('resize', onResize);
-
-      // Stop the 3D room render loop: it would otherwise keep rendering the
-      // heavy scene at 60fps behind the gameplay, stealing frames from the
-      // Pac-Man game (visible as stutter in its first seconds).
-      cancelAnimationFrame(arcadeAnimationId);
-      arcadeAnimationId = null;
-
-      // Reset fade so the room can be reloaded later if needed
-      gsap.set(blackFade, { opacity: 0 });
-    },
+    onComplete: finishEnterScreen,
   });
 }
 
