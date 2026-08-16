@@ -10,7 +10,7 @@ import gsap                                  from 'gsap';
    GLOBAL STATE VARIABLES
    ========================================================== */
 let canvas, hint, infoCard, infoCardClose, infoCardNumber, infoCardTitle, infoCardDesc;
-let navPrev, navNext, navTitle, entranceBtn, debugPanel, debugName, debugCam, debugTarget;
+let navTitle, entranceBtn, debugPanel, debugName, debugCam, debugTarget;
 let DEBUG = false;
 let FREECAM = false;
 let pixelRatioLimit = 1.3;
@@ -157,8 +157,6 @@ function initScene() {
   infoCardNumber = document.querySelector('#info-card-number');
   infoCardTitle  = document.querySelector('#info-card-title');
   infoCardDesc   = document.querySelector('#info-card-description');
-  navPrev        = document.querySelector('#nav-prev');
-  navNext        = document.querySelector('#nav-next');
   navTitle       = document.querySelector('#btn-return-entrance');
   entranceBtn    = document.querySelector('#btn-return-entrance');
   debugPanel     = document.querySelector('#debug-panel');
@@ -347,8 +345,13 @@ function initScene() {
       createHotspots();
 
       const promptEl = document.createElement('div');
+      // NOTE: intentionally NOT sharing the .arcade-btn class here — Three.js
+      // (CSS2DRenderer) drives this element's inline `transform` every frame
+      // to track its 3D position, and .arcade-btn's hover/transition rules
+      // touch `transform`/`transition:all`, which fights that positioning.
+      // .screen-prompt below duplicates the same Primary token values instead.
       promptEl.className   = 'screen-prompt';
-      promptEl.textContent = '▶ CLICK TO ENTER';
+      promptEl.textContent = '> CLICK TO ENTER';
       promptEl.addEventListener('click', (e) => { e.stopPropagation(); enterScreen(); });
       pacmanPrompt = new CSS2DObject(promptEl);
       const pacPt = TOUR_POINTS.find(p => p.id === 'pacman');
@@ -396,8 +399,7 @@ function initScene() {
 
   // Navigation Panel Listeners
   infoCardClose.addEventListener('click', () => infoCard.classList.add('hidden'));
-  navPrev.addEventListener('click', onNavPrevClick);
-  navNext.addEventListener('click', onNavNextClick);
+  renderRoomDots();
   if (entranceBtn) {
     entranceBtn.addEventListener('click', goToEntrance);
   }
@@ -487,6 +489,7 @@ function goToPoint(index) {
   updateInfoCard(point);
   updateBottomBar(point);
   updateActiveMarker(index);
+  updateRoomDots(index);
   if (pacmanPrompt) pacmanPrompt.visible = (point.id === 'pacman');
 
   if (DEBUG) {
@@ -507,18 +510,11 @@ function updateBottomBar(point) {
   // navTitle.textContent = point.title;
 }
 
-function onNavPrevClick() {
-  goToPoint(currentPointIndex <= 0 ? TOUR_POINTS.length - 1 : currentPointIndex - 1);
-}
-
-function onNavNextClick() {
-  goToPoint(currentPointIndex >= TOUR_POINTS.length - 1 ? 0 : currentPointIndex + 1);
-}
-
 function goToEntrance() {
   moveCamera(ENTRANCE_VIEW.cameraPosition, ENTRANCE_VIEW.cameraTarget, 1.6);
   infoCard.classList.add('hidden');
   updateActiveMarker(-1);
+  updateRoomDots(-1);
   if (pacmanPrompt) pacmanPrompt.visible = false;
   // navTitle.textContent = 'Explore the arcade';
   currentPointIndex    = -1;
@@ -528,6 +524,30 @@ window.goToEntrance3D = goToEntrance;
 function updateActiveMarker(activeIndex) {
   document.querySelectorAll('.hotspot-marker').forEach((el, i) => {
     el.classList.toggle('active', i === activeIndex);
+  });
+}
+
+/* ==========================================================
+   ROOM DOTS — position indicator + direct jump, replaces the
+   prev/next arrows so this control never reads as "back"
+   ========================================================== */
+function renderRoomDots() {
+  const wrap = document.querySelector('#room-dots');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  TOUR_POINTS.forEach((point, i) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'room-dot';
+    dot.setAttribute('aria-label', point.title);
+    dot.addEventListener('click', () => goToPoint(i));
+    wrap.appendChild(dot);
+  });
+}
+
+function updateRoomDots(activeIndex) {
+  document.querySelectorAll('.room-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === activeIndex);
   });
 }
 

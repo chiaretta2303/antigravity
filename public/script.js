@@ -933,15 +933,23 @@ document.getElementById('btn-play-game')?.addEventListener('click', () => {
   });
 });
 
-document.getElementById('btn-back-to-uniqlo')?.addEventListener('click', () => {
-  // Reset the 3D arcade camera if the scene is live (safe no-op otherwise),
-  // then run the reverse page-regeneration transition directly. No proxy
-  // click on #back-uniqlo-btn: its listener only exists after the arcade
-  // scene has initialized, which made this button silently do nothing.
-  if (typeof window.goToEntrance3D === 'function') {
-    try { window.goToEntrance3D(); } catch (_) { /* scene not initialized */ }
+document.getElementById('btn-back-to-press-start')?.addEventListener('click', () => {
+  // True "one step back": replays the Press Start screen exactly like the
+  // first arrival from the arcade room (showPressStartButton() is designed
+  // to be safely re-entrant, see its own comment).
+  showPressStartButton();
+});
+
+document.getElementById('btn-press-start-back')?.addEventListener('click', () => {
+  // True "one step back" into the 3D arcade room: initArcadeExperience()
+  // is already built to resume a previously-initialized scene (restarts
+  // the render loop, re-attaches listeners, resets the camera) rather than
+  // reloading it from scratch — see its own "Restart the render loop..."
+  // comment. This is the same call the forward transition itself uses.
+  showScreen('arcadeReveal');
+  if (typeof window.initArcadeExperience === 'function') {
+    window.initArcadeExperience();
   }
-  startReverseTransition();
 });
 
 document.getElementById('btn-close-popup')?.addEventListener('click', () => {
@@ -1111,9 +1119,9 @@ const SFX = {
 // covers buttons added at any time without per-button wiring.
 const UI_INTERACTIVE_SELECTOR = [
   'button',
-  '.arcade-btn', '.arcade-img-button',
+  '.arcade-btn', '.arcade-icon-btn', '.arcade-img-button',
   '.uq-tab', '.uq-icon-btn', '.uq-btn-primary', '.uq-btn-ghost',
-  '.wahba-btn', '.wahba-cta-btn',
+  '.wahba-btn',
   '[role="button"]',
   '#pacman-easter-egg', // landing-page hidden Pac-Man (only sound source on landing)
 ].join(', ');
