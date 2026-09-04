@@ -18,6 +18,7 @@
   --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-pixel: 'Press Start 2P', monospace;
   --font-mono: 'Share Tech Mono', monospace;
+  --font-uniqlo: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 
   /* Font Size Scale */
   --size-hero: 42px;
@@ -516,228 +517,6 @@ body, html {
   max-width: 100px;
 }
 
-/* ── Promo grid (2-col) ── */
-.uq-promo-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  margin-top: 0;
-}
-
-.uq-promo-tile {
-  position: relative;
-  height: 420px;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-}
-
-.uq-promo-bg {
-  position: absolute;
-  inset: 0;
-}
-
-.uq-promo-body {
-  position: relative;
-  z-index: 5;
-  padding: 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.uq-promo-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.6);
-}
-
-.uq-promo-title {
-  font-size: 2rem;
-  font-weight: 800;
-  line-height: 1.15;
-  color: #fff;
-  letter-spacing: -0.5px;
-}
-
-.uq-promo-price {
-  font-size: 13px;
-  color: rgba(255,255,255,0.6);
-}
-
-/* Small promo-tile CTA — one shared shape, two contrast modifiers so it
-   reads clearly against either a light or a dark tile photo. */
-.uq-btn-sm {
-  margin-top: 8px;
-  border: none;
-  padding: 10px 24px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  cursor: pointer;
-  align-self: flex-start;
-  font-family: inherit;
-  transition: background 0.2s;
-}
-
-.uq-btn-sm.white {
-  background: #fff;
-  color: #111;
-}
-
-.uq-btn-sm.white:hover {
-  background: #f0f0f0;
-}
-
-.uq-btn-sm.dark {
-  background: #111;
-  color: #fff;
-}
-
-.uq-btn-sm.dark:hover {
-  background: #333;
-}
-
-/* ── UT × Pac-Man editorial ── */
-.uq-ut-editorial {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 0;
-  padding: 100px 80px;
-  background: #fff;
-  border-top: 1px solid #f0f0f0;
-}
-
-.uq-ut-left {
-  max-width: 480px;
-}
-
-.uq-ut-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  color: #E60012;
-  margin-bottom: 20px;
-  text-transform: uppercase;
-}
-
-.uq-ut-title {
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -1px;
-  color: #111;
-  margin-bottom: 24px;
-}
-
-.uq-ut-desc {
-  font-size: 15px;
-  color: #555;
-  line-height: 1.7;
-  margin-bottom: 32px;
-}
-
-.uq-ut-prices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px 24px;
-}
-
-.uq-ut-price-item {
-  font-size: 13px;
-  color: #666;
-}
-
-.uq-ut-price-item strong {
-  color: #111;
-}
-
-/* Pixel art decorative right panel */
-.uq-ut-right {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 320px;
-}
-
-.uq-pixel-grid {
-  position: relative;
-  width: 300px;
-  height: 260px;
-  background: #0a0a0a;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 44px;
-  padding: 32px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-}
-
-.px-ghost-row {
-  display: flex;
-  gap: 20px;
-}
-
-.px-chase-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-/* Mini pixel ghosts in the UT editorial */
-.px-ghost {
-  width: 32px;
-  height: 36px;
-  border-radius: 16px 16px 0 0;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.px-ghost::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  width: 100%;
-  height: 8px;
-  background-image: radial-gradient(circle at 25% 100%, transparent 5px, currentColor 5px);
-  background-size: 33.33% 100%;
-}
-
-.red-g   { background: #FF0000; color: #FF0000; }
-.pink-g  { background: #FFB8FF; color: #FFB8FF; }
-.cyan-g  { background: #00FFFF; color: #00FFFF; }
-.orange-g{ background: #FFB852; color: #FFB852; }
-
-.px-pacman {
-  width: 40px;
-  height: 40px;
-  background: #FFD43B;
-  border-radius: 50%;
-  clip-path: polygon(50% 50%, 100% 12%, 100% 88%);
-  flex-shrink: 0;
-  box-shadow: 0 0 10px rgba(255, 212, 59, 0.5);
-}
-
-.px-pellets {
-  width: 8px;
-  height: 8px;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 8px #fff;
-  flex-shrink: 0;
-  animation: pellet-blink 1s step-end infinite;
-}
-
-@keyframes pellet-blink {
-  50% { opacity: 0; }
-}
 
 /* ── Service strip ── */
 .uq-banner-strip {
@@ -1683,38 +1462,47 @@ html:has(.screen.arcade-mode.active) {
 }
 
 /* Retro Blocky Cart Icon Container */
+/* Il carrello è un Icon Button come tutti gli altri: stessa scatola 40x40,
+   stesso bordo blu, stesso hover a riempimento giallo. Prima aveva un bordo
+   rosa #ff0055 che non esisteva da nessun'altra parte nel sistema. */
 .arcade-cart-btn-container {
   position: relative;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #000;
-  border: 3px solid #ff0055; /* Arcade pink-red border */
-  padding: 6px 14px;
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  background: #05070f;
+  border: 2.5px solid var(--maze-blue);
   border-radius: 4px;
-  box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
   transition: all 0.15s ease;
   user-select: none;
 }
 
+/* Hover identico a .arcade-icon-btn: riempimento giallo, icona nera. */
 .arcade-cart-btn-container:hover {
+  background: var(--pacman-yellow);
   border-color: var(--pacman-yellow);
-  box-shadow: 0 0 15px rgba(255, 212, 59, 0.6);
-  background: rgba(255, 212, 59, 0.08);
+}
+
+.arcade-cart-btn-container:focus-visible {
+  outline: 2px solid var(--pacman-yellow);
+  outline-offset: 3px;
 }
 
 .arcade-cart-icon {
-  width: 22px;
-  height: 22px;
+  width: 21px;
+  height: 18px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  filter: brightness(0) invert(1); /* Pure white cart icon */
-  transition: transform 0.15s ease;
+  transition: filter 0.15s ease;
 }
 
+/* L'SVG è già giallo; in hover lo porto a nero sul fondo giallo. */
 .arcade-cart-btn-container:hover .arcade-cart-icon {
-  transform: scale(1.1) rotate(-5deg);
+  filter: brightness(0);
 }
 
 .cart-count-badge {
@@ -1802,7 +1590,9 @@ html:has(.screen.arcade-mode.active) {
   position: relative;
 }
 
-.arcade-product-item .cursor-indicator {
+.arcade-product-item .cursor-indicator,
+.qty-control-btn,
+.orig-price-strike {
   position: absolute;
   left: 10px;
   color: var(--pacman-yellow);
@@ -2122,7 +1912,7 @@ html:has(.screen.arcade-mode.active) {
 
 .wahba-label {
   color: #666;
-  font-size: 0.85rem;
+  font-size: 13px;
   letter-spacing: 2px;
   margin-bottom: 15px;
 }
@@ -2655,7 +2445,7 @@ html:has(.screen.arcade-mode.active) {
 
 .cart-item-qty-val {
   font-family: monospace;
-  font-size: 0.85rem;
+  font-size: 11px;
   color: white;
 }
 
@@ -2769,17 +2559,8 @@ html:has(.screen.arcade-mode.active) {
   pointer-events: auto;
 }
 
-/* Style for the retro pixel art cart icon */
-.arcade-cart-icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  filter: drop-shadow(0 0 5px rgba(255, 212, 59, 0.5));
-  transition: transform 0.2s;
-  display: block;
-}
+/* La regola per .arcade-cart-icon è una sola, più in alto (riga ~1707):
+   questa era un duplicato che sovrascriveva la misura con 24x24. */
 
 /* ============================================================
    ARCADE EXPERIENCE STYLES (Scoped to #screen-arcade-reveal)
@@ -3004,7 +2785,7 @@ html:has(.screen.arcade-mode.active) {
 
 #screen-arcade-reveal #info-card-description {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
+  font-size: 14px;
   color: #dcdce6;
   line-height: 1.6;
   font-weight: 400;
@@ -3155,8 +2936,28 @@ html:has(.screen.arcade-mode.active) {
   font-size: 13px !important;
   color: #8898a6 !important;
 }
-.discount-text {
-  font-size: 24px !important;
+/* Un solo livello per tutti i titoli dei modal, premio compreso. Prima erano
+   tre corpi diversi per la stessa cosa: 14 sullo Skip, 22.5 su Game Over e
+   Reward (che ereditavano il default del browser per gli h2) e 24 sul premio.
+   Il premio ha bisogno anche della famiglia esplicita: porta pure la classe
+   .wahba-price, che piu' avanti gli imporrebbe il font mono. */
+.modal-content h2,
+#locked-collection-popup h2,
+#game-over-overlay h2,
+#reward-overlay h2 {
+  font-family: var(--font-pixel) !important;
+  font-size: 14px !important;
+  letter-spacing: 1.5px !important;
+  line-height: 1.6 !important;
+}
+
+/* Selettore piu' specifico: piu' avanti il blocco dei prezzi include
+   .wahba-price, che questo elemento porta insieme a .discount-text e che
+   altrimenti gli rimetterebbe il font mono. */
+#reward-overlay .discount-text {
+  font-family: var(--font-pixel) !important;
+  font-size: 14px !important;
+  letter-spacing: 1.5px !important;
   color: var(--pacman-yellow) !important;
 }
 
@@ -3294,7 +3095,11 @@ html:has(.screen.arcade-mode.active) {
   align-items: center;
   justify-content: center;
   font-family: var(--font-pixel);
-  font-size: 14px;
+  /* Stesso corpo dei bottoni testuali (.arcade-btn): un bottone e' un bottone,
+     che dentro ci sia una parola o un glifo. Prima questo era 14px, cioe' un
+     livello tipografico in piu' che esisteva solo qui. */
+  font-size: 10px;
+  letter-spacing: 0.5px;
   background: #05070f;
   color: var(--pacman-yellow);
   border: 2.5px solid var(--maze-blue);
@@ -3453,24 +3258,13 @@ html:has(.screen.arcade-mode.active) {
   text-shadow: 0 0 8px rgba(255, 212, 59, 0.35);
 }
 
+/* Ora contiene lo stesso Icon Button carrello delle altre schermate:
+   niente più font-size da emoji né pillola contatore a sé stante. */
 .checkout-topbar-cart {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 1.2rem;
-  color: #ccc;
   min-width: 60px;
   justify-content: flex-end;
-}
-
-.checkout-cart-count {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--pacman-yellow);
-  background: #161618;
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 1px 8px;
 }
 
 /* ── Body / grid layout ── */
@@ -3552,7 +3346,7 @@ html:has(.screen.arcade-mode.active) {
 
 .form-label {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 11px;
   letter-spacing: 1px;
   color: #999;
 }
@@ -3562,7 +3356,7 @@ html:has(.screen.arcade-mode.active) {
   border: 1.5px solid rgba(0, 59, 255, 0.35);
   color: var(--text-white);
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: 14px;
   padding: 11px 13px;
   border-radius: 5px;
   outline: none;
@@ -3663,13 +3457,13 @@ select.form-input {
 }
 
 .option-card-name {
-  font-size: 0.92rem;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-white);
 }
 
 .option-card-sub {
-  font-size: 0.75rem;
+  font-size: 11px;
   color: #888;
 }
 
@@ -3710,9 +3504,12 @@ select.form-input {
   box-shadow: 0 0 24px rgba(0, 59, 255, 0.08);
 }
 
+/* Stessa etichetta di sezione di .wahba-label: entrambe aprono con "//" e
+   devono avere la stessa voce. Prima questa era in Share Tech Mono e l'altra
+   in Press Start 2P, cioe' lo stesso ruolo scritto in due font diversi. */
 .summary-title {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-family: var(--font-pixel);
+  font-size: 13px;
   letter-spacing: 2px;
   color: var(--pacman-yellow);
   margin-bottom: 16px;
@@ -3861,11 +3658,6 @@ select.form-input {
   box-shadow: 0 0 40px rgba(255, 212, 59, 0.15);
 }
 
-.complete-icon {
-  font-size: 3rem;
-  margin-bottom: 14px;
-}
-
 .complete-title {
   font-family: var(--font-pixel);
   font-size: 1.3rem;
@@ -4010,10 +3802,277 @@ select.form-input {
   margin-right: 6px;
 }
 
+/* Il marchio UNIQLO apre la card, al posto dell'emoji. Il PNG ha una cornice
+   bianca intorno al riquadro rosso (il rosso è 1654x1654 dentro 1770x1814):
+   la taglio con clip-path e recupero lo spazio in alto col margine negativo,
+   così il rosso è un quadrato di 62px attaccato al bordo del titolo. */
 .complete-uniqlo-logo {
   display: block;
-  width: 32px;
-  height: 32px;
-  margin: 16px auto 0;
-  opacity: 0.9;
+  width: 66px;
+  height: 68px;
+  margin: -3px auto 21px;
+  clip-path: inset(5.07% 3.22% 3.75% 3.33%);
+}
+
+/* =========================================
+   SCALA TIPOGRAFICA ARCADE — sette livelli, in ordine di peso
+   Ogni testo della parte arcade cade su uno di questi sette, e i livelli
+   sono scritti dal piu' pesante al piu' leggero. Se ne serve un altro si
+   aggiunge qui e lo si documenta: non si inventa un corpo dentro la regola
+   del singolo componente. Due famiglie — Press Start 2P dichiara, Share
+   Tech Mono si legge — e a parita' di corpo il pixel pesa piu' del mono,
+   quindi viene prima.
+
+     H1  Title       Press Start 2P   18   tracking 1.5
+     H2  Body        Share Tech Mono  15   tracking 0.8
+     H3  Subtitle    Press Start 2P   13   tracking 2
+     H4  Data body   Share Tech Mono  13   tracking 1
+     H5  Data title  Press Start 2P   11   tracking 1.5
+     H6  Caption     Share Tech Mono  11   tracking 1
+     H7  Button      Press Start 2P   10   tracking 0.5
+========================================= */
+
+/* H1 Title · Press Start 2P 18 — ogni titolo della parte arcade: i messaggi
+   grandi del gioco, i titoli dei modal, il premio, la barra dei punteggi.
+   Prima erano due livelli, 22 per i messaggi e 14 per i titoli: stessa
+   funzione, due misure. Ora una sola, a meta' strada. */
+.ready-text,
+.rom-loading-title,
+.player-text,
+.attract-title,
+.checkout-title,
+.complete-title,
+.empty-title,
+.self-test-text,
+.skip-title,
+#screen-arcade-reveal #info-card-title,
+#item-view-name,
+.silhouette,
+.modal-content h2,
+#locked-collection-popup h2,
+#game-over-overlay h2,
+#reward-overlay h2,
+#reward-overlay .discount-text,
+.hud-col span,
+#score-val,
+#high-score-val,
+#p2-score-val {
+  font-family: var(--font-pixel) !important;
+  font-size: 18px !important;
+  letter-spacing: 1.5px !important;
+}
+
+/* H2 Body · Share Tech Mono 15 — il testo lungo che si legge davvero: i
+   paragrafi dei modal e la descrizione della Info Card. Il paragrafo di
+   SKIP stava a 14 su un livello suo: stesso ruolo, un pixel di differenza,
+   quindi e' rientrato qui. */
+.game-over-text {
+  font-family: var(--font-mono) !important;
+  color: #aaa;
+  margin: 10px 0 22px;
+}
+.game-over-text,
+#screen-arcade-reveal #info-card-description,
+.arc-skip-prompt p,
+.complete-desc,
+.skip-text {
+  font-family: var(--font-mono) !important;
+  font-size: 15px !important;
+  letter-spacing: 0.8px !important;
+}
+
+/* H3 Subtitle · Press Start 2P 13 con tracking largo — il sottotitolo del
+   titolo: etichette di sezione, contatori, intestazioni di lista, il log di
+   avvio della macchina. Il totale stava qui: e' un dato come Subtotal, e
+   ora sta nella coppia dei dati con il suo colore e la sua riga a marcarlo. */
+.press-start-label,
+.terminal-header .logo,
+.crt-logo,
+.arcade-start-menu .subtitle,
+.arcade-credit-bar,
+.ghost-name,
+.ghost-nick,
+.crt-sep,
+.key-cap,
+#crt-item-counter,
+#arcade-header-status,
+#screen-arcade-reveal #info-card-number,
+.checkout-section-title,
+.checkout-brand,
+.drawer-title,
+.arc-list-label,
+.self-test-text {
+  font-family: var(--font-pixel) !important;
+  font-size: 13px !important;
+  letter-spacing: 2px !important;
+}
+
+/* -- H4 e H5 sono la coppia dei dati --------------------------------------
+   Ovunque il sito mostri un dato lo mostra in coppia: una cosa che gli da'
+   il nome, e il dato stesso. EMAIL e you@example.com. Standard Delivery e
+   €4.95. Subtotal e $39.90. Il nome del capo e il suo prezzo. Sono due
+   ruoli diversi, quindi due livelli diversi: il nome e' pixel, il dato e'
+   mono. Si distinguono per FONT, non per mezzo pixel.
+   Prima i prezzi del carrello e del Product Viewer stavano da soli su un
+   livello a 14: e' lo stesso mestiere di €4.95 dentro la Option Card, e ora
+   stanno insieme.
+   H5 sta sotto a H4 in questa scala perche' e' piu' piccolo di corpo — il
+   nome di un dato si legge, non si annuncia — ma essendo pixel a 11 pesa
+   quanto il mono a 13 che gli sta accanto. */
+
+/* H4 Data body · Share Tech Mono 13 — il dato: quello che si scrive nei
+   campi, i prezzi, i valori del riepilogo, il numero d'ordine */
+.form-input,
+.option-card-sub,
+.option-card-price,
+.summary-row > span:last-child,
+.price-summary-row > span:last-child,
+#cart-total-val,
+#summary-total,
+.summary-item-name,
+.summary-item-price,
+.cart-item-name,
+.cart-item-price,
+#item-view-price,
+#cart-subtotal-val,
+#cart-discount-val,
+.complete-order-number,
+#complete-order-id {
+  font-family: var(--font-mono) !important;
+  font-size: 13px !important;
+  letter-spacing: 1px !important;
+}
+
+/* H5 Data title · Press Start 2P 11 — il testo che da' il nome a un dato */
+.form-label,
+.option-card-name,
+.summary-row > span:first-child,
+.price-summary-row > span:first-child {
+  font-family: var(--font-pixel) !important;
+  font-size: 11px !important;
+  letter-spacing: 1.5px !important;
+}
+
+/* H6 Caption · Share Tech Mono 11 — quello che sta sotto al dato: varianti,
+   taglie, quantita', note a margine */
+#rom-progress-pct,
+.cart-item-variant,
+.wahba-btn,
+.cart-item-qty-val,
+.cart-item-remove-btn,
+.card-demo-notice,
+.checkout-secure-note {
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+}
+
+/* H7 Button · Press Start 2P 10 — bottoni, monitor, badge */
+.keys-hint-label,
+#arc-preview-number,
+#arc-preview-price,
+.cart-count-badge,
+#item-view-cart-count-badge,
+.arcade-product-item,
+.arcade-product-item .item-number,
+.arcade-product-item .cursor-indicator,
+.qty-control-btn,
+.orig-price-strike {
+  font-family: var(--font-pixel) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* =========================================
+   SCALA TIPOGRAFICA UNIQLO — sette livelli, in ordine di peso
+   La parte UNIQLO ha una famiglia sola, Helvetica Neue, quindi qui i livelli
+   non si distinguono per font come nell'arcade: si distinguono per corpo e
+   per peso. A parita' di corpo viene prima il piu' grasso.
+   Stesso metodo dell'arcade: un livello, un ruolo. Se un testo non rientra
+   in nessuno di questi sette, o e' un ruolo nuovo da aggiungere qui, o e'
+   un errore.
+
+     H1  Title     900   90   tracking -2
+     H2  Subtitle  500   20   tracking -0.3
+     H3  Body      400   15   tracking 0
+     H4  Label     700   13   tracking 1
+     H5  Link      400   13   tracking 0
+     H6  Occhiello 600   11   tracking 3
+     H7  Caption   400   11   tracking 0
+========================================= */
+
+/* H1 Title · 900 a 90 — il titolo della campagna. Ce n'e' uno solo per
+   pagina ed e' la prima cosa che si vede. */
+.uq-hero-title {
+  font-family: var(--font-uniqlo) !important;
+  font-weight: 900 !important;
+  font-size: 90px !important;
+  letter-spacing: -2px !important;
+}
+
+/* H2 Subtitle · 500 a 20 — il titolo di una sezione della pagina */
+.uq-section-label {
+  font-family: var(--font-uniqlo) !important;
+  font-weight: 500 !important;
+  font-size: 20px !important;
+  letter-spacing: -0.3px !important;
+}
+
+/* H3 Body · 400 a 15 — il paragrafo che si legge davvero */
+.uq-hero-desc {
+  font-family: var(--font-uniqlo) !important;
+  font-weight: 400 !important;
+  font-size: 15px !important;
+  letter-spacing: 0 !important;
+}
+
+/* H4 Label · 700 a 13 — il testo piccolo in grassetto che da' un nome: alle
+   sezioni del sito nel menu, ai gruppi di link nel footer, ai bottoni.
+   Prima erano quattro livelli quasi uguali — 14/0.5 per il menu, 13/0.5 per
+   il footer, 13/1.5 e 13/2 per due bottoni diversi, 11/1 per un terzo — che
+   si distinguevano per mezzo pixel di tracking. Un bottone UNIQLO si
+   riconosce dal rettangolo rosso, non da una spaziatura sua. */
+.uq-tab,
+.uq-footer-heading,
+.uq-btn-primary,
+.uq-btn-ghost {
+  font-family: var(--font-uniqlo) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 1px !important;
+}
+
+/* H5 Link · 400 a 13 — i link e il testo di servizio: quello che si legge e
+   si clicca nel corpo della pagina */
+.uq-search-placeholder,
+.uq-strip-item span,
+.uq-footer-col ul a,
+.uq-footer-col p {
+  font-family: var(--font-uniqlo) !important;
+  font-weight: 400 !important;
+  font-size: 13px !important;
+  letter-spacing: 0 !important;
+}
+
+/* H6 Occhiello · 600 a 11 con tracking largo — la riga che introduce il
+   titolo, e la pastiglia che marca una novita' */
+.uq-hero-eyebrow,
+.deco-pill {
+  font-family: var(--font-uniqlo) !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 3px !important;
+}
+
+/* H7 Caption · 400 a 11 — quello che sta sotto o ai margini: i nomi delle
+   categorie sotto le icone, la barra di servizio in cima, le note legali */
+.uq-cat-item span,
+.uq-utility-bar span,
+.uq-footer-bottom span,
+.uq-footer-links a,
+.uq-country-btn {
+  font-family: var(--font-uniqlo) !important;
+  font-weight: 400 !important;
+  font-size: 11px !important;
+  letter-spacing: 0 !important;
 }
