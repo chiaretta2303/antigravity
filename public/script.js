@@ -1,14 +1,14 @@
 // Preload arcade button images to avoid delay/flicker on click
 const preloadBtnUp = new Image();
-preloadBtnUp.src = '/assets/arcade-button-up.png';
+preloadBtnUp.src = 'assets/arcade-button-up.png';
 const preloadBtnDown = new Image();
-preloadBtnDown.src = '/assets/arcade-button-down.png';
+preloadBtnDown.src = 'assets/arcade-button-down.png';
 
 // Pre-decode the maze background off the main thread so its first paint at
 // gameplay start doesn't stall the game's opening frames.
 const preloadMaze = new Image();
 preloadMaze.decoding = 'async';
-preloadMaze.src = '/assets/maze-without-pellets.png';
+preloadMaze.src = 'assets/maze-without-pellets.png';
 if (preloadMaze.decode) preloadMaze.decode().catch(() => {});
 
 // STATE
@@ -865,7 +865,7 @@ function showPressStartButton() {
   const ps = document.getElementById('screen-press-start');
   if (ps) { ps.style.transition = ''; ps.style.opacity = ''; }
   const btnImg = document.getElementById('arcade-btn-img');
-  if (btnImg) btnImg.src = '/assets/arcade-button-up.png';
+  if (btnImg) btnImg.src = 'assets/arcade-button-up.png';
   const btn = document.getElementById('arcade-start-btn');
   if (btn) {
     btn.classList.remove('pressed');
@@ -879,7 +879,7 @@ function onPressStartClick() {
   
   const btnImg = document.getElementById('arcade-btn-img');
   if (btnImg) {
-    btnImg.src = '/assets/arcade-button-down.png';
+    btnImg.src = 'assets/arcade-button-down.png';
   }
 
   // Arcade cabinet button "click": a short punchy square-wave tap with a
@@ -1642,7 +1642,7 @@ function startGame() {
   // press-start flow, so autoplay is allowed; play().catch() covers the
   // rare case where it still isn't.
   try {
-    const readyAudio = new Audio('/assets/audio/pacman-ready-intro.mp3.mp3');
+    const readyAudio = new Audio('assets/audio/pacman-ready-intro.mp3.mp3');
     readyAudio.volume = 0.65;
     readyAudio.loop = false;
     readyAudio.addEventListener('ended', beginGameplay, { once: true });
@@ -2244,10 +2244,10 @@ document.getElementById('btn-play-from-skip')?.addEventListener('click', () => {
 // SCREEN 7: COLLECTION
 // =========================================
 const productsData = [
-  { id: 'tshirt',     name: 'Pac-Man Graphic T-Shirt',    price: 24.90, hasVariants: true, variants: { black: '/assets/products/tshirt-black.png',     white: '/assets/products/tshirt-white.png'     } },
-  { id: 'sweatshirt', name: 'Pac-Man Arcade Hoodie',      price: 49.90, hasVariants: true, variants: { black: '/assets/products/hoodie-black.png', white: '/assets/products/hoodie-white.png' } },
-  { id: 'cap',        name: 'Pac-Man Logo Cap',           price: 19.90, hasVariants: true, variants: { black: '/assets/products/cap-black.png',       white: '/assets/products/cap-white.png'       } },
-  { id: 'tote',       name: 'UNIQLO x Pac-Man Bag',       price: 14.90, hasVariants: true, variants: { black: '/assets/products/bag-black.png',       white: '/assets/products/bag-white.png'       } }
+  { id: 'tshirt',     name: 'Pac-Man Graphic T-Shirt',    price: 24.90, hasVariants: true, variants: { black: 'assets/products/tshirt-black.png',     white: 'assets/products/tshirt-white.png'     } },
+  { id: 'sweatshirt', name: 'Pac-Man Arcade Hoodie',      price: 49.90, hasVariants: true, variants: { black: 'assets/products/hoodie-black.png', white: 'assets/products/hoodie-white.png' } },
+  { id: 'cap',        name: 'Pac-Man Logo Cap',           price: 19.90, hasVariants: true, variants: { black: 'assets/products/cap-black.png',       white: 'assets/products/cap-white.png'       } },
+  { id: 'tote',       name: 'UNIQLO x Pac-Man Bag',       price: 14.90, hasVariants: true, variants: { black: 'assets/products/bag-black.png',       white: 'assets/products/bag-white.png'       } }
 ];
 
 

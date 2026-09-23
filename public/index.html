@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UNIQLO x PAC-MAN</title>
   <link rel="stylesheet" href="styles.css?v=25">
-  <link rel="preload" href="/assets/arcade-button-up.png" as="image">
-  <link rel="preload" href="/assets/arcade-button-down.png" as="image">
+  <link rel="preload" href="assets/arcade-button-up.png" as="image">
+  <link rel="preload" href="assets/arcade-button-down.png" as="image">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <!-- Import map to resolve bare module specifiers in arcade.js -->
@@ -56,7 +56,7 @@
           </div>
           <!-- UNIQLO logo lockup: Japanese mark + wordmark, single reference photo -->
           <div class="uq-logo-block">
-            <img src="/assets/uniqlo-logo-jp.png" alt="UNIQLO" class="uq-logo-img uq-logo-combined">
+            <img src="assets/uniqlo-logo-jp.png" alt="UNIQLO" class="uq-logo-img uq-logo-combined">
           </div>
         </div>
 
@@ -260,12 +260,12 @@
 
     <!-- SCREEN 2.5: PRESS START BUTTON -->
     <div id="screen-press-start" class="screen">
-      <img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
+      <img src="assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
       <button id="btn-press-start-back" class="arcade-icon-btn" aria-label="Back to UNIQLO">&lt;</button>
       <div class="press-start-scene">
         <div id="arcade-start-btn" class="arcade-img-button">
           <img id="arcade-btn-img"
-               src="/assets/arcade-button-up.png"
+               src="assets/arcade-button-up.png"
                alt="Press Start"
                class="arcade-btn-img"
                onerror="this.style.display='none'">
@@ -276,7 +276,7 @@
 
     <!-- SCREEN 3 & 4: ARCADE CABINET REVEAL & COIN SEQUENCE -->
     <div id="screen-arcade-reveal" class="screen">
-      <img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
+      <img src="assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
       <canvas id="three-canvas"></canvas>
 
       <!-- ROM loading overlay: shown while the 3D room model downloads -->
@@ -383,8 +383,8 @@
 
         <!-- 3. ACTUAL START MENU -->
         <div id="start-menu-content" class="arcade-start-menu hidden">
-          <img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="arcade-uniqlo-logo">
-          <img src="/assets/pac-man-logo.png" alt="PAC-MAN" class="arcade-pacman-logo">
+          <img src="assets/uniqlo-logo.png" alt="UNIQLO" class="arcade-uniqlo-logo">
+          <img src="assets/pac-man-logo.png" alt="PAC-MAN" class="arcade-pacman-logo">
           <p class="subtitle">UNIQLO CAPSULE COLLECTION</p>
           <div class="start-actions">
             <button id="btn-play-game" class="arcade-btn primary">PLAY PLAYER 1</button>
@@ -432,13 +432,13 @@
               <span id="p2-score-val">0</span>
             </div>
             <div class="hud-logo">
-              <img src="/assets/uniqlo-logo.png" alt="UNIQLO" onerror="this.style.display='none'">
+              <img src="assets/uniqlo-logo.png" alt="UNIQLO" onerror="this.style.display='none'">
             </div>
           </div>
 
           <div class="playfield">
             <!-- Background maze -->
-            <img src="/assets/maze-without-pellets.png" class="maze-bg" alt="Maze">
+            <img src="assets/maze-without-pellets.png" class="maze-bg" alt="Maze">
 
             <!-- Game Canvas for Pac-Man and Items -->
             <canvas id="game-canvas" width="448" height="496"></canvas>
@@ -510,7 +510,7 @@
 
     <!-- SCREEN 7: ARCADE REWARD COLLECTION SCREEN -->
     <div id="screen-arcade-collection" class="screen arcade-mode">
-      <img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
+      <img src="assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
       <div class="scanlines"></div>
 
       <!-- CRT top bar -->
@@ -525,7 +525,7 @@
           <span id="crt-item-counter" class="crt-counter">GAME 01/04</span>
         </div>
         <div id="arcade-cart-btn" class="arcade-cart-btn-container">
-          <img src="/assets/cart-pixel.svg" alt="Cart" class="arcade-cart-icon">
+          <img src="assets/cart-pixel.svg" alt="Cart" class="arcade-cart-icon">
           <span id="cart-count-badge" class="cart-count-badge">0</span>
         </div>
       </div>
@@ -589,7 +589,7 @@
 
     <!-- ITEM VIEW MODAL -->
     <div id="item-view-overlay" class="modal hidden arcade-mode wahba-shell">
-      <img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
+      <img src="assets/uniqlo-logo.png" alt="UNIQLO" class="uniqlo-watermark">
       <div class="scanlines"></div>
 
       <div class="terminal-header" style="position: absolute; top: 40px; left: 40px; width: calc(100% - 80px); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; padding: 15px 30px; z-index: 10;">
@@ -597,7 +597,7 @@
           <span class="logo">/PRODUCT_VIEWER</span>
         </div>
         <div id="item-view-cart-btn" class="arcade-cart-btn-container">
-          <img src="/assets/cart-pixel.svg" alt="Cart" class="arcade-cart-icon">
+          <img src="assets/cart-pixel.svg" alt="Cart" class="arcade-cart-icon">
           <span id="item-view-cart-count-badge" class="cart-count-badge">0</span>
         </div>
       </div>
@@ -650,7 +650,7 @@
       <div class="scanlines"></div>
       
       <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid rgba(0, 59, 255, 0.4);">
-        <span class="drawer-title" style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; color: var(--pacman-yellow);"><img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="drawer-uniqlo-logo">// YOUR BAG</span>
+        <span class="drawer-title" style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; color: var(--pacman-yellow);"><img src="assets/uniqlo-logo.png" alt="UNIQLO" class="drawer-uniqlo-logo">// YOUR BAG</span>
         <button id="btn-close-bag" class="arcade-icon-btn" aria-label="Close">&times;</button>
       </div>
       
@@ -697,14 +697,14 @@
       <div class="checkout-topbar">
         <button id="btn-checkout-back" class="arcade-icon-btn" aria-label="Back to bag">&lt;</button>
         <div class="checkout-topbar-center">
-          <span class="checkout-brand"><img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="checkout-brand-logo">UNIQLO &times; PAC-MAN</span>
+          <span class="checkout-brand"><img src="assets/uniqlo-logo.png" alt="UNIQLO" class="checkout-brand-logo">UNIQLO &times; PAC-MAN</span>
           <span class="checkout-title">CHECKOUT</span>
         </div>
         <div class="checkout-topbar-cart">
           <!-- Stesso carrello pixel di Item Selector e Product Viewer: una sola icona
                per tutte e tre le schermate, invece dell'emoji che c'era prima. -->
           <div class="arcade-cart-btn-container">
-            <img src="/assets/cart-pixel.svg" alt="Cart" class="arcade-cart-icon">
+            <img src="assets/cart-pixel.svg" alt="Cart" class="arcade-cart-icon">
             <span id="checkout-item-count-badge" class="cart-count-badge">0</span>
           </div>
         </div>
@@ -907,7 +907,7 @@
       <!-- ORDER COMPLETE STEP -->
       <div id="checkout-step-complete" class="checkout-complete hidden">
         <div class="complete-card">
-          <img src="/assets/uniqlo-logo.png" alt="UNIQLO" class="complete-uniqlo-logo">
+          <img src="assets/uniqlo-logo.png" alt="UNIQLO" class="complete-uniqlo-logo">
           <div class="complete-title">ORDER COMPLETE</div>
           <div class="complete-desc">Thank you for shopping the UNIQLO x PAC-MAN collection.</div>
           <div class="complete-order-number">ORDER #<span id="complete-order-id">PM-0000</span></div>
