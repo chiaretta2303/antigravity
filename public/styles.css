@@ -388,6 +388,19 @@ body, html {
   transform: translateY(-1px);
 }
 
+/* Disabled — nessun bottone UNIQLO oggi viene disattivato, ma il componente
+   deve saperlo fare: il rosso perde il colore e diventa un grigio caldo, e
+   il testo scende al minimo contrasto leggibile. Stessa logica del disabled
+   arcade, tarata sul fondo chiaro. La regola ripete :hover perche' su un
+   bottone disabilitato il browser continua a far combaciare :hover. */
+.uq-btn-primary:disabled,
+.uq-btn-primary:disabled:hover {
+  background: #DAD7D1;
+  color: #96928A;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Small modifier — same Primary role, compact size (e.g. newsletter signup) */
 .uq-btn-primary.small {
   padding: 10px 16px;
@@ -412,6 +425,20 @@ body, html {
 .uq-btn-ghost:hover {
   border-color: #111;
   background: rgba(17,17,17,0.05);
+}
+
+/* Disabled — il contorno sbiadisce dal 35% al 15% e il testo va al grigio.
+   La variante .full inverte su hover, quindi qui va battuta con una regola
+   piu' specifica, altrimenti un bottone disabilitato si riempirebbe di nero
+   al passaggio del mouse. */
+.uq-btn-ghost:disabled,
+.uq-btn-ghost:disabled:hover,
+.uq-btn-ghost.full:disabled,
+.uq-btn-ghost.full:disabled:hover {
+  background: transparent;
+  border-color: rgba(17,17,17,0.15);
+  color: #96928A;
+  cursor: not-allowed;
 }
 
 /* Full modifier — same Secondary/Ghost role, full-width pill shape used
